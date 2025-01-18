@@ -6,15 +6,15 @@ __author__ = 'Roman Kalkreuth'
 __version__ = '0.1'
 __email__ = 'roman.kalkreuth@rwth-aachen.de'
 
-from abc import ABC
-from abc import abstractmethod
-from dataclasses import dataclass
-from enum import Enum
-
 import math
 import random
 import operator
 import copy
+
+from abc import ABC
+from abc import abstractmethod
+from dataclasses import dataclass, asdict
+from enum import Enum
 
 MU = 1
 LAMBDA = 1
@@ -29,6 +29,7 @@ LEVELS_BACK = 1
 NUM_FUNCTIONS = 4
 MUTATION_RATE = 0.1
 GENERATIONS = 100
+JOBS = 10
 STRICT_SELECTION = True
 IDEAL = 0.01
 MINIMIZING = True
@@ -53,6 +54,52 @@ def euclidean_distance(x:dict, y:dict) -> float:
         dist += math.pow(xi - yi, 2)
     return math.sqrt(dist)
 
+
+@dataclass
+class Config(ABC):
+    def dictionary(self) -> dict:
+        return self.__dict__
+
+@dataclass
+class CGPConfig(Config):
+    num_jobs: int
+    max_generations: int
+
+    functions: list
+    terminals: list
+    variables: list
+
+    num_functions: int
+    num_terminals: int
+    num_variables: int
+
+    fitness_metric: str
+    stopping_criteria: float
+    minimizing_fitness: bool
+
+    ideal_fitness: float
+
+    silent_algorithm: bool
+    silent_evolver:bool
+    minimalistic_output:bool
+
+class Hyperparameters(ABC):
+
+    def dictionary(self) -> dict:
+        return self.__dict__
+
+@dataclass
+class CGPHyperparameters(Hyperparameters):
+
+    mu: int
+    lmbda: int
+
+    num_nodes: int
+
+    levels_back: int
+    mutation_rate: float
+
+    strict_selection: bool
 
 @dataclass
 class Terminal(ABC):
@@ -81,7 +128,7 @@ class Problem():
     data: list
     actual: list
 
-    def __init__(self, data_: list, actual_: list, loss_: callable(),
+    def __init__(self, data_: list, actual_: list, loss_: callable,
                  ideal_: float, minimizing_: bool):
         self.data = data_
         self.actual = actual_
@@ -148,6 +195,10 @@ def check_config():
 
 
 class TinyCGP:
+    config: Config
+    hyperparameters: Hyperparameters
+    problem: Problem
+
     class GeneType(Enum):
         FUNCTION = 0
         CONNECTION = 1
@@ -346,12 +397,6 @@ class TinyCGP:
             paths.append(path)
         return paths
 
-    def evolve(self):
-        for generation in range(GENERATIONS):
-            self.breed()
-            best = self.evaluate()
-            print("Generation #" + str(generation) + " -> Best Fitness: " + str(best))
-
     def breed(self):
         parent = self.selection()
         self.population.clear()
@@ -418,7 +463,19 @@ class TinyCGP:
 
     def print_population(self):
         for individual in self.population:
-            print(individual)
+            self.print_individual(individual)
+
+    def print_individual(self, individual):
+        print("Genome: " + str(individual[0]) + " : Fitness: " + str(individual[1]))
+
+    def evolve(self):
+        for job in range(JOBS):
+            best_fitness = None
+            for generation in range(GENERATIONS):
+                self.breed()
+                best_fitness = self.evaluate()
+                print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
+            print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
 
 random.seed(SEED)
 functions = Functions([operator.add, operator.sub, operator.mul, pdiv],
@@ -429,4 +486,9 @@ benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA1')
 problem = Problem(data, actual, loss, IDEAL, MINIMIZING)
 cgp = TinyCGP(problem, functions, terminals)
-cgp.evolve()
+#cgp.evolve()
+
+hp = CGPHyperparameters(mu=MU, lmbda=LAMBDA, num_nodes=NUM_FUNCTION_NODES, levels_back=LEVELS_BACK,
+                        mutation_rate= MUTATION_RATE, strict_selection=STRICT_SELECTION)
+
+print(hp.dictionary())
