@@ -30,13 +30,6 @@ IDEAL = 0.01
 MINIMIZING = True
 SEED = 42
 
-@dataclass
-class Operator(ABC): 
-    _arity: int 
-    _name: str 
-    _function: callable
-    _children: List[Any]
-
 def pdiv(x, y):
     return x / y if y > 0 else 1.0
 
