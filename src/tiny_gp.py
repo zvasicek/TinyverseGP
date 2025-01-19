@@ -66,38 +66,25 @@ class Config(ABC):
 class GPConfig(Config):
     num_jobs: int
     max_generations: int
-
-    fitness_metric: str
     stopping_criteria: float
     minimizing_fitness: bool
-
     ideal_fitness: float
-
     silent_algorithm: bool
     silent_evolver:bool
     minimalistic_output:bool
 
 class Hyperparameters(ABC):
-
     def dictionary(self) -> dict:
         return self.__dict__
 
 @dataclass
 class GPHyperparameters(Hyperparameters):
-
     pop_size: int
-
     max_size: int
-
     max_depth: int
     mutation_rate: float
     cx_rate: float
     tournament_size: int
-
-@dataclass
-class Terminal(ABC):
-    index: int
-    type: int
 
 @dataclass
 class Function():
@@ -113,21 +100,20 @@ class Function():
     def call(self, args: list) -> Any:
         assert(len(args) == self.arity)
         return self.function(*args)
+class Var(Function):
+    def __init__(self, index):
+        self.const = False
+        Function.__init__(self, 0, 'Var', lambda : index)
+class Const(Function):
+    def __init__(self, value):
+        self.const = True
+        Function.__init__(self, 0, 'Const', lambda : value) 
 
-class Add(Function):
-    def __init__(self):
-        super().__init__(2, 'Add', operator.add)
-class Sub(Function):
-    def __init__(self):
-        super().__init__(2, 'Sub', operator.sub)
-class Mul(Function):
-    def __init__(self):
-        super().__init__(2, 'Mul', operator.mul)
-class Div(Function):
-    def __init__(self):
-        super().__init__(2, 'Div', pdiv)
-
-
+# SR Functions
+Add = Function(2, 'Add', operator.add)
+Sub = Function(2, 'Sub', operator.sub)
+Mul = Function(2, 'Mul', operator.mul)
+Div = Function(2, 'Div', pdiv)
 
 @dataclass
 class Problem():
@@ -154,7 +140,6 @@ class Problem():
 
 @dataclass
 class Benchmark(ABC):
-
     @abstractmethod
     def generate(self, benchmark: str):
         pass
@@ -164,7 +149,6 @@ class Benchmark(ABC):
         pass
 
 class SRBenchmark(Benchmark):
-
     def dataset_uniform(self, a: int, b: int, n: int, dimension: int, benchmark: str) -> tuple:
         sample = []
         point = []
@@ -195,18 +179,10 @@ class SRBenchmark(Benchmark):
                 return pow(args[0],5) - 2 * pow(args[0],4) + pow(args[0],2)
 
 
-def check_config():
-    if LEVELS_BACK > NUM_FUNCTION_NODES:
-        raise ValueError('LEVELS_BACK > NUM_FUNCTION_NODES')
-
 class Node:
     def __init__(self, function: Any, children: List[Any]):
         self.function = function
         self.children = children
-
-def Term(index):
-    TF = Function(0, 'Term', lambda : index)
-    return Node(TF, [])
 
 def node_size(node: Node) -> int:
     if len(node.children) == 0:
@@ -219,18 +195,13 @@ class TinyGP:
     problem: Problem
     functions: list[Function]
 
-    class TerminalType(Enum):
-        VARIABLE = 0
-        CONSTANT = 1
-
-    def __init__(self, problem_: object, functions_: list[Function], terminals_: list, config: Config, hyperparameters: Hyperparameters):
+    def __init__(self, problem_: object, functions_: list[Function], config: Config, hyperparameters: Hyperparameters):
         # NOTE: having init_population as a function could allow people to call it again and double the pop size 
-        self.functions = functions_
-        self.inputs = dict()
+        self.functions = [f for f in functions_ if f.arity > 0]
+        self.terminals = [f for f in functions_ if f.arity == 0]
         self.problem = problem_
         self.hyperparameters = hyperparameters 
         self.config = config
-        self.init_inputs(terminals_)
         self.population = [[genome, 0.0] for genome in self.init_ramped_half_half(POP_SIZE, 1, MAX_DEPTH, MAX_SIZE)]
         self.evaluate()
 
@@ -239,20 +210,13 @@ class TinyGP:
         fitness = 0.0
         return [genome, fitness]
 
-    def init_inputs(self, terminals_: list):
-        for index, terminal in enumerate(terminals_):
-            if isinstance(terminal, str):
-                self.inputs[index] = (terminal, self.TerminalType.VARIABLE)
-            else:
-                self.inputs[index] = (terminal, self.TerminalType.CONSTANT)
-
     def tree_random_full(self, max_depth : int, size : int) -> Node :
         """
         returns a random tree with `max_depth` and using functions
         that sample random terminal and nonterminal nodes.
         """
         if max_depth == 0 or size < 2:
-            return Term(random.randint(0, len(self.inputs)-1))
+            return Node(random.choice(self.terminals), [])
         n = random.choice(self.functions)
         children = [self.tree_random_full(max_depth - 1, size // n.arity - 1) for _ in range(n.arity)]
         return Node(n, children)
@@ -263,9 +227,9 @@ class TinyGP:
         that sample random terminal and nonterminal nodes.
         """
         if max_depth <= 1 or size < 2:
-            return Term(random.randint(0, len(self.inputs)-1))
+            return Node(random.choice(self.terminals), [])
         if min_depth <= 0 and random.random() < 0.5:
-            return Term(random.randint(0, len(self.inputs)-1))
+            return Node(random.choice(self.terminals), [])
         else:
             n = random.choice(self.functions)
             size = size - n.arity
@@ -288,15 +252,6 @@ class TinyGP:
                 pop.append(tree)
                 grow = not grow
         return pop
-
-    def input_value(self, index: int) -> any:
-        return self.inputs[index][0]
-
-    def input_name(self, index: int) -> str:
-        return str(self.input_value(index))
-
-    def input_type(self, index: int) -> TerminalType:
-        return self.inputs[index][1]
 
     def fitness(self, individual: list[list[int], float]):
         return individual[1]
@@ -338,13 +293,12 @@ class TinyGP:
         prediction = []
 
         def eval_node(node: Node):
-            if len(node.children) == 0:
-                index = node.function.call([])
+            if node.function.arity == 0:
                 # NOTE: this assumes that we will first have the list of variables in order in the list of terminals 
-                if self.input_type(index) == self.TerminalType.VARIABLE:
-                    return data_point[index]
+                if node.function.const:
+                    return node.function.call([]) 
                 else:
-                    return self.input_value(index)
+                    return data_point[node.function.call([])]
             else:
                 args = [eval_node(child) for child in node.children]
                 return node.function.call(args)
@@ -420,7 +374,7 @@ class TinyGP:
 
         def print_node(node: Node):
             if len(node.children) == 0:
-                return self.input_name(node.function([]))
+                return node.function.name + "(" + str(node.function.call([])) + ")"
             else:
                 args = [print_node(child) for child in node.children]
                 return node.function.name + "(" + ", ".join(args) + ")"
@@ -433,7 +387,7 @@ class TinyGP:
             self.print_individual(individual)
 
     def print_individual(self, individual):
-        print("Genome: " + str(individual[0]) + " : Fitness: " + str(individual[1]))
+        print("Genome: " + ";".join(self.expression(individual[0])) + " : Fitness: " + str(individual[1]))
 
     def evolve(self):
         # NOTE: is this supposed as a preparation for multithreading?
@@ -443,13 +397,11 @@ class TinyGP:
                 self.breed()
                 best_fitness = self.evaluate()
                 print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
+            self.print_individual(self.population[-1])
             print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
 
 random.seed(SEED)
-functions = [Add(), Sub(), Mul(), Div()]
-#Functions([operator.add, operator.sub, operator.mul, pdiv],
-#                      ["ADD", "SUB", "MUL", "DIV"])
-terminals = ['X', 1]
+functions = [Add, Sub, Mul, Div, Var(0), Const(1)]
 loss = euclidean_distance
 benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA1')
@@ -457,17 +409,17 @@ problem = Problem(data, actual, loss, IDEAL, MINIMIZING)
 hp = GPHyperparameters(pop_size=POP_SIZE, max_size=MAX_SIZE, max_depth=MAX_DEPTH, cx_rate=CX_RATE,
                         mutation_rate= MUTATION_RATE, tournament_size=TOURNAMENT_SIZE)
 config = GPConfig(
-    num_jobs=2,
-    max_generations=100,
-    fitness_metric='euclidean_distance',
-    stopping_criteria=0.01,
-    minimizing_fitness=True,
-    ideal_fitness=0.01,
-    silent_algorithm=True,
-    silent_evolver=True,
-    minimalistic_output=True)
+            num_jobs=2,
+            max_generations=100,
+            stopping_criteria=0.01,
+            minimizing_fitness=True,
+            ideal_fitness=0.01,
+            silent_algorithm=True,
+            silent_evolver=True,
+            minimalistic_output=True
+       )
 
-gp = TinyGP(problem, functions, terminals, config, hp)
+gp = TinyGP(problem, functions, config, hp)
 gp.evolve()
 
 
