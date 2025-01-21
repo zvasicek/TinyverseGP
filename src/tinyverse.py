@@ -24,13 +24,18 @@ class GPBase(ABC):
     def expression(self):
         pass
 
-    @abstractmethod
-    def report_job(self):
-        pass
+    def report_job(self, job: int, num_evaluations: int, best_fitness: float,
+                   silent_evolver: bool, minimalistic_output: bool):
+        if not silent_evolver:
+            if not minimalistic_output:
+                print("Job #" + str(job) + " - Evaluations: " + str(num_evaluations) +
+                      " - Best Fitness: " + str(best_fitness))
+            else:
+                print(str(num_evaluations) + ";" + str(best_fitness))
 
-    @abstractmethod
-    def report_generation(self):
-        pass
+    def report_generation(self, silent: bool, generation: int, best_fitness: float):
+        if not silent:
+            print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
 
 @dataclass
 class Config(ABC):
