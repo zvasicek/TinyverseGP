@@ -434,6 +434,5 @@ config = GPConfig(
     minimalistic_output=True
 )
 
-#gp = TinyGP(problem, functions, config, hp)
-#gp.evolve()
-#print(hp.dictionary())
+gp = TinyGP(problem, functions, config, hp)
+gp.evolve()
