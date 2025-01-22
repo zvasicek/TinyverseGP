@@ -1,5 +1,3 @@
-from multiprocessing.process import ORIGINAL_DIR
-
 from src.tinyverse import Function
 import operator
 
@@ -18,3 +16,5 @@ OR  = Function(2, 'OR', operator.or_)
 NAND = Function(2, 'NAND', operator.not_(operator.and_))
 NOR = Function(2, 'Nor', operator.not_(operator.or_))
 NOT = Function(1, 'NOR', operator.not_)
+
+# Policy Search
