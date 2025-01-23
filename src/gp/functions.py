@@ -25,11 +25,11 @@ NOR = Function(2, 'NOR', lambda x,y : ~(int(x) | int(y)))
 
 # Policy Search / Classificiation
 
-LT = Function(2, 'AND', operator.lt)
-LTE = Function(2, 'AND', operator.le)
-GT = Function(2, 'AND', operator.gt)
-GTE = Function(2, 'AND', operator.ge)
-EQ = Function(2, 'AND', operator.eq)
+LT = Function(2, 'AND', lambda x,y : b2f(x < y))
+LTE = Function(2, 'AND', lambda x,y : b2f(x <= y))
+GT = Function(2, 'AND', lambda x,y : b2f(x > y))
+GTE = Function(2, 'AND',lambda x,y : b2f(x >= y))
+EQ = Function(2, 'AND', lambda x,y : b2f(x == y))
 
 
 
