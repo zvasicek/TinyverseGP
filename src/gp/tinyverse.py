@@ -44,9 +44,29 @@ class Config(ABC):
         return self.__dict__
 
 @dataclass
+class GPConfig(Config):
+    num_jobs: int
+    max_generations: int
+    stopping_criteria: float
+    minimizing_fitness: bool
+    ideal_fitness: float
+    silent_algorithm: bool
+    silent_evolver: bool
+    minimalistic_output: bool
+
+@dataclass
 class Hyperparameters(ABC):
     def dictionary(self) -> dict:
         return self.__dict__
+
+@dataclass
+class GPHyperparameters(Hyperparameters):
+    pop_size: int
+    max_size: int
+    max_depth: int
+    mutation_rate: float
+    cx_rate: float
+    tournament_size: int
 
 @dataclass
 class Function():

@@ -23,14 +23,17 @@ NOT = Function(1, 'NOT', lambda x : ~int(x))
 NAND = Function(2, 'NAND', lambda x,y : ~(int(x) & int(y)))
 NOR = Function(2, 'NOR', lambda x,y : ~(int(x) | int(y)))
 
-# Policy Search / Classificiation
+# Policy Search / Classification
 
 LT = Function(2, 'AND', lambda x,y : b2f(x < y))
 LTE = Function(2, 'AND', lambda x,y : b2f(x <= y))
 GT = Function(2, 'AND', lambda x,y : b2f(x > y))
 GTE = Function(2, 'AND',lambda x,y : b2f(x >= y))
 EQ = Function(2, 'AND', lambda x,y : b2f(x == y))
-
+NEG = Function(1, 'AND', lambda x : operator.neg(x))
+IF = Function(3, 'AND', lambda x,y,z : y if f2b(x) else z)
+IFLEZ = Function(3, 'AND', lambda x,y,z : y if x <= 0 else z)
+IFGTZ = Function(3, 'AND', lambda x,y,z : y if x > 0 else z)
 
 
 
