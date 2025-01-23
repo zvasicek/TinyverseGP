@@ -32,9 +32,8 @@ class BlackBox(Problem):
 
     def evaluate(self, genome, model:GPModel) -> float:
         predictions = []
-        paths = self.decode(genome)
-        for observation in self.problem.data:
-            prediction = self.predict(genome, observation, paths)
+        for observation in self.observations:
+            prediction = model.predict(genome, observation)
             predictions.append(prediction)
         return self.cost(predictions)
 

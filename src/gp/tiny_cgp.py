@@ -28,10 +28,10 @@ LAMBDA = 32
 POPULATION_SIZE = MU + LAMBDA
 NUM_INPUTS = 2
 NUM_OUTPUTS = 1
-NUM_FUNCTION_NODES = 30
+NUM_FUNCTION_NODES = 10
 MAX_ARITY = 2
 NUM_NODES = NUM_INPUTS + NUM_FUNCTION_NODES + NUM_OUTPUTS
-LEVELS_BACK = 5
+LEVELS_BACK = 2
 NUM_FUNCTIONS = 4
 MUTATION_RATE = 0.1
 MAX_GENERATIONS = 30
@@ -400,7 +400,7 @@ hyperparameters = CGPHyperparameters(mu=MU, lmbda=LAMBDA,
                                      levels_back=LEVELS_BACK, mutation_rate=MUTATION_RATE,
                                      strict_selection=STRICT_SELECTION)
 
-problem = PolicySearch(env=env, ideal_= 100000, minimizing_=MINIMIZING_FITNESS)
+problem = PolicySearch(env=env, ideal_= 100, minimizing_=MINIMIZING_FITNESS)
 #problem  = BlackBoxProblem(data, actual, loss, IDEAL_FITNESS, MINIMIZING_FITNESS)
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 policy = cgp.evolve()

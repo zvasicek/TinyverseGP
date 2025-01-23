@@ -1,6 +1,12 @@
 from src.tinyverse import Function
 import operator
 
+def f2b(input: float):
+    return True if input > 0 else False
+
+def b2f(input: bool):
+    return 1.0 if input else -1.0
+
 def pdiv(x, y):
     return x / y if y > 0 else 1.0
 
@@ -24,5 +30,7 @@ LTE = Function(2, 'AND', operator.le)
 GT = Function(2, 'AND', operator.gt)
 GTE = Function(2, 'AND', operator.ge)
 EQ = Function(2, 'AND', operator.eq)
+
+
 
 
