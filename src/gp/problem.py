@@ -14,31 +14,46 @@ class Problem(ABC):
         return fitness1 < fitness2 if self.minimizing \
             else fitness1 > fitness2
 
+    def evaluate(self, genome, model:GPModel):
+        pass
+
 @dataclass
-class BlackBoxProblem(Problem):
+class BlackBox(Problem):
     observations: list
     actual: list
 
-    def __init__(self, data_: list, actual_: list, loss_: callable,
+    def __init__(self, observations_: list, actual_: list, loss_: callable,
                  ideal_: float, minimizing_: bool):
-        self.data = data_
+        self.observations = observations_
         self.actual = actual_
         self.loss = loss_
         self.ideal = ideal_
         self.minimizing = minimizing_
 
-    def evaluate(self, prediction: list) -> float:
+    def evaluate(self, genome, model:GPModel) -> float:
+        predictions = []
+        paths = self.decode(genome)
+        for observation in self.problem.data:
+            prediction = self.predict(genome, observation, paths)
+            predictions.append(prediction)
+        return self.cost(predictions)
+
+    def cost(self, predictions: list) -> float:
+        cost = 0.0
+        for index, _ in enumerate(predictions[0]):
+            cost += self.loss([prediction[index] for prediction in predictions])
+        return cost
+
+    def loss(self, prediction: list) -> float:
         return self.loss(self.actual, prediction)
 
-class PolicySearchProblem(Problem):
+class PolicySearch(Problem):
     agent: GPAgent
-    model: GPModel
 
-    def __init__(self, env: gym.Env, ideal_: float, minimizing_: bool, model_: GPModel):
+    def __init__(self, env: gym.Env, ideal_: float, minimizing_: bool):
         self.agent = GPAgent(env)
         self.ideal = ideal_
         self.minimizing = minimizing_
-        self.model = model_
 
-    def evaluate(self, genome) -> float:
-        return self.agent.evaluate_policy(genome, self.model)
+    def evaluate(self, genome, model:GPModel, num_episodes = 100) -> float:
+        return self.agent.evaluate_policy(genome, model, num_episodes)

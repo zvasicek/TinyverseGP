@@ -9,42 +9,41 @@ __email__ = 'roman.kalkreuth@rwth-aachen.de'
 import math
 import random
 import copy
+import Box2D
+import pygame
 
 from dataclasses import dataclass
 from enum import Enum
-
-
-from tiny_gp import (TinyGP, Problem, GPConfig, Hyperparameters, SRBenchmark, euclidean_distance,
-                     Add, Sub, Mul, Div, Var, Const)
-from src.benchmark.policy_search.policy_evaluation import GPAgent
-from src.gp.problem import PolicySearchProblem
-from src.gp.problem import BlackBoxProblem
-
 import gymnasium as gym
+from gymnasium.wrappers import FlattenObservation
+
+from tiny_gp import (TinyGP, GPConfig, Hyperparameters, SRBenchmark)
+from src.gp.tinyverse import Var, Const
+from functions import ADD, SUB, MUL, DIV, AND, OR, NOT, NAND, NOR, LT, LTE, GT, GTE, EQ
+from loss import euclidean_distance
+from src.gp.problem import Problem, BlackBox, PolicySearch
 
 MU = 1
-LAMBDA = 1
+LAMBDA = 32
 POPULATION_SIZE = MU + LAMBDA
 NUM_INPUTS = 2
 NUM_OUTPUTS = 1
-NUM_FUNCTION_NODES = 10
+NUM_FUNCTION_NODES = 30
 MAX_ARITY = 2
 NUM_NODES = NUM_INPUTS + NUM_FUNCTION_NODES + NUM_OUTPUTS
-NUM_GENES = ((MAX_ARITY + 1) * NUM_FUNCTION_NODES) + NUM_OUTPUTS
-LEVELS_BACK = 10
+LEVELS_BACK = 5
 NUM_FUNCTIONS = 4
 MUTATION_RATE = 0.1
-MAX_GENERATIONS = 100
-NUM_JOBS = 10
-STRICT_SELECTION = True
-IDEAL_FITNESS = 0.01
-MINIMIZING_FITNESS = True
+MAX_GENERATIONS = 30
+NUM_JOBS = 1
+IDEAL_FITNESS = 10
+STRICT_SELECTION = False
+MINIMIZING_FITNESS = False
 SEED = 42
 
 SILENT_ALGORITHM = False
 SILENT_EVOLVER = False
 MINIMALISTIC_OUTPUT = False
-
 
 @dataclass
 class CGPHyperparameters(Hyperparameters):
@@ -60,9 +59,11 @@ class CGPConfig(GPConfig):
     num_inputs: int
     num_outputs: int
     num_function_nodes: int
-    num_genes: int
     num_functions: int
     max_arity: int
+
+    def init(self):
+        self.num_genes = ((self.max_arity + 1) * self.num_function_nodes)  + self.num_outputs
 
 def check_config():
     if LEVELS_BACK > NUM_FUNCTION_NODES:
@@ -80,7 +81,7 @@ class TinyCGP(TinyGP):
         CONSTANT = 1
 
     def __init__(self, problem_: Problem, functions_: list, terminals_: list,
-                 config_: GPConfig, hyperparameters_: Hyperparameters, evaluator_ = None):
+                 config_: GPConfig, hyperparameters_: Hyperparameters):
         #TinyGP.__init__(problem_, functions_, config_, hyperparameters_)
         self.population = []
         self.functions = functions_
@@ -91,10 +92,6 @@ class TinyCGP(TinyGP):
         self.inputs = dict()
         self.init_inputs(terminals_)
         self.init_population()
-        if evaluator_ is not None:
-            self.evaluator = evaluator_
-        else:
-            self.evaluator = self.evaluate_observations
 
     def init_population(self):
         for _ in range(self.hyperparameters.population_size):
@@ -132,7 +129,8 @@ class TinyCGP(TinyGP):
         elif gene_type == self.GeneType.FUNCTION:
             return random.randint(0, self.config.num_functions - 1)
         else:
-            return random.randint(0, self.config.num_function_nodes + self.config.num_inputs - 1)
+            rand = random.randint(0, self.config.num_inputs + self.config.num_function_nodes - 1)
+            return rand
 
     def phenotype(self, position: int) -> GeneType:
         if position >= self.config.num_function_nodes * (self.config.max_arity + 1):
@@ -160,7 +158,7 @@ class TinyCGP(TinyGP):
         position = self.node_position(node_num)
         return genome[position]
 
-    def node_connections(self, node_num: int, genome: list[int]) -> int:
+    def node_connections(self, node_num: int, genome: list[int]) -> []:
         position = self.node_position(node_num)
         inputs = []
         for count in range(self.config.max_arity):
@@ -187,53 +185,45 @@ class TinyCGP(TinyGP):
         return individual[1]
 
     def evaluate(self) -> float:
-        best = None
+        best_genome = None
+        best_fitness = None
         for individual in self.population:
             genome = individual[0]
             fitness = individual[1] = self.evaluate_individual(genome)
 
-            if best is None:
-                best = fitness
+            if best_genome is None:
+                best_genome = genome
+                best_fitness = fitness
 
             if self.problem.is_ideal(fitness):
-                return individual
-            if self.problem.is_better(fitness, best):
-                best = fitness
-        return best
+                return genome, fitness
+            if self.problem.is_better(fitness, best_fitness):
+                best_genome = individual
+                best_fitness = individual[1]
+        return best_genome, best_fitness
 
-    def evaluate_individual(self, genome:list[int], evaluator) -> float:
-        return evaluator(genome)
+    def evaluate_individual(self, genome:list[int]) -> float:
+        return self.problem.evaluate(genome, self)
 
     def evaluate_observation(self, genome: list[int], observation):
         paths = self.decode(genome)
         return self.predict(genome, observation, paths)
 
-    def evaluate_observations(self, genome: list[int]) -> float:
-        predictions = []
-        paths = self.decode(genome)
-        for observation in self.problem.data:
-            prediction = self.predict(genome, observation, paths)
-            predictions.append(prediction)
-        return self.cost(predictions)
-
     def evaluate_node(self, node_num: int, genome: list[int], args: list) -> float:
         function = self.node_function(node_num, genome)
+        arity = self.functions[function].arity
+        if arity < len(args):
+            args = args[:arity]
         return self.functions[function].call(args)
 
-    def cost(self, predictions: list) -> float:
-        cost = 0.0
-        for index, _ in enumerate(predictions[0]):
-            cost += self.problem.evaluate([prediction[index] for prediction in predictions])
-        return cost
-
-    def predict(self, genome: list[int], data_point: list, paths=None) -> list:
+    def predict(self, genome: list[int], observation: list, paths=None) -> list:
         node_map = dict()
         prediction = []
 
         if paths is None:
             paths = self.decode(genome)
 
-        for path in paths:
+        for count, path in enumerate(paths):
             cost = 0.0
             for node_num in path:
                 if node_num not in node_map.keys():
@@ -241,11 +231,11 @@ class TinyCGP(TinyGP):
                         if self.terminals[node_num].const:
                             node_map[node_num] = self.terminals[node_num].call([])
                         else:
-                            node_map[node_num] = data_point[self.terminals[node_num].call([])]
+                            node_map[node_num] = observation[self.terminals[node_num].call([])]
                     else:
                         arguments = []
                         connections = self.node_connections(node_num, genome)
-                        for count, connection in enumerate(connections):
+                        for connection in connections:
                             argument = node_map[connection]
                             arguments.append(argument)
                         node_map[node_num] = self.evaluate_node(node_num, genome, arguments)
@@ -299,10 +289,10 @@ class TinyCGP(TinyGP):
             self.population.append(offspring)
 
     def selection(self) -> list:
-        sorted_pop = sorted(self.population, key=lambda ind: ind[1])
+        sorted_pop = sorted(self.population, key=lambda ind: ind[1], reverse=not self.config.minimizing_fitness)
         count = 0
         if not self.hyperparameters.strict_selection:
-            best_fitness = sorted_pop[0]
+            best_fitness = sorted_pop[0][1]
             for individual in sorted_pop:
                 if individual[1] != best_fitness:
                     break
@@ -361,40 +351,61 @@ class TinyCGP(TinyGP):
         print("Genome: " + str(individual[0]) + " : Fitness: " + str(individual[1]))
 
     def evolve(self):
+        best_solution = None
+        best_fitness = None
         for job in range(self.config.num_jobs):
-            best_fitness = None
+            best_fitness_job = None
             for generation in range(self.config.max_generations):
                 self.breed()
-                best_fitness = self.evaluate()
-                print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
-            print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
+                self.evaluate()
+
+                best_solution_gen, best_fitness_gen = self.population[0][0], self.population[0][1]
+
+                if best_solution is None or self.problem.is_better(best_fitness_gen, best_fitness):
+                    best_solution = best_solution_gen
+                    best_fitness = best_fitness_gen
+
+                if best_fitness_job is None or self.problem.is_better(best_fitness_gen, best_fitness_job):
+                    best_fitness_job = best_fitness_gen
+
+                print("Generation #" + str(generation) + " -> Best fitness: " + str(best_fitness_job))
+            print("Job #" + str(job) + " -> Best fitness found: " + str(best_fitness_job))
+        return best_solution
 
 
 random.seed(SEED)
-functions = [Add, Sub, Mul, Div]
-terminals = [Var(0), Const(1)]
+functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT]
+terminals = [Var(0), Var(1), Var(2), Var(3), Var(4), Var(5), Var(6), Var(7)]
 loss = euclidean_distance
 benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA1')
 
-env = gym.make("LunarLander-v3", continuous=False, gravity=-10.0, enable_wind=False, wind_power=15.0, turbulence_power=1.5)
-#problem  = BlackBoxProblem(data, actual, loss, IDEAL_FITNESS, MINIMIZING_FITNESS)
-evaluator = GPAgent.evaluate_policy
+env = gym.make("LunarLander-v3")
+wrapped_env = FlattenObservation(env)
 
+NUM_INPUTS = wrapped_env.observation_space.shape[0]
+NUM_OUTPUTS = 4
 
-problem = Problem(data, actual, loss, IDEAL_FITNESS, MINIMIZING_FITNESS)
 config = CGPConfig(num_jobs=NUM_JOBS, max_generations=MAX_GENERATIONS, stopping_criteria=IDEAL_FITNESS,
                   minimizing_fitness=MINIMIZING_FITNESS, ideal_fitness = IDEAL_FITNESS,
                   silent_algorithm=SILENT_ALGORITHM, silent_evolver=SILENT_EVOLVER,
-                  minimalistic_output=MINIMALISTIC_OUTPUT, num_functions = NUM_FUNCTIONS,
+                  minimalistic_output=MINIMALISTIC_OUTPUT, num_functions = len(functions),
                   max_arity = MAX_ARITY, num_inputs=NUM_INPUTS, num_outputs=NUM_OUTPUTS,
-                  num_function_nodes=NUM_FUNCTION_NODES, num_genes = NUM_GENES)
+                  num_function_nodes=NUM_FUNCTION_NODES)
+
+config.init()
+
 hyperparameters = CGPHyperparameters(mu=MU, lmbda=LAMBDA,
                                      population_size=POPULATION_SIZE,
                                      levels_back=LEVELS_BACK, mutation_rate=MUTATION_RATE,
                                      strict_selection=STRICT_SELECTION)
+
+problem = PolicySearch(env=env, ideal_= 100000, minimizing_=MINIMIZING_FITNESS)
+#problem  = BlackBoxProblem(data, actual, loss, IDEAL_FITNESS, MINIMIZING_FITNESS)
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
+policy = cgp.evolve()
 
-problem = PolicySearchProblem(env=env, model_=cgp, ideal_= IDEAL_FITNESS, minimizing_=False)
+env = gym.make("LunarLander-v3", render_mode="human")
+problem = PolicySearch(env=env, ideal_= 100, minimizing_=MINIMIZING_FITNESS)
+problem.evaluate(policy,cgp, num_episodes = 1)
 
-#cgp.evolve()

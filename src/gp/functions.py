@@ -11,10 +11,18 @@ MUL = Function(2, 'MUL', operator.mul)
 DIV = Function(2, 'DIV', pdiv)
 
 # Logical Functions
-AND = Function(2, 'AND', operator.and_)
-OR  = Function(2, 'OR', operator.or_)
-NAND = Function(2, 'NAND', operator.not_(operator.and_))
-NOR = Function(2, 'Nor', operator.not_(operator.or_))
-NOT = Function(1, 'NOR', operator.not_)
+AND = Function(2, 'AND', lambda x,y : int(x) & int(y))
+OR  = Function(2, 'OR', lambda x,y : int(x) | int(y))
+NOT = Function(1, 'NOT', lambda x : ~int(x))
+NAND = Function(2, 'NAND', lambda x,y : ~(int(x) & int(y)))
+NOR = Function(2, 'NOR', lambda x,y : ~(int(x) | int(y)))
 
-# Policy Search
+# Policy Search / Classificiation
+
+LT = Function(2, 'AND', operator.lt)
+LTE = Function(2, 'AND', operator.le)
+GT = Function(2, 'AND', operator.gt)
+GTE = Function(2, 'AND', operator.ge)
+EQ = Function(2, 'AND', operator.eq)
+
+

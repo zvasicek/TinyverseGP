@@ -1,6 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
+from typing import List, Any
 
 class GPBase(ABC):
     best_fitness: float
