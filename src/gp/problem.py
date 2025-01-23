@@ -8,7 +8,8 @@ class Problem(ABC):
     ideal: float
 
     def is_ideal(self, fitness: float) -> bool:
-        return fitness == self.ideal
+        return fitness <= self.ideal if self.minimizing \
+            else fitness >= self.ideal
 
     def is_better(self, fitness1: float, fitness2: float) -> bool:
         return fitness1 < fitness2 if self.minimizing \
@@ -48,11 +49,15 @@ class BlackBox(Problem):
 
 class PolicySearch(Problem):
     agent: GPAgent
+    num_episodes: int
 
-    def __init__(self, env: gym.Env, ideal_: float, minimizing_: bool):
+    def __init__(self, env: gym.Env, ideal_: float, minimizing_: bool, num_episodes_: int = 100):
         self.agent = GPAgent(env)
         self.ideal = ideal_
         self.minimizing = minimizing_
+        self.num_episodes = num_episodes_
 
-    def evaluate(self, genome, model:GPModel, num_episodes = 100) -> float:
+    def evaluate(self, genome, model:GPModel, num_episodes:int = None) -> float:
+        if num_episodes is None:
+            num_episodes = self.num_episodes
         return self.agent.evaluate_policy(genome, model, num_episodes)
