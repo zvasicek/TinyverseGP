@@ -13,14 +13,8 @@ import numpy as np
 
 from dataclasses import dataclass
 from enum import Enum
-import gymnasium as gym
-from gymnasium.wrappers import FlattenObservation
-from gymnasium.wrappers import RecordEpisodeStatistics, RecordVideo
-import ale_py
 
 from src.gp.tinyverse import Var, Const, GPModel, Hyperparameters, GPConfig
-from functions import ADD, SUB, MUL, DIV, AND, OR, NOT, NAND, NOR, LT, LTE, GT, GTE, EQ, MIN, MAX, NEG, IF, IFGTZ, IFLEZ
-from loss import euclidean_distance
 from src.gp.problem import Problem, BlackBox, PolicySearch
 
 MU = 1
@@ -364,7 +358,6 @@ class TinyCGP(GPModel):
             for generation in range(self.config.max_generations):
                 self.breed()
                 best_solution_gen, best_fitness_gen, is_ideal = self.evaluate()
-                #best_solution_gen, best_fitness_gen = self.population[0][0], self.population[0][1]
 
                 if best_solution is None or self.problem.is_better(best_fitness_gen, best_fitness):
                     best_solution = best_solution_gen
@@ -386,56 +379,3 @@ class TinyCGP(GPModel):
                             silent_evolver=self.config.silent_evolver,
                             minimalistic_output=self.config.minimalistic_output)
         return best_solution
-
-
-#random.seed(SEED)
-
-env = gym.make("ALE/Breakout-v5",)
-wrapped_env = FlattenObservation(env)
-
-NUM_INPUTS = wrapped_env.observation_space.shape[0]
-NUM_OUTPUTS = 5
-
-functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, LT, LTE, GT, GTE, EQ, NEG, MIN, MAX, IF, IFGTZ, IFLEZ]
-terminals = [Var(index=count) for count in range(NUM_INPUTS)]
-
-config = CGPConfig(num_jobs=NUM_JOBS, max_generations=MAX_GENERATIONS, stopping_criteria=IDEAL_FITNESS,
-                  minimizing_fitness=MINIMIZING_FITNESS, ideal_fitness = IDEAL_FITNESS,
-                  silent_algorithm=SILENT_ALGORITHM, silent_evolver=SILENT_EVOLVER, report_interval = REPORT_INTERVAL,
-                  minimalistic_output=MINIMALISTIC_OUTPUT, num_functions = len(functions),
-                  max_arity = MAX_ARITY, num_inputs=NUM_INPUTS, num_outputs=NUM_OUTPUTS,
-                  num_function_nodes=NUM_FUNCTION_NODES)
-
-config.init()
-
-hyperparameters = CGPHyperparameters(mu=MU, lmbda=LAMBDA,
-                                     population_size=POPULATION_SIZE,
-                                     levels_back=LEVELS_BACK, mutation_rate=MUTATION_RATE,
-                                     strict_selection=STRICT_SELECTION)
-
-problem = PolicySearch(env=env, ideal_= IDEAL_FITNESS, minimizing_=MINIMIZING_FITNESS, num_episodes_= 10)
-#problem  = BlackBoxProblem(data, actual, loss, IDEAL_FITNESS, MINIMIZING_FITNESS)
-cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
-best_solution = cgp.evolve()
-#print(best_solution)
-env.close()
-
-
-#expression = cgp.expression(best_solution)
-#print(expression)
-
-#render_mode="human"
-#render_mode = "rgb_array"
-# LunarLander-v3
-gym.register_envs(ale_py)
-env = gym.make("ALE/Breakout-v5", render_mode="human")
-#env = gym.wrappers.RecordVideo(env, 'video')
-#env = RecordVideo(env, video_folder="gym-recordings", name_prefix="lunar-lander")
-problem = PolicySearch(env=env, ideal_= 100, minimizing_=MINIMIZING_FITNESS)
-problem.evaluate(best_solution, cgp, num_episodes = 5)
-env.close()
-
-
-#loss = euclidean_distance
-#benchmark = SRBenchmark()
-#data, actual = benchmark.generate('KOZA1')
