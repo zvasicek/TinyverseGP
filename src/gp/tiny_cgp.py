@@ -14,31 +14,8 @@ import numpy as np
 from dataclasses import dataclass
 from enum import Enum
 
-from src.gp.tinyverse import Var, Const, GPModel, Hyperparameters, GPConfig
-from src.gp.problem import Problem, BlackBox, PolicySearch
-
-MU = 1
-LAMBDA = 4
-POPULATION_SIZE = MU + LAMBDA
-NUM_INPUTS = 2
-NUM_OUTPUTS = 1
-NUM_FUNCTION_NODES = 20
-MAX_ARITY = 3
-NUM_NODES = NUM_INPUTS + NUM_FUNCTION_NODES + NUM_OUTPUTS
-LEVELS_BACK = NUM_FUNCTION_NODES
-NUM_FUNCTIONS = 4
-MUTATION_RATE = 0.1
-MAX_GENERATIONS = 500
-NUM_JOBS = 1
-IDEAL_FITNESS = 500
-STRICT_SELECTION = False
-MINIMIZING_FITNESS = False
-SEED = 42
-
-SILENT_ALGORITHM = False
-SILENT_EVOLVER = False
-MINIMALISTIC_OUTPUT = False
-REPORT_INTERVAL = 50
+from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig
+from src.gp.problem import Problem
 
 @dataclass
 class CGPHyperparameters(Hyperparameters):
@@ -60,10 +37,6 @@ class CGPConfig(GPConfig):
     def init(self):
         self.num_genes = ((self.max_arity + 1) * self.num_function_nodes)  + self.num_outputs
 
-def check_config():
-    if LEVELS_BACK > NUM_FUNCTION_NODES:
-        raise ValueError('LEVELS_BACK > NUM_FUNCTION_NODES')
-
 class TinyCGP(GPModel):
 
     class GeneType(Enum):
@@ -76,8 +49,9 @@ class TinyCGP(GPModel):
         CONSTANT = 1
 
     def __init__(self, problem_: Problem, functions_: list, terminals_: list,
-                 config_: GPConfig, hyperparameters_: Hyperparameters):
+                 config_: CGPConfig, hyperparameters_: Hyperparameters):
         #TinyGP.__init__(problem_, functions_, config_, hyperparameters_)
+        self.num_evaluations = None
         self.population = []
         self.functions = functions_
         self.terminals = terminals_
@@ -280,7 +254,7 @@ class TinyCGP(GPModel):
         parent = self.selection()
         self.population.clear()
         self.population.append(parent)
-        for _ in range(LAMBDA):
+        for _ in range(self.hyperparameters.lmbda):
             offspring = copy.deepcopy(parent)
             self.mutation(offspring[0])
             self.population.append(offspring)
@@ -322,7 +296,7 @@ class TinyCGP(GPModel):
                     else:
                         arg_expr = self.input_name(argument)
                     node_expr += arg_expr
-                    if index < MAX_ARITY - 1:
+                    if index < self.config.max_arity - 1:
                         node_expr += ", "
                 node_expr += ")"
                 expr_map[node_num] = node_expr
@@ -334,7 +308,7 @@ class TinyCGP(GPModel):
         outputs = self.outputs(genome)
 
         for output in outputs:
-            if output < NUM_INPUTS:
+            if output < self.config.num_inputs:
                 expression = self.input_name(output)
             else:
                 expression = expr_map[output]
@@ -358,7 +332,6 @@ class TinyCGP(GPModel):
             for generation in range(self.config.max_generations):
                 self.breed()
                 best_solution_gen, best_fitness_gen, is_ideal = self.evaluate()
-                #best_solution_gen, best_fitness_gen = self.population[0][0], self.population[0][1]
 
                 if best_solution is None or self.problem.is_better(best_fitness_gen, best_fitness):
                     best_solution = best_solution_gen
