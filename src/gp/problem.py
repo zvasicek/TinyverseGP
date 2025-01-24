@@ -2,7 +2,7 @@ import gymnasium as gym
 from dataclasses import dataclass
 from abc import ABC
 from src.benchmark.policy_search.policy_evaluation import GPAgent
-from tinyverse import GPModel
+from src.gp.tinyverse import GPModel
 
 class Problem(ABC):
     ideal: float
@@ -30,6 +30,7 @@ class BlackBox(Problem):
         self.loss = loss_
         self.ideal = ideal_
         self.minimizing = minimizing_
+        self.unidim = True if isinstance(self.actual[0], float) or isinstance(self.actual[0], int)  else False
 
     def evaluate(self, genome, model:GPModel) -> float:
         predictions = []
@@ -41,11 +42,11 @@ class BlackBox(Problem):
     def cost(self, predictions: list) -> float:
         cost = 0.0
         for index, _ in enumerate(predictions[0]):
-            cost += self.loss([prediction[index] for prediction in predictions])
+            cost += self.loss([prediction[index] for prediction in predictions], [act if self.unidim else act[index] for act in self.actual])
         return cost
 
-    def loss(self, prediction: list) -> float:
-        return self.loss(self.actual, prediction)
+    #def loss(self, prediction: list) -> float:
+    #    return self.loss(self.actual, prediction)
 
 class PolicySearch(Problem):
     agent: GPAgent
@@ -57,7 +58,7 @@ class PolicySearch(Problem):
         self.minimizing = minimizing_
         self.num_episodes = num_episodes_
 
-    def evaluate(self, genome, model:GPModel, num_episodes:int = None) -> float:
+    def evaluate(self, genome, model:GPModel, num_episodes:int = None, wait_key:bool = False) -> float:
         if num_episodes is None:
             num_episodes = self.num_episodes
-        return self.agent.evaluate_policy(genome, model, num_episodes)
+        return self.agent.evaluate_policy(genome, model, num_episodes, wait_key)
