@@ -25,15 +25,17 @@ NOR = Function(2, 'NOR', lambda x,y : ~(int(x) | int(y)))
 
 # Policy Search / Classification
 
-LT = Function(2, 'AND', lambda x,y : b2f(x < y))
-LTE = Function(2, 'AND', lambda x,y : b2f(x <= y))
-GT = Function(2, 'AND', lambda x,y : b2f(x > y))
-GTE = Function(2, 'AND',lambda x,y : b2f(x >= y))
-EQ = Function(2, 'AND', lambda x,y : b2f(x == y))
-NEG = Function(1, 'AND', lambda x : operator.neg(x))
-IF = Function(3, 'AND', lambda x,y,z : y if f2b(x) else z)
-IFLEZ = Function(3, 'AND', lambda x,y,z : y if x <= 0 else z)
-IFGTZ = Function(3, 'AND', lambda x,y,z : y if x > 0 else z)
+LT = Function(2, 'LT', lambda x,y : b2f(x < y))
+LTE = Function(2, 'LTE', lambda x,y : b2f(x <= y))
+GT = Function(2, 'GT', lambda x,y : b2f(x > y))
+GTE = Function(2, 'GTE',lambda x,y : b2f(x >= y))
+EQ = Function(2, 'EQ', lambda x,y : b2f(x == y))
+MIN = Function(2, 'MIN', lambda x,y : min(x,y))
+MAX = Function(2, 'MAX', lambda x,y : max(x,y))
+NEG = Function(1, 'NEQ', lambda x : operator.neg(x))
+IF = Function(3, 'IF', lambda x,y,z : y if f2b(x) else z)
+IFLEZ = Function(3, 'IFLEZ', lambda x,y,z : y if x <= 0 else z)
+IFGTZ = Function(3, 'IFGTZ', lambda x,y,z : y if x > 0 else z)
 
 
 
