@@ -13,8 +13,11 @@ import copy
 from dataclasses import dataclass
 from enum import Enum
 
-from tiny_gp import (TinyGP, Problem, GPConfig, Hyperparameters, SRBenchmark, euclidean_distance,
-                     Add, Sub, Mul, Div, Var, Const)
+from src.gp.tinyverse import GPModel
+from src.gp.functions import *
+from src.gp.problem import *
+from src.gp.tinyverse import *
+from src.benchmark.benchmark import *
 
 MU = 1
 LAMBDA = 1
@@ -62,7 +65,7 @@ def check_config():
     if LEVELS_BACK > NUM_FUNCTION_NODES:
         raise ValueError('LEVELS_BACK > NUM_FUNCTION_NODES')
 
-class TinyCGP(TinyGP):
+class TinyCGP(GPModel):
 
     class GeneType(Enum):
         FUNCTION = 0
@@ -352,7 +355,7 @@ class TinyCGP(TinyGP):
                 print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
             print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
 
-
+'''
 random.seed(SEED)
 functions = [Add, Sub, Mul, Div]
 terminals = [Var(0), Const(1)]
@@ -372,3 +375,4 @@ hyperparameters = CGPHyperparameters(mu=MU, lmbda=LAMBDA,
                                      strict_selection=STRICT_SELECTION)
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 cgp.evolve()
+'''

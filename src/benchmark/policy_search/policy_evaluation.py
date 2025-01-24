@@ -6,7 +6,7 @@ class GPAgent:
     def __init__(self, env_: gym.Env):
         self.env = env_
 
-    def evaluate_policy(self, policy, model, num_episodes = 100):
+    def evaluate_policy(self, policy, model, num_episodes = 100, wait_key=False):
         rewards = []
         for episode in range(num_episodes):
             obs, info = self.env.reset()
@@ -18,6 +18,8 @@ class GPAgent:
                 done = terminated or truncated
                 obs = next_obs
                 cumulative_reward += reward
+            if wait_key:
+                input("Press Enter to continue...")
             rewards.append(cumulative_reward)
         return statistics.mean(rewards)
 

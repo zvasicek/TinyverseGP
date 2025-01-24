@@ -1,4 +1,4 @@
-from src.tinyverse import Function
+from src.gp.tinyverse import Function
 import operator
 
 def f2b(input: float):

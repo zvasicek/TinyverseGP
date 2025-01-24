@@ -17,10 +17,10 @@ from enum import Enum
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
 
-from tiny_gp import (TinyGP, GPConfig, Hyperparameters, SRBenchmark)
-from src.gp.tinyverse import Var, Const
-from functions import ADD, SUB, MUL, DIV, AND, OR, NOT, NAND, NOR, LT, LTE, GT, GTE, EQ
-from loss import euclidean_distance
+#from src.gp.tiny_gp import (TinyGP, GPConfig, Hyperparameters, SRBenchmark)
+from src.gp.tinyverse import Var, Const, GPConfig, Hyperparameters, GPModel
+from src.gp.functions import ADD, SUB, MUL, DIV, AND, OR, NOT, NAND, NOR, LT, LTE, GT, GTE, EQ
+from src.gp.loss import euclidean_distance
 from src.gp.problem import Problem, BlackBox, PolicySearch
 
 MU = 1
@@ -69,7 +69,7 @@ def check_config():
     if LEVELS_BACK > NUM_FUNCTION_NODES:
         raise ValueError('LEVELS_BACK > NUM_FUNCTION_NODES')
 
-class TinyCGP(TinyGP):
+class TinyCGP(GPModel):
 
     class GeneType(Enum):
         FUNCTION = 0
@@ -372,7 +372,8 @@ class TinyCGP(TinyGP):
             print("Job #" + str(job) + " -> Best fitness found: " + str(best_fitness_job))
         return best_solution
 
-
+'''
+TODO: remove from here
 random.seed(SEED)
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT]
 terminals = [Var(0), Var(1), Var(2), Var(3), Var(4), Var(5), Var(6), Var(7)]
@@ -409,3 +410,4 @@ env = gym.make("LunarLander-v3", render_mode="human")
 problem = PolicySearch(env=env, ideal_= 100, minimizing_=MINIMIZING_FITNESS)
 problem.evaluate(policy,cgp, num_episodes = 1)
 
+'''
