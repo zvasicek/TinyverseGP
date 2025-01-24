@@ -102,7 +102,7 @@ def node_size(node: Node) -> int:
     return 1 + sum([node_size(child) for child in node.children])
 
 
-class TinyGP(GPModel):
+class TinyTGP(GPModel):
     config: Config
     hyperparameters: Hyperparameters
     problem: Problem
