@@ -9,34 +9,34 @@ __email__ = 'roman.kalkreuth@rwth-aachen.de'
 import math
 import random
 import copy
-import Box2D
-import pygame
+import numpy as np
 
 from dataclasses import dataclass
 from enum import Enum
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
+from gymnasium.wrappers import RecordEpisodeStatistics, RecordVideo
+import ale_py
 
-from tiny_gp import (TinyGP, GPConfig, Hyperparameters, SRBenchmark)
-from src.gp.tinyverse import Var, Const
-from functions import ADD, SUB, MUL, DIV, AND, OR, NOT, NAND, NOR, LT, LTE, GT, GTE, EQ
+from src.gp.tinyverse import Var, Const, GPModel, Hyperparameters, GPConfig
+from functions import ADD, SUB, MUL, DIV, AND, OR, NOT, NAND, NOR, LT, LTE, GT, GTE, EQ, MIN, MAX, NEG, IF, IFGTZ, IFLEZ
 from loss import euclidean_distance
 from src.gp.problem import Problem, BlackBox, PolicySearch
 
 MU = 1
-LAMBDA = 32
+LAMBDA = 4
 POPULATION_SIZE = MU + LAMBDA
 NUM_INPUTS = 2
 NUM_OUTPUTS = 1
-NUM_FUNCTION_NODES = 10
-MAX_ARITY = 2
+NUM_FUNCTION_NODES = 20
+MAX_ARITY = 3
 NUM_NODES = NUM_INPUTS + NUM_FUNCTION_NODES + NUM_OUTPUTS
-LEVELS_BACK = 2
+LEVELS_BACK = NUM_FUNCTION_NODES
 NUM_FUNCTIONS = 4
 MUTATION_RATE = 0.1
-MAX_GENERATIONS = 30
+MAX_GENERATIONS = 500
 NUM_JOBS = 1
-IDEAL_FITNESS = 10
+IDEAL_FITNESS = 500
 STRICT_SELECTION = False
 MINIMIZING_FITNESS = False
 SEED = 42
@@ -44,6 +44,7 @@ SEED = 42
 SILENT_ALGORITHM = False
 SILENT_EVOLVER = False
 MINIMALISTIC_OUTPUT = False
+REPORT_INTERVAL = 50
 
 @dataclass
 class CGPHyperparameters(Hyperparameters):
@@ -69,7 +70,7 @@ def check_config():
     if LEVELS_BACK > NUM_FUNCTION_NODES:
         raise ValueError('LEVELS_BACK > NUM_FUNCTION_NODES')
 
-class TinyCGP(TinyGP):
+class TinyCGP(GPModel):
 
     class GeneType(Enum):
         FUNCTION = 0
@@ -111,10 +112,10 @@ class TinyCGP(TinyGP):
                 self.inputs[index] = (terminal, self.TerminalType.CONSTANT)
 
     def init_genome(self) -> list[int]:
-        genome = []
+        genome = np.zeros(self.config.num_genes, dtype=np.uint32)
         for count in range(self.config.num_genes):
             gene = self.init_gene(count)
-            genome.append(gene)
+            genome[count] = gene
         return genome
 
     def init_gene(self, position: int) -> int:
@@ -143,7 +144,7 @@ class TinyCGP(TinyGP):
         return self.inputs[index][0]
 
     def input_name(self, index: int) -> str:
-        return str(self.input_value(index))
+        return str(self.input_value(index).name)
 
     def input_type(self, index: int) -> TerminalType:
         return self.inputs[index][1]
@@ -184,7 +185,7 @@ class TinyCGP(TinyGP):
     def fitness(self, individual: list[list[int], float]):
         return individual[1]
 
-    def evaluate(self) -> float:
+    def evaluate(self) -> tuple:
         best_genome = None
         best_fitness = None
         for individual in self.population:
@@ -196,13 +197,15 @@ class TinyCGP(TinyGP):
                 best_fitness = fitness
 
             if self.problem.is_ideal(fitness):
-                return genome, fitness
+                return genome, fitness, True
+
             if self.problem.is_better(fitness, best_fitness):
                 best_genome = individual
                 best_fitness = individual[1]
-        return best_genome, best_fitness
+        return best_genome, best_fitness, False
 
     def evaluate_individual(self, genome:list[int]) -> float:
+        self.num_evaluations += 1
         return self.problem.evaluate(genome, self)
 
     def evaluate_observation(self, genome: list[int], observation):
@@ -247,7 +250,7 @@ class TinyCGP(TinyGP):
         nodes = dict()
 
         for position in range(self.config.num_genes - 1,
-                              self.config.num_genesS - self.config.num_outputs - 1, -1):
+                              self.config.num_genes - self.config.num_outputs - 1, -1):
             node_num = genome[position]
             if node_num >= self.config.num_inputs:
                 nodes[node_num] = True
@@ -298,7 +301,9 @@ class TinyCGP(TinyGP):
                     break
                 else:
                     count += 1
-        parent = random.randint(0, count)
+            parent = random.randint(0, count - 1)
+        else:
+            parent = 0
         return sorted_pop[parent]
 
     def mutation(self, genome: list[int]):
@@ -315,7 +320,7 @@ class TinyCGP(TinyGP):
             for node_num in active_nodes:
                 args = self.node_connections(node_num, genome)
                 function = self.node_function(node_num, genome)
-                func_name = self.functions.name(function)
+                func_name = self.functions[function].name
                 node_expr = func_name + "("
                 for index, argument in enumerate(args):
                     if argument in expr_map:
@@ -355,11 +360,11 @@ class TinyCGP(TinyGP):
         best_fitness = None
         for job in range(self.config.num_jobs):
             best_fitness_job = None
+            self.num_evaluations = 0
             for generation in range(self.config.max_generations):
                 self.breed()
-                self.evaluate()
-
-                best_solution_gen, best_fitness_gen = self.population[0][0], self.population[0][1]
+                best_solution_gen, best_fitness_gen, is_ideal = self.evaluate()
+                #best_solution_gen, best_fitness_gen = self.population[0][0], self.population[0][1]
 
                 if best_solution is None or self.problem.is_better(best_fitness_gen, best_fitness):
                     best_solution = best_solution_gen
@@ -368,44 +373,16 @@ class TinyCGP(TinyGP):
                 if best_fitness_job is None or self.problem.is_better(best_fitness_gen, best_fitness_job):
                     best_fitness_job = best_fitness_gen
 
-                print("Generation #" + str(generation) + " -> Best fitness: " + str(best_fitness_job))
-            print("Job #" + str(job) + " -> Best fitness found: " + str(best_fitness_job))
+                self.report_generation(silent = self.config.silent_algorithm,
+                                       generation=generation,
+                                       best_fitness=best_fitness,
+                                       report_interval=self.config.report_interval)
+                if is_ideal:
+                    break
+
+            self.report_job(job = job,
+                            num_evaluations=self.num_evaluations,
+                            best_fitness=best_fitness_job,
+                            silent_evolver=self.config.silent_evolver,
+                            minimalistic_output=self.config.minimalistic_output)
         return best_solution
-
-
-random.seed(SEED)
-functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT]
-terminals = [Var(0), Var(1), Var(2), Var(3), Var(4), Var(5), Var(6), Var(7)]
-loss = euclidean_distance
-benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA1')
-
-env = gym.make("LunarLander-v3")
-wrapped_env = FlattenObservation(env)
-
-NUM_INPUTS = wrapped_env.observation_space.shape[0]
-NUM_OUTPUTS = 4
-
-config = CGPConfig(num_jobs=NUM_JOBS, max_generations=MAX_GENERATIONS, stopping_criteria=IDEAL_FITNESS,
-                  minimizing_fitness=MINIMIZING_FITNESS, ideal_fitness = IDEAL_FITNESS,
-                  silent_algorithm=SILENT_ALGORITHM, silent_evolver=SILENT_EVOLVER,
-                  minimalistic_output=MINIMALISTIC_OUTPUT, num_functions = len(functions),
-                  max_arity = MAX_ARITY, num_inputs=NUM_INPUTS, num_outputs=NUM_OUTPUTS,
-                  num_function_nodes=NUM_FUNCTION_NODES)
-
-config.init()
-
-hyperparameters = CGPHyperparameters(mu=MU, lmbda=LAMBDA,
-                                     population_size=POPULATION_SIZE,
-                                     levels_back=LEVELS_BACK, mutation_rate=MUTATION_RATE,
-                                     strict_selection=STRICT_SELECTION)
-
-problem = PolicySearch(env=env, ideal_= 100, minimizing_=MINIMIZING_FITNESS)
-#problem  = BlackBoxProblem(data, actual, loss, IDEAL_FITNESS, MINIMIZING_FITNESS)
-cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
-policy = cgp.evolve()
-
-env = gym.make("LunarLander-v3", render_mode="human")
-problem = PolicySearch(env=env, ideal_= 100, minimizing_=MINIMIZING_FITNESS)
-problem.evaluate(policy,cgp, num_episodes = 1)
-
