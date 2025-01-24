@@ -13,14 +13,8 @@ import numpy as np
 
 from dataclasses import dataclass
 from enum import Enum
-import gymnasium as gym
-from gymnasium.wrappers import FlattenObservation
-from gymnasium.wrappers import RecordEpisodeStatistics, RecordVideo
-import ale_py
 
 from src.gp.tinyverse import Var, Const, GPModel, Hyperparameters, GPConfig
-from functions import ADD, SUB, MUL, DIV, AND, OR, NOT, NAND, NOR, LT, LTE, GT, GTE, EQ, MIN, MAX, NEG, IF, IFGTZ, IFLEZ
-from loss import euclidean_distance
 from src.gp.problem import Problem, BlackBox, PolicySearch
 
 MU = 1
