@@ -52,8 +52,8 @@ class GPModel(ABC):
             else:
                 print(str(num_evaluations) + ";" + str(best_fitness))
 
-    def report_generation(self, silent: bool, generation: int, best_fitness: float):
-        if not silent:
+    def report_generation(self, silent: bool, generation: int, best_fitness: float, report_interval: int):
+        if not silent and generation % report_interval == 0:
             print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
 
 @dataclass
@@ -80,6 +80,7 @@ class GPConfig(Config):
     silent_evolver: bool
     minimalistic_output: bool
     num_outputs: int
+    report_interval:int
 
 @dataclass
 class Hyperparameters(ABC):
@@ -128,9 +129,11 @@ class Var(Function):
     '''
     Variable function class.
     '''
-    def __init__(self, index):
+    def __init__(self, index:int , name_:str = None):
         self.const = False
-        Function.__init__(self, 0, 'Var', lambda: index)
+        if name_ is None:
+            name_ = 'Var'
+        Function.__init__(self, 0, name_, lambda: index)
 
 
 class Const(Function):
