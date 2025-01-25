@@ -263,7 +263,6 @@ class TinyTGP(GPModel):
                 args = [print_node(child) for child in node.children]
                 return node.function.name + "(" + ", ".join(args) + ")"
 
-        # TODO: multi-tree
         return [print_node(g) for g in genome]
 
     def print_population(self):
