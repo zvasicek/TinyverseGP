@@ -4,6 +4,7 @@ from gymnasium.wrappers import FlattenObservation
 from src.gp.problem import Problem, BlackBox, PolicySearch
 from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
 from src.gp.functions import *
+from src.gp.loss import *
 from math import sqrt, pi
 
 print("Koza1 SR Benchmark")

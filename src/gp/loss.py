@@ -1,6 +1,9 @@
 import math
 
 def hamming_distance(x: dict, y: dict) -> int:
+    '''
+    Calculate the Hamming distance between two vectors.
+    '''
     if len(x) != len(y):
         raise ValueError("Dimensions do not match.")
     dist = 0
@@ -10,6 +13,9 @@ def hamming_distance(x: dict, y: dict) -> int:
 
 
 def euclidean_distance(x: dict, y: dict) -> float:
+    '''
+    Calculate the Euclidean distance between two vectors.
+    '''
     if len(x) != len(y):
         raise ValueError("Dimensions do not match.")
     dist = 0.0
