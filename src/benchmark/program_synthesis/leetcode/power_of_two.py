@@ -5,12 +5,12 @@ import math
 
 N = 100
 MAX = 10000
+TESTCASES = [(0, 0), (1, 1), (-1, 0), (16, 1), (65536, 1)]
 
 # https://github.com/hongxiaolong/leetcode/blob/master/Python/power_of_two.py
 def isPowerOfTwo(n):
     return n > 0 and bin(n).count('1') == 1
 
-leetcode_testcases = [(0, 0), (1, 1), (-1, 0), (16, 1), (65536, 1)]
 
 def generate_dataset(n, max = 10000, ratio = 0.2):
     """
