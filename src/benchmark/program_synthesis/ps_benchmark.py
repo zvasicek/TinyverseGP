@@ -1,6 +1,6 @@
-from src.benchmark import benchmark
+from src.benchmark.benchmark import Benchmark
 
-class PSBenchmark(benchmark):
+class PSBenchmark(Benchmark):
     generator: callable
     args: list
     dataset: list
