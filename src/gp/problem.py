@@ -86,10 +86,18 @@ class PolicySearch(Problem):
         return self.agent.evaluate_policy(genome, model, num_episodes, wait_key)
 
 
-class ProgramSynthesis():
+class ProgramSynthesis(Problem):
+    """
+    Represent a program synthesis problem where the evaluation is based on a dataset
+    that consists of positive examples and counterexamples.
 
-    def __init__(self, dataset_):
+    The predictions are made with a binary step activation function and the cost function
+    is based on the hamming distance between the binary predictions and the actual values in the
+    dataset.
+    """
+    def __init__(self, dataset_, minimizing_: bool):
         self.dataset = dataset_
+        self.minimizing = minimizing_
 
     def is_ideal(self, fitness):
         return fitness == len(self.dataset)
@@ -112,3 +120,10 @@ class ProgramSynthesis():
 
     def predict_obs(self, candidate, evaluator, obs):
         return self.binary_step(evaluator(candidate, obs))
+
+    def cost(self, predictions):
+        cost = 0
+        for i, observation in enumerate(self.dataset):
+            prediction = predictions[i]
+            cost += (1 if observation[1] == prediction else 0)
+        return cost
