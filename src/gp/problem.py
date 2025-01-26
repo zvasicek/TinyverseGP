@@ -5,21 +5,40 @@ from src.benchmark.policy_search.policy_evaluation import GPAgent
 from src.gp.tinyverse import GPModel
 
 class Problem(ABC):
+    '''
+    Abstract class for a problem to be solved by genetic programming.
+    '''
     ideal: float
 
     def is_ideal(self, fitness: float) -> bool:
+        '''
+        Check if the fitness reached an ideal state.
+        This can prompt an early stop in the optimization process.
+        '''
         return fitness <= self.ideal if self.minimizing \
             else fitness >= self.ideal
 
     def is_better(self, fitness1: float, fitness2: float) -> bool:
+        '''
+        Check if the first fitness is better than the second.
+        It takes into consideration whether the problem is minimizing or maximizing.
+        '''
         return fitness1 < fitness2 if self.minimizing \
             else fitness1 > fitness2
 
     def evaluate(self, genome, model:GPModel):
+        '''
+        This method implements how to evaluate the genome using the model.
+        It is problem-specific and should be implemented by the user.
+        '''
         pass
 
 @dataclass
 class BlackBox(Problem):
+    '''
+    A black-box problem where the fitness is calculated by a loss function
+    of a set of examples of input and output.
+    '''
     observations: list
     actual: list
 
@@ -45,10 +64,11 @@ class BlackBox(Problem):
             cost += self.loss([prediction[index] for prediction in predictions], [act if self.unidim else act[index] for act in self.actual])
         return cost
 
-    #def loss(self, prediction: list) -> float:
-    #    return self.loss(self.actual, prediction)
-
 class PolicySearch(Problem):
+    '''
+    A reinforcement learning problem where the fitness is calculated by the
+    average reward of the policy.
+    '''
     agent: GPAgent
     num_episodes: int
 

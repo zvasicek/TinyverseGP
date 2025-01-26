@@ -2,12 +2,21 @@ from src.gp.tinyverse import Function
 import operator
 
 def f2b(input: float):
+    '''
+    Converts a float to a boolean
+    '''
     return True if input > 0 else False
 
 def b2f(input: bool):
+    '''
+    Converts a boolean to a float
+    '''
     return 1.0 if input else -1.0
 
 def pdiv(x, y):
+    '''
+    Protected Division
+    '''
     return x / y if y > 0 else 1.0
 
 # Arithmetic Functions

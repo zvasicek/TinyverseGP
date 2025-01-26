@@ -1,11 +1,9 @@
 from src.gp.tiny_cgp import *
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
-from src.gp.problem import BlackBox, PolicySearch
+from src.gp.problem import Problem, BlackBox, PolicySearch
 from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
 from src.gp.functions import *
-from src.gp.loss import euclidean_distance
-from src.gp.tinyverse import Var, Const
 from math import sqrt, pi
 
 print("Koza1 SR Benchmark")
@@ -22,7 +20,6 @@ config = CGPConfig(
     silent_algorithm=False,
     silent_evolver=False,
     minimalistic_output=True,
-    report_interval=10,
     num_functions = len(functions),
     max_arity = 2,
     num_inputs=1,
@@ -40,6 +37,7 @@ hyperparameters = CGPHyperparameters(
 )
 
 config.init()
+#random.seed(42)
 
 loss = euclidean_distance
 benchmark = SRBenchmark()
@@ -48,6 +46,7 @@ functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
 
 problem  = BlackBox(data, actual, loss, 1e-6, True)
+
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 cgp.evolve()
 
@@ -68,7 +67,6 @@ config = CGPConfig(
     silent_algorithm=False,
     silent_evolver=False,
     minimalistic_output=True,
-    report_interval=10,
     num_functions = len(functions),
     max_arity = 3,
     num_inputs=wrapped_env.observation_space.shape[0],
@@ -93,4 +91,3 @@ policy = cgp.evolve()
 env = gym.make("LunarLander-v3", render_mode="human")
 problem = PolicySearch(env=env, ideal_= 100, minimizing_=False)
 problem.evaluate(policy, cgp, num_episodes = 1, wait_key=True)
-

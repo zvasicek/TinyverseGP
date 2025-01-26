@@ -1,4 +1,5 @@
 from src.gp.tiny_tgp import *
+from src.gp.loss import *
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
 from src.gp.problem import Problem, BlackBox, PolicySearch
@@ -17,7 +18,8 @@ config = GPConfig(
     silent_algorithm=True,
     silent_evolver=True,
     minimalistic_output=True,
-    num_outputs=1
+    num_outputs=1,
+    report_interval=1
 )
 
 hyperparameters = GPHyperparameters(
@@ -45,18 +47,6 @@ tgp.evolve()
 print("LunarLander-v3 Benchmark")
 input("Press Enter to begin...")
 
-config = GPConfig(
-    num_jobs=1,
-    max_generations=50,
-    stopping_criteria=0.01,
-    minimizing_fitness=False, # this should be used from the problem instance
-    ideal_fitness=0.01,  # this should be used from the problem instance
-    silent_algorithm=True,
-    silent_evolver=True,
-    minimalistic_output=True,
-    num_outputs=4
-)
-
 env = gym.make("LunarLander-v3")
 wrapped_env = FlattenObservation(env)
 
@@ -73,7 +63,8 @@ config = GPConfig(
     silent_algorithm=True,
     silent_evolver=True,
     minimalistic_output=True,
-    num_outputs=4
+    num_outputs=4,
+    report_interval=1
 )
 
 hyperparameters = GPHyperparameters(
