@@ -10,7 +10,7 @@ class GPAgent:
         if flatten_obs:
             self.wrapped_env = FlattenObservation(self.env)
 
-    def evaluate_policy(self, policy, model, num_episodes = 100, wait_key=False):
+    def evaluate_policy(self, policy, model, num_episodes = 1, wait_key=False):
         rewards = []
         for episode in range(num_episodes):
             obs, info = self.env.reset()
