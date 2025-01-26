@@ -1,8 +1,10 @@
 import gymnasium as gym
+import numpy as np
 from dataclasses import dataclass
 from abc import ABC
 from src.benchmark.policy_search.policy_evaluation import GPAgent
 from src.gp.tinyverse import GPModel
+
 
 class Problem(ABC):
     '''
@@ -82,3 +84,31 @@ class PolicySearch(Problem):
         if num_episodes is None:
             num_episodes = self.num_episodes
         return self.agent.evaluate_policy(genome, model, num_episodes, wait_key)
+
+
+class ProgramSynthesis():
+
+    def __init__(self, dataset_):
+        self.dataset = dataset_
+
+    def is_ideal(self, fitness):
+        return fitness == len(self.dataset)
+
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def binary_step(self, x, threshold = 0.5):
+        return 0 if self.sigmoid(x) <= threshold else 1
+
+    def evaluate(self, candidate, evaluator):
+        predictions = self.predict(candidate,evaluator)
+        return self.cost(predictions)
+
+    def predict(self, candidate, evaluator):
+        predictions = []
+        for observation in self.dataset:
+            predictions.append(self.predict_obs(candidate,evaluator, observation[0]))
+        return predictions
+
+    def predict_obs(self, candidate, evaluator, obs):
+        return self.binary_step(evaluator(candidate, obs))
