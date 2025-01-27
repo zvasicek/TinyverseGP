@@ -236,7 +236,7 @@ class TinyCGP(GPModel):
                 return genome, fitness, True
 
             if self.problem.is_better(fitness, best_fitness):
-                best_genome = copy.deepcopy(individual)
+                best_genome = copy.deepcopy(individual[0])
                 best_fitness = individual[1]
         return best_genome, best_fitness, False
 
