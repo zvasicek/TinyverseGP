@@ -19,7 +19,8 @@ config = GPConfig(
     silent_evolver=True,
     minimalistic_output=True,
     num_outputs=1,
-    report_interval=1
+    report_interval=1,
+    max_time=60
 )
 
 hyperparameters = GPHyperparameters(
@@ -41,7 +42,7 @@ terminals = [Var(0), Const(1)]#, Const(1), Const(2), Const(sqrt(2)), Const(pi), 
 
 problem  = BlackBox(data, actual, loss, 1e-6, True)
 
-tgp = TinyTGP(problem, functions + terminals, config, hyperparameters)
+tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
 tgp.evolve()
 
 print("LunarLander-v3 Benchmark")
@@ -64,7 +65,8 @@ config = GPConfig(
     silent_evolver=True,
     minimalistic_output=True,
     num_outputs=4,
-    report_interval=1
+    report_interval=1,
+    max_time=60
 )
 
 hyperparameters = GPHyperparameters(
@@ -77,7 +79,7 @@ hyperparameters = GPHyperparameters(
 )
 
 problem = PolicySearch(env=env, ideal_= 100, minimizing_=False)
-tgp = TinyTGP(problem, functions + terminals, config, hyperparameters)
+tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
 policy = tgp.evolve()
 
 env = gym.make("LunarLander-v3", render_mode="human")

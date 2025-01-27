@@ -11,6 +11,7 @@ import math
 import random
 import operator
 import copy
+import time
 
 from abc import ABC
 from abc import abstractmethod
@@ -49,16 +50,18 @@ class TinyTGP(GPModel):
     problem: Problem
     functions: list[Function]
 
-    def __init__(self, problem_: object, functions_: list[Function], config: Config, hyperparameters: Hyperparameters):
-        self.functions = [f for f in functions_ if f.arity > 0]
-        self.terminals = [f for f in functions_ if f.arity == 0]
+    def __init__(self, problem_: object, functions_: list[Function], terminals_: list[Function], config: Config, hyperparameters: Hyperparameters):
+        self.functions = functions_ # [f for f in functions_ if f.arity > 0]
+        self.terminals = terminals_ # [f for f in functions_ if f.arity == 0]
         self.problem = problem_
         self.hyperparameters = hyperparameters
         self.config = config
         self.best = None
+        self.num_evaluations = 0
         self.population = [[genome, 0.0] 
                             for genome in self.init_ramped_half_half(self.hyperparameters.pop_size, 1, self.hyperparameters.max_depth, self.hyperparameters.max_size)]
         self.evaluate()
+
 
     def tree_random_full(self, max_depth: int, size: int) -> Node:
         """
@@ -129,6 +132,7 @@ class TinyTGP(GPModel):
         '''
         Evaluate a single individual.
         '''
+        self.num_evaluations += 1
         f = self.problem.evaluate(genome, self)
         if self.best is None or self.problem.is_better(f, self.best[1]):
             self.best = [copy.copy(genome), f]
@@ -274,12 +278,36 @@ class TinyTGP(GPModel):
 
     def evolve(self):
         # NOTE: is this supposed as a preparation for multithreading?
+        t0 = time.time()
+        elapsed = 0
+        terminate = False
+        best_fitness_job = None
         for job in range(self.config.num_jobs):
             best_fitness = None
             for generation in range(self.config.max_generations):
                 self.breed()
                 best_fitness = self.evaluate()
-                print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
-            self.print_individual(self.best)
-            print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
+                #print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
+                self.report_generation(silent = self.config.silent_algorithm,
+                                       generation=generation,
+                                       best_fitness=best_fitness,
+                                       report_interval=self.config.report_interval)
+                t1 = time.time()
+                delta = t1-t0
+                t0 = t1
+                elapsed += delta
+                if elapsed + delta >= self.config.max_time:
+                    terminate = True
+                    break
+            #self.print_individual(self.best)
+            if best_fitness_job is None or self.problem.is_better(best_fitness, best_fitness_job):
+                    best_fitness_job = best_fitness
+            #print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
+            self.report_job(job = job,
+                            num_evaluations=self.num_evaluations,
+                            best_fitness=best_fitness_job,
+                            silent_evolver=self.config.silent_evolver,
+                            minimalistic_output=self.config.minimalistic_output)
+            if terminate:
+                break
         return self.best[0]

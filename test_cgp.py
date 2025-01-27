@@ -27,7 +27,8 @@ config = CGPConfig(
     num_inputs=1,
     num_outputs=1,
     num_function_nodes=10,
-    report_interval=1
+    report_interval=1,
+    max_time=60
 )
 
 hyperparameters = CGPHyperparameters(
@@ -75,7 +76,8 @@ config = CGPConfig(
     num_inputs=wrapped_env.observation_space.shape[0],
     num_outputs=4,
     num_function_nodes=10,
-    report_interval=1
+    report_interval=1,
+    max_time=60
 )
 config.init()
 

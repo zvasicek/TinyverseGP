@@ -10,11 +10,12 @@ import math
 import random
 import copy
 import numpy as np
+import time
 
 from dataclasses import dataclass
 from enum import Enum
 
-from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig
+from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var
 from src.gp.problem import Problem
 
 @dataclass
@@ -39,6 +40,7 @@ class CGPConfig(GPConfig):
     num_function_nodes: int
     num_functions: int
     max_arity: int
+    max_time: int
 
     def init(self):
         self.num_genes = ((self.max_arity + 1) * self.num_function_nodes)  + self.num_outputs
@@ -97,7 +99,7 @@ class TinyCGP(GPModel):
         Initialize the inputs.
         '''
         for index, terminal in enumerate(terminals_):
-            if isinstance(terminal, str):
+            if isinstance(terminal, Var):
                 self.inputs[index] = (terminal, self.TerminalType.VARIABLE)
             else:
                 self.inputs[index] = (terminal, self.TerminalType.CONSTANT)
@@ -150,7 +152,8 @@ class TinyCGP(GPModel):
         '''
         Get the input name.
         '''
-        return str(self.input_value(index).name)
+
+        return str(self.input_value(index).name) + "(" + str(self.input_value(index).call([]))+ ")"
 
     def input_type(self, index: int) -> TerminalType:
         '''
@@ -424,6 +427,9 @@ class TinyCGP(GPModel):
         '''
         best_solution = None
         best_fitness = None
+        t0 = time.time()
+        elapsed = 0
+        terminate = False
         for job in range(self.config.num_jobs):
             best_fitness_job = None
             self.num_evaluations = 0
@@ -444,10 +450,20 @@ class TinyCGP(GPModel):
                                        report_interval=self.config.report_interval)
                 if is_ideal:
                     break
+                t1 = time.time()
+                delta = t1 - t0
+                t0 = t1
+                elapsed += delta
+                if elapsed + delta >= self.config.max_time:
+                    terminate = True
+                    break
+
 
             self.report_job(job = job,
                             num_evaluations=self.num_evaluations,
                             best_fitness=best_fitness_job,
                             silent_evolver=self.config.silent_evolver,
                             minimalistic_output=self.config.minimalistic_output)
+            if terminate:
+                break
         return best_solution[0]

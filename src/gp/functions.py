@@ -20,10 +20,10 @@ def pdiv(x, y):
     return x / y if y > 0 else 1.0
 
 # Arithmetic Functions
-ADD = Function(2, 'ADD', operator.add)
-SUB = Function(2, 'SUB', operator.sub)
-MUL = Function(2, 'MUL', operator.mul)
-DIV = Function(2, 'DIV', pdiv)
+ADD = Function(2, 'Add', operator.add)
+SUB = Function(2, 'Sub', operator.sub, lambda x, y: x-y)
+MUL = Function(2, 'Mul', operator.mul)
+DIV = Function(2, 'Div', pdiv, lambda x, y: x/y)
 
 # Logical Functions
 AND = Function(2, 'AND', lambda x,y : int(x) & int(y))

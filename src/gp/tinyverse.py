@@ -81,6 +81,7 @@ class GPConfig(Config):
     minimalistic_output: bool
     num_outputs: int
     report_interval:int
+    max_time:int
 
 @dataclass
 class Hyperparameters(ABC):
@@ -110,15 +111,19 @@ class Function():
     It contains information about arity, a string representation for the function, 
     and the function itself.
     The method `call` is used to call the function with the given arguments.
+    The method `custom` is meant to make the function compatible with sympy, if
+    None is passed, it will use the defaults.
     '''
     name: str
     arity: int
     function: callable
+    custom: callable
 
-    def __init__(self, arity_, name_, function_):
+    def __init__(self, arity_, name_, function_, custom_=None):
         self.function = function_
         self.name = name_
         self.arity = arity_
+        self.custom = custom_
 
     def call(self, args: list) -> Any:
         assert (len(args) == self.arity)
