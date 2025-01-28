@@ -3,33 +3,24 @@
 import random
 import math
 
-N = 100
-MAX = 10000
-TESTCASES = [(0, 0), (1, 1), (-1, 0), (16, 1), (65536, 1)]
+# Testcases from Leetcode
+testcases = [(0, 0), (1, 1), (-1, 0), (16, 1), (65536, 1)]
+examples = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024,
+            2048, 4096, 8192, 16384, 32768, 65536, 131072,
+            262144, 524288, 1048576]
 
 # https://github.com/hongxiaolong/leetcode/blob/master/Python/power_of_two.py
 def isPowerOfTwo(n):
     return n > 0 and bin(n).count('1') == 1
 
-
-def generate_dataset(n, max = 10000, ratio = 0.2):
-    """
-    Generates a dataset of n observations with maximum value max and ratio positive examples
-
-    :param n: Number of observations
-    :param max: Maximum value in the dataset
-    :param ratio: Ratio of positive examples (leads to 1.0 - ratio counterexamples)
-    :return: dataset
-    """
-    dataset = []
-    exp = int(math.log2(max))
-    for i in range(n):
-        if random.random() < ratio:
-            rand =  int(math.pow(2, random.randint(0, exp)))
-            status = 1
-        else:
-            rand = random.randint(0, max)
-            status = 1 if isPowerOfTwo(rand) else 0
-        case = (rand,  status)
-        dataset.append(case)
+def generate_dataset(n, m):
+    powers = [int(math.pow(2,i)) for i in range(n + 1)]
+    dataset = [(power, 1) for power in powers]
+    max = 2 ** n
+    for i in range(m - len(powers)):
+        rand = random.randint(-max, max - 1)
+        if rand not in dataset:
+            dataset.append((rand, 0))
+    dataset.append((0,0))
+    random.shuffle(dataset)
     return dataset
