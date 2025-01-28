@@ -27,8 +27,9 @@ class CGPHyperparameters(Hyperparameters):
     lmbda: int
     population_size: int
     levels_back: int
-    mutation_rate: float
     strict_selection: bool
+    mutation_rate: float = None
+    mutation_rate_genes: int = None
 
 @dataclass
 class CGPConfig(GPConfig):
@@ -370,9 +371,17 @@ class TinyCGP(GPModel):
         '''
         Mutates the genome 
         '''
-        for index, gene in enumerate(genome):
-            if random.random() < self.hyperparameters.mutation_rate:
+        if self.hyperparameters.mutation_rate is not None:
+            for index, gene in enumerate(genome):
+                if random.random() < self.hyperparameters.mutation_rate:
+                    genome[index] = self.init_gene(index)
+        elif self.hyperparameters.mutation_rate_genes is not None:
+            mg = random.randint(1, self.hyperparameters.mutation_rate_genes)
+            for _ in range(mg):
+                index = random.randint(0, self.config.num_genes - 1)
                 genome[index] = self.init_gene(index)
+        else:
+            raise ValueError("Either mutation_rate or mutation_rate_genes must be set")
 
     def expression(self, genome: list[int]) -> list[str]:
         '''

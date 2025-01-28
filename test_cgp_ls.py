@@ -44,7 +44,6 @@ class LS(Problem):
         self.ideal = 0
 
         known_gates = ["INVA","IDA", "AND2","OR2","XOR2","NAND2","NOR2","XNOR2"]
-        
         b = BlifFile(known_gates=known_gates)
         self.num_inputs, self.num_outputs, gates = b.parse(blif_)
 
@@ -90,10 +89,10 @@ class LS(Problem):
             g2v[g.name] = o
             print(o)
 
-        self.ref_outs = []
+        self.reference = []
         for o in b.eachOutput():    
             print('output', o, g2v[o])
-            self.ref_outs.append(g2v[o])
+            self.reference.append(g2v[o])
 
         #sys.exit(0)
         #vars = [f'x{i}' for i in range(self.num_inputs)]
@@ -113,7 +112,7 @@ class LS(Problem):
 
         hd = 0
         for i in range(self.num_outputs):
-            odiff = self.bdd.apply('xor', prediction[i], self.ref_outs[i])
+            odiff = self.bdd.apply('xor', prediction[i], self.reference[i])
             #odiff = prediction[i] ^ self.ref_vars[i]
             hd += odiff.count()
             #print('i', i, odiff, hd)
@@ -130,7 +129,7 @@ class LS(Problem):
 
 
 functions = [NOT, ID, AND, OR, XOR, NAND, NOR, XNOR]
-
+#functions = [NOT, AND, OR, NAND, NOR, XNOR]
 
 parity5 = """.model parity_5.blif
 .inputs i0 i1 i2 i3 i4
@@ -179,7 +178,8 @@ hyperparameters = CGPHyperparameters(
     lmbda=4,
     population_size=5,
     levels_back=20,
-    mutation_rate=0.1,
+    #mutation_rate=0.1,
+    mutation_rate_genes=5,
     strict_selection=True
 )
 
