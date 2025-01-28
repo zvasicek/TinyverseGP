@@ -1,8 +1,6 @@
-import os
-import struct
-
-
 class BlifFile:
+    """ BLIF file parser """
+
     def __init__(self, known_gates=None):
         self.known_gates = []
         for i in range(len(known_gates)):
@@ -10,9 +8,183 @@ class BlifFile:
             if g == None:
                 g = "-null-"
             self.known_gates.append(g)
-        self._init()
+        self.initialize_()
 
-    def _init(self):
+    def parse(self, blif_or_file: str) -> tuple:
+        """
+        Parses a BLIF file and returns the number of inputs, outputs and gates.
+        The parsed data is stored in the object and can be accessed using the eachGate, eachInput and eachOutput methods.
+
+        :param blif_or_file: A string containing the BLIF data or a file object
+        :return: A tuple containing the number of inputs, outputs and gates
+        """
+
+        if isinstance(blif_or_file, str):
+            data = blif_or_file
+            assert '.model' in data, 'The BLIF file must contain a model.'
+        else:
+            data = blif_or_file.read()
+
+        self.initialize_()
+
+        lbuf = ""
+        lineid = 0
+        for l in data.splitlines():
+            l = l.strip()
+            if not l:
+                continue
+            if (l.endswith("\\")):
+                lbuf += l[:-1]
+                continue
+            if (lbuf):
+                l = lbuf + l
+                lbuf = ""
+            l = l.split('#', 1)[0]
+            if not l:
+                continue
+            if l.startswith('.'):
+                # param
+                wordlist = l[1:].split()
+                pid, args = wordlist[0], wordlist[1:]
+
+                if self.tableSpec != None:
+                    self._identifyGate()
+
+                if (pid == "names"):
+                    self.tableSpec = args
+                    if (len(args) > 3):
+                        raise Exception(
+                            "Invalid number of inputs (1, 2 or 3 input gates are supported only) \"%s\"" % l)
+                elif (pid == "inputs"):
+                    self.inputs = args
+                elif (pid == "outputs"):
+                    self.outputs = args
+                elif (pid == "model"):
+                    pass
+                elif (pid == "end"):
+                    break
+                elif (pid.startswith("default")):
+                    pass
+                elif (pid == "gate"):
+                    args[0] = args[0].upper()
+                    if args[0] in self.name_conversion:
+                        args[0] = self.name_conversion[args[0]]
+                    if (args[0] in self.known_gates):
+                        gtype = self.known_gates.index(args[0])
+                    elif (args[0] == "ZERO") and ("XOR2" in self.known_gates):
+                        # constant zero using XOR
+                        gtype = self.known_gates.index("XOR2")
+                    elif (args[0] == "ONE") and ("XNOR2" in self.known_gates):
+                        # constant 1 using XNOR
+                        gtype = self.known_gates.index("XNOR2")
+                    else:
+                        raise Exception("Unknown gate \"%s\". Supported gate names: %s" % (
+                            args[0], ','.join(self.known_gates)))
+
+                    pin_map = {}
+                    for a in args[1:]:
+                        pin_name, map = [b.strip() for b in a.split('=')]
+                        pin_map[pin_name.upper()] = map
+
+                    if (len(pin_map) > 3):
+                        raise Exception(
+                            "Invalid number of inputs (1,2 or 3 input gates are supported only) \"%s\"" % l)
+
+                    if not 'B' in pin_map:
+                        pin_map['B'] = None
+                    if not 'A' in pin_map:
+                        pin_map['A'] = None
+
+                    self.gatelist[pin_map['O']] = BlifGate(
+                        pin_map['O'], pin_map['A'], pin_map['B'], gtype)
+
+                else:
+                    raise Exception("Unknown command \".%s\"" % pid)
+
+            elif self.tableSpec != None:
+                l = l.split()
+                if len(l) == 1:
+                    if l[0] == '0':
+                        self.tableFunc = 0
+                    else:
+                        self.tableFunc = 1
+                    self.tableData.append((l[0]))
+                else:
+
+                    if ((l[1] != '1') and (l[1] != '0')):
+                        raise Exception(
+                            "Invalid BLIF data: %s. Right side should contain 0 for OFF-set or 1 for ON-set" % ' '.join(l))
+
+                    # First data line, initialize tableFunc
+                    if (self.tableFunc == None):
+                        if (l[1] == '0'):  # OFF-set
+                            self.tableFunc = (
+                                1 << 2**(len(self.tableSpec)-1)) - 1
+                        else:  # ON-set
+                            self.tableFunc = 0
+
+                    vals = expand(l[0])
+                    for v in vals:
+                        self.tableData.append((v, l[1]))
+
+                    expval = 0
+                    for v in vals:
+                        # print v, int(v,2)
+                        expval |= (1 << int(v, 2))
+
+                    if (l[1] == '0'):  # OFF-set
+                        expval = expval ^ (
+                            (1 << 2**(len(self.tableSpec)-1)) - 1)
+                        self.tableFunc &= expval
+                    else:  # ON-set
+                        self.tableFunc |= expval
+
+            else:
+                raise Exception("Invalid BLIF data: %s" % l)
+
+        if self.tableSpec != None:
+            self._identifyGate()
+
+        # Topological sort of gatelist
+        remaining = {key: idx for idx, key in enumerate(self.gatelist.keys())}
+        g2lev = {}
+        for i in self.inputs:
+            g2lev[i] = 0
+
+        def prop(g):
+            if g in g2lev:
+                return g2lev[g]
+            ina = self.gatelist[g].ina
+            ina = prop(ina) if (ina != None) else 0
+            inb = self.gatelist[g].inb
+            inb = prop(inb) if (inb != None) else 0
+            g2lev[g] = max(ina, inb) + 1
+            return g2lev[g]
+
+        for o in self.outputs:
+            prop(o)
+
+        g2lev = sorted(g2lev.items(), key=lambda x: x[1])
+        self.toposorted = [g for g, lev in g2lev if not g in self.inputs]
+
+        return len(self.inputs), len(self.outputs), len(self.gatelist)
+
+    def eachGate(self):
+        """ Returns an iterator over the gates """	
+        for g in self.toposorted:
+            yield self.gatelist[g]
+
+    def eachInput(self):
+        """ Returns an iterator over the inputs """	
+        for i in self.inputs:
+            yield i
+
+    def eachOutput(self):
+        """ Returns an iterator over the outputs """	
+        for o in self.outputs:
+            yield o
+
+    def initialize_(self):
         self.outputs = []
         self.inputs = []
         self.gatelist = {}
@@ -21,6 +193,27 @@ class BlifFile:
         self.tableData = []
         self.tableFunc = None
         self.result = None
+        self.name_conversion = {
+            "INV1": "INVA",
+            "INV": "INVA",
+            "NOR": "NOR2",
+            "OR": "OR2",
+            "AND": "AND2",
+            "NAND": "NAND2",
+            "XNOR": "XNOR2",
+            "XOR": "XOR2",
+            "XORA": "XOR2",
+            "XORA2": "XOR2",
+            "XORB2": "XOR2",
+            "XNORA": "XNOR2",
+            "XNORA2": "XNOR2",
+            "XNORB2": "XNOR2",
+            "BUF": "IDA",
+            "BUF1": "IDA",
+            "WIRE": "IDA",
+            "ZERO0": "ZERO",
+            "ONE0": "ONE"
+        }
 
     def _identifyGate(self):
         if self.tableSpec == None:
@@ -71,211 +264,6 @@ class BlifFile:
         self.tableSpec = None
         self.tableData = []
         self.tableFunc = None
-
-    def parse(self, blif_or_file: str) -> tuple:
-        """Parses a BLIF file and returns the number of inputs, outputs and gates."""
-
-        if isinstance(blif_or_file, str):
-            data = blif_or_file
-            assert '.model' in data, 'The BLIF file must contain a model.'
-        else:
-            data = blif_or_file.read()
-
-        self._init()
-
-        lbuf = ""
-        lineid = 0
-        for l in data.splitlines():
-            l = l.strip()
-            if not l:
-                continue
-            if (l.endswith("\\")):
-                lbuf += l[:-1]
-                continue
-            if (lbuf):
-                l = lbuf + l
-                lbuf = ""
-            l = l.split('#', 1)[0]
-            if not l:
-                continue
-            if l.startswith('.'):
-                # param
-                wordlist = l[1:].split()
-                pid, args = wordlist[0], wordlist[1:]
-
-                if self.tableSpec != None:
-                    self._identifyGate()
-
-                if (pid == "names"):
-                    self.tableSpec = args
-                    if (len(args) > 3):
-                        raise Exception(
-                            "Invalid number of inputs (1, 2 or 3 input gates are supported only) \"%s\"" % l)
-                elif (pid == "inputs"):
-                    self.inputs = args
-                elif (pid == "outputs"):
-                    self.outputs = args
-                elif (pid == "model"):
-                    pass
-                elif (pid == "end"):
-                    break
-                elif (pid.startswith("default")):
-                    pass
-                elif (pid == "gate"):
-                    args[0] = args[0].upper()
-                    if args[0] == "INV1":
-                        args[0] = "INVA"
-                    elif args[0] == "INV":
-                        args[0] = "INVA"
-                    elif args[0] == "NOR":
-                        args[0] = "NOR2"
-                    elif args[0] == "OR":
-                        args[0] = "OR2"
-                    elif args[0] == "AND":
-                        args[0] = "AND2"
-                    elif args[0] == "NAND":
-                        args[0] = "NAND2"
-                    elif args[0] == "XNOR":
-                        args[0] = "XNOR2"
-                    elif args[0] == "XOR":
-                        args[0] = "XOR2"
-                    elif args[0] == "XORA":
-                        args[0] = "XOR2"
-                    elif args[0] == "XORA2":
-                        args[0] = "XOR2"
-                    elif args[0] == "XORB2":
-                        args[0] = "XOR2"
-                    elif args[0] == "XNORA":
-                        args[0] = "XNOR2"
-                    elif args[0] == "XNORA2":
-                        args[0] = "XNOR2"
-                    elif args[0] == "XNORB2":
-                        args[0] = "XNOR2"
-                    elif args[0] == "BUF":
-                        args[0] = "IDA"
-                    elif args[0] == "BUF1":
-                        args[0] = "IDA"
-                    elif args[0] == "WIRE":
-                        args[0] = "IDA"
-                    elif args[0] == "ZERO0":
-                        args[0] = "ZERO"
-                    elif args[0] == "ONE0":
-                        args[0] = "ONE"
-
-                    if (args[0] in self.known_gates):
-                        gtype = self.known_gates.index(args[0])
-                    # vyrobeni 0 pomoci XORu
-                    elif (args[0] == "ZERO") and ("XOR2" in self.known_gates):
-                        gtype = self.known_gates.index("XOR2")
-                    # vyrobeni 1 pomoci XNORu
-                    elif (args[0] == "ONE") and ("XNOR2" in self.known_gates):
-                        gtype = self.known_gates.index("XNOR2")
-                    else:
-                        raise Exception("Unknown gate \"%s\". Supported gate names: %s" % (
-                            args[0], ','.join(self.known_gates)))
-
-                    pin_map = {}
-                    for a in args[1:]:
-                        pin_name, map = [b.strip() for b in a.split('=')]
-                        pin_map[pin_name.upper()] = map
-
-                    if (len(pin_map) > 3):
-                        raise Exception(
-                            "Invalid number of inputs (1,2 or 3 input gates are supported only) \"%s\"" % l)
-
-                    if not 'B' in pin_map:
-                        pin_map['B'] = None
-                    if not 'A' in pin_map:
-                        pin_map['A'] = None
-
-                    self.gatelist[pin_map['O']] = BlifGate(
-                        pin_map['O'], pin_map['A'], pin_map['B'], gtype)
-                    # type, in1, in2, zpozdeni pocitano od vystupu, level index
-
-                else:
-                    raise Exception("Unknown command \".%s\"" % pid)
-
-            elif self.tableSpec != None:
-                l = l.split()
-                if len(l) == 1:
-                    if l[0] == '0':
-                        self.tableFunc = 0
-                    else:
-                        self.tableFunc = 1
-                    self.tableData.append((l[0]))
-                else:
-
-                    if ((l[1] != '1') and (l[1] != '0')):
-                        raise Exception(
-                            "Invalid BLIF data: %s. Right side should contain 0 for OFF-set or 1 for ON-set" % ' '.join(l))
-
-                    # Prvni datovy radek, inicializovat tableFunc
-                    if (self.tableFunc == None):
-                        if (l[1] == '0'):  # OFF-set
-                            self.tableFunc = (
-                                1 << 2**(len(self.tableSpec)-1)) - 1
-                        else:  # ON-set
-                            self.tableFunc = 0
-
-                    vals = expand(l[0])
-                    for v in vals:
-                        self.tableData.append((v, l[1]))
-
-                    expval = 0
-                    for v in vals:
-                        # print v, int(v,2)
-                        expval |= (1 << int(v, 2))
-
-                    if (l[1] == '0'):  # OFF-set
-                        expval = expval ^ (
-                            (1 << 2**(len(self.tableSpec)-1)) - 1)
-                        self.tableFunc &= expval
-                    else:  # ON-set
-                        self.tableFunc |= expval
-
-            else:
-                raise Exception("Invalid BLIF data: %s" % l)
-
-        if self.tableSpec != None:
-            self._identifyGate()
-
-        # Topological sort of gatelist
-        remaining = {key: idx for idx, key in enumerate(self.gatelist.keys())}
-        g2lev = {}
-        for i in self.inputs:
-            g2lev[i] = 0
-
-        def prop(g):
-            if g in g2lev:
-                return g2lev[g]
-            ina = self.gatelist[g].ina
-            ina = prop(ina) if (ina != None) else 0
-            inb = self.gatelist[g].inb
-            inb = prop(inb) if (inb != None) else 0
-            g2lev[g] = max(ina, inb) + 1
-            return g2lev[g]
-
-        for o in self.outputs:
-            prop(o)
-
-        # sort g2lev by value
-        g2lev = sorted(g2lev.items(), key=lambda x: x[1])
-        # and not g in self.outputs]
-        self.toposorted = [g for g, lev in g2lev if not g in self.inputs]
-
-        return len(self.inputs), len(self.outputs), len(self.gatelist)
-
-    def eachGate(self):
-        for g in self.toposorted:
-            yield self.gatelist[g]
-
-    def eachInput(self):
-        for i in self.inputs:
-            yield i
-
-    def eachOutput(self):
-        for o in self.outputs:
-            yield o
 
 
 class BlifGate:
