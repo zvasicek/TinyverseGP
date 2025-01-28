@@ -1,5 +1,5 @@
-# https://leetcode.com/problems/happy-number/
-
+# https://leetcode.com/problems/happy-number/description/
+# https://oeis.org/A007770
 examples = [1, 7, 10, 13, 19, 23, 28, 31, 32, 44, 49, 68, 70, 79, 82, 86, 91, 94, 97, 100, 103, 109,
             29, 130, 133, 139, 167, 176, 188, 190, 192, 193, 203, 208, 219, 226, 230, 236, 239, 262,
             263, 280, 291, 293, 301, 302, 310, 313, 319, 320, 326, 329, 331, 338, 356, 362, 365, 367,
@@ -9,21 +9,3 @@ examples = [1, 7, 10, 13, 19, 23, 28, 31, 32, 44, 49, 68, 70, 79, 82, 86, 91, 94
             806, 818, 820, 833, 836, 847, 860, 863, 874, 881, 888, 899, 901, 904, 907, 910, 912, 913,
             921, 923, 931, 932, 937, 940, 946, 964, 970, 973, 989, 998, 1000]
 
-def generate_counterexamples(examples, n):
-    counterexamples = [i for i in range(n) if n not in examples]
-    return counterexamples
-
-def generate_dataset(n, examples):
-    """
-    Generates a dataset of n observations for the happy number coding problem.
-    :param n: Number of observations
-    :param examples: Number of (positive) examples
-    :return: dataset
-    """
-    dataset = []
-    for i in range(n):
-        if i in examples:
-            dataset.append((i, 1))
-        else:
-            dataset.append((i, 0))
-    return dataset
