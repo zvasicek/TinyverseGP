@@ -31,6 +31,8 @@ OR  = Function(2, 'OR', lambda x,y : int(x) | int(y))
 NOT = Function(1, 'NOT', lambda x : ~int(x))
 NAND = Function(2, 'NAND', lambda x,y : ~(int(x) & int(y)))
 NOR = Function(2, 'NOR', lambda x,y : ~(int(x) | int(y)))
+XOR = Function(2, 'XOR', lambda x,y : int(x) ^ int(y))
+XNOR = Function(2, 'XNOR', lambda x,y : ~(int(x) ^ int(y)))
 
 # Policy Search / Classification
 

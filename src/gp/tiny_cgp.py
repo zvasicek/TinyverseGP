@@ -9,7 +9,7 @@ __email__ = 'roman.kalkreuth@rwth-aachen.de'
 import math
 import random
 import copy
-import numpy as np
+#import numpy as np
 import time
 
 from dataclasses import dataclass
@@ -108,7 +108,7 @@ class TinyCGP(GPModel):
         '''
         Initialize a genome.
         '''
-        genome = np.zeros(self.config.num_genes, dtype=np.uint32)
+        genome = [0 for i in range(self.config.num_genes)]
         for count in range(self.config.num_genes):
             gene = self.init_gene(count)
             genome[count] = gene
@@ -466,4 +466,4 @@ class TinyCGP(GPModel):
                             minimalistic_output=self.config.minimalistic_output)
             if terminate:
                 break
-        return best_solution[0]
+        return best_solution

@@ -1,4 +1,9 @@
+Box2D==2.3.10
+pygame==2.6.1
 gymnasium==1.0.0
+numpy>=1.21.0
+dd>=0.6.0
 numpy==2.2.2
 swig==4.3.0
 sympy==1.13.3
+requests==2.32.3
