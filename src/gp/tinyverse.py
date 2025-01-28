@@ -125,7 +125,7 @@ class Function():
         self.arity = arity_
         self.custom = custom_
 
-    def call(self, args: list) -> Any:
+    def __call__(self, *args) -> Any:
         assert (len(args) == self.arity)
         return self.function(*args)
 

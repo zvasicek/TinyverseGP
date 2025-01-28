@@ -44,7 +44,8 @@ class CGPConfig(GPConfig):
     max_time: int
 
     def init(self):
-        self.num_genes = ((self.max_arity + 1) * self.num_function_nodes)  + self.num_outputs
+        self.genes_per_node = self.max_arity + 1
+        self.num_genes = (self.genes_per_node * self.num_function_nodes)  + self.num_outputs
 
 class TinyCGP(GPModel):
     '''
@@ -71,6 +72,7 @@ class TinyCGP(GPModel):
         self.num_evaluations = None
         self.population = []
         self.functions = functions_
+        self.function2arity = [f.arity for f in functions_]
         self.terminals = terminals_
         self.problem = problem_
         self.config = config_
@@ -154,7 +156,7 @@ class TinyCGP(GPModel):
         Get the input name.
         '''
 
-        return str(self.input_value(index).name) + "(" + str(self.input_value(index).call([]))+ ")"
+        return str(self.input_value(index).name) + "(" + str(self.input_value(index)())+ ")"
 
     def input_type(self, index: int) -> TerminalType:
         '''
@@ -263,7 +265,30 @@ class TinyCGP(GPModel):
         arity = self.functions[function].arity
         if arity < len(args):
             args = args[:arity]
-        return self.functions[function].call(args)
+        return self.functions[function](*args)
+
+    def predict_optimized_(self, genome: list[int], observation: list, paths=None) -> list:
+        '''
+        Predict the output for a single observation.
+        '''
+        maxidx = self.config.genes_per_node * self.config.num_function_nodes
+        step = self.config.genes_per_node
+        
+        node_values = [None for i in range(self.config.num_function_nodes + self.config.num_inputs)]
+        for i in range(self.config.num_inputs):
+            if not self.terminals[i].const:
+                node_values[i] = observation[i]
+            else:
+                node_values[i] = self.terminals[i]()
+
+        nidx = self.config.num_inputs
+        for node_num in range(0, maxidx, step):
+            fun = genome[node_num]
+            args = [node_values[i] for i in genome[node_num + 1:node_num + self.function2arity[fun] + 1]]
+            node_values[nidx] = self.functions[fun](*args)
+            nidx += 1
+        
+        return [node_values[genome[maxidx+i]] for i in range(self.config.num_outputs)]
 
     def predict(self, genome: list[int], observation: list, paths=None) -> list:
         '''
@@ -281,9 +306,9 @@ class TinyCGP(GPModel):
                 if node_num not in node_map.keys():
                     if node_num < self.config.num_inputs:
                         if self.terminals[node_num].const:
-                            node_map[node_num] = self.terminals[node_num].call([])
+                            node_map[node_num] = self.terminals[node_num]()
                         else:
-                            node_map[node_num] = observation[self.terminals[node_num].call([])]
+                            node_map[node_num] = observation[self.terminals[node_num]()]
                     else:
                         arguments = []
                         connections = self.node_connections(node_num, genome)
@@ -393,8 +418,9 @@ class TinyCGP(GPModel):
                 active_nodes = self.active_nodes(genome)
             expr_map = dict()
             for node_num in active_nodes:
-                args = self.node_connections(node_num, genome)
                 function = self.node_function(node_num, genome)
+                node_arity = self.function2arity[function]
+                args = self.node_connections(node_num, genome)[0:node_arity]
                 func_name = self.functions[function].name
                 node_expr = func_name + "("
                 for index, argument in enumerate(args):
@@ -403,7 +429,7 @@ class TinyCGP(GPModel):
                     else:
                         arg_expr = self.input_name(argument)
                     node_expr += arg_expr
-                    if index < self.config.max_arity - 1:
+                    if index < node_arity - 1:
                         node_expr += ", "
                 node_expr += ")"
                 expr_map[node_num] = node_expr

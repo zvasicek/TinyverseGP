@@ -145,12 +145,12 @@ class TinyTGP(GPModel):
         def eval_node(node: Node):
             if node.function.arity == 0:
                 if node.function.const:
-                    return node.function.call([])
+                    return node.function()
                 else:
-                    return observation[node.function.call([])]
+                    return observation[node.function()]
             else:
                 args = [eval_node(child) for child in node.children]
-                return node.function.call(args)
+                return node.function(*args)
 
         return [eval_node(g) for g in genome]
 
@@ -262,7 +262,7 @@ class TinyTGP(GPModel):
 
         def print_node(node: Node):
             if len(node.children) == 0:
-                return node.function.name + "(" + str(node.function.call([])) + ")"
+                return node.function.name + "(" + str(node.function()) + ")"
             else:
                 args = [print_node(child) for child in node.children]
                 return node.function.name + "(" + ", ".join(args) + ")"

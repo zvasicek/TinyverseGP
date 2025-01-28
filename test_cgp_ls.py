@@ -106,8 +106,9 @@ class LS(Problem):
         #Hamming distance using BDDs
         
         observation = self.bdd_vars
-        #rint('observation', observation)	
-        prediction = model.predict(genome, observation)
+        #print('observation', observation)	
+        #prediction = model.predict(genome, observation)
+        prediction = model.predict_optimized_(genome, observation)
         #print('prediction', prediction)
 
         hd = 0
@@ -130,6 +131,7 @@ class LS(Problem):
 
 functions = [NOT, ID, AND, OR, XOR, NAND, NOR, XNOR]
 #functions = [NOT, AND, OR, NAND, NOR, XNOR]
+functions = [ID, AND, XOR]
 
 parity5 = """.model parity_5.blif
 .inputs i0 i1 i2 i3 i4
@@ -202,4 +204,4 @@ print('best', best)
 
 print(cgp.evaluate_individual(best))
 
-print('decode', cgp.decode(best))
+print('decode', cgp.expression(best))
