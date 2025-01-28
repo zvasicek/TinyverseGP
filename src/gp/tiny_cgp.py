@@ -48,6 +48,14 @@ class CGPConfig(GPConfig):
         self.genes_per_node = self.max_arity + 1
         self.num_genes = (self.genes_per_node * self.num_function_nodes)  + self.num_outputs
 
+class Individual:
+    '''
+    CGP individual
+    '''
+    def __init__(self, genome: list[int], fitness: float = None):
+        self.genome = genome
+        self.fitness = fitness
+
 class TinyCGP(GPModel):
     '''
     TinyCGP class
@@ -86,17 +94,16 @@ class TinyCGP(GPModel):
         '''
         Initialize the population. 
         '''
+        self.population.clear()
         for _ in range(self.hyperparameters.population_size):
             individual = self.init_individual()
             self.population.append(individual)
 
-    def init_individual(self):
+    def init_individual(self) -> Individual:
         '''
         Initialize an individual.
         '''
-        genome = self.init_genome()
-        fitness = 0.0
-        return [genome, fitness]
+        return Individual(self.init_genome())
 
     def init_inputs(self, terminals_: list):
         '''
@@ -112,11 +119,7 @@ class TinyCGP(GPModel):
         '''
         Initialize a genome.
         '''
-        genome = [0 for i in range(self.config.num_genes)]
-        for count in range(self.config.num_genes):
-            gene = self.init_gene(count)
-            genome[count] = gene
-        return genome
+        return [self.init_gene(i) for i in range(self.config.num_genes)]
 
     def init_gene(self, position: int) -> int:
         '''
@@ -216,33 +219,35 @@ class TinyCGP(GPModel):
         else:
             return self.node_number(position) - 1
 
-    def fitness(self, individual: list[list[int], float]):
+    def fitness(self, individual: Individual) -> float:
         '''
         Get the fitness of an individual.
         '''
-        return individual[1]
+        return individual.fitness
 
-    def evaluate(self) -> tuple:
+    def evaluate(self) -> (Individual, bool):
         '''
         Evaluate the population.
         '''
-        best_genome = None
-        best_fitness = None
+        best = None
         for individual in self.population:
-            genome = individual[0]
-            fitness = individual[1] = self.evaluate_individual(genome)
-
-            if best_genome is None:
-                best_genome = genome
-                best_fitness = fitness
+            genome = individual.genome
+            if (individual.fitness is None):
+                individual.fitness = self.evaluate_individual(genome)
+            fitness = individual.fitness
 
             if self.problem.is_ideal(fitness):
-                return genome, fitness, True
+                return individual, True
+
+            if best is None:
+                best = individual
+                best_fitness = fitness
 
             if self.problem.is_better(fitness, best_fitness):
-                best_genome = copy.deepcopy(individual[0])
-                best_fitness = individual[1]
-        return best_genome, best_fitness, False
+                best = individual
+                best_fitness = fitness
+
+        return best, False
 
     def evaluate_individual(self, genome:list[int]) -> float:
         '''
@@ -363,28 +368,28 @@ class TinyCGP(GPModel):
             paths.append(path)
         return paths
 
-    def breed(self):
+    def breed(self, parent : Individual = None):
         '''
-        Breed the population.
+        Breed the population from a given parent.
         '''
-        parent = self.selection()
         self.population.clear()
         self.population.append(parent)
         for _ in range(self.hyperparameters.lmbda):
-            offspring = copy.deepcopy(parent)
-            self.mutation(offspring[0])
+            # mutation requires fitness calculation, so we need to genome only
+            offspring = Individual(parent.genome.copy()) 
+            self.mutation(offspring.genome)
             self.population.append(offspring)
 
     def selection(self) -> list:
         '''
         Select a random individual among the best solutions.
         '''
-        sorted_pop = sorted(self.population, key=lambda ind: ind[1], reverse=not self.config.minimizing_fitness)
+        sorted_pop = sorted(self.population, key=lambda ind: ind.fitness, reverse=not self.config.minimizing_fitness)
         count = 0
         if not self.hyperparameters.strict_selection:
-            best_fitness = sorted_pop[0][1]
+            best_fitness = sorted_pop[0].fitness
             for individual in sorted_pop:
-                if individual[1] != best_fitness:
+                if individual.fitness != best_fitness:
                     break
                 else:
                     count += 1
@@ -455,49 +460,61 @@ class TinyCGP(GPModel):
             self.print_individual(individual)
 
     def print_individual(self, individual):
-        print("Genome: " + str(individual[0]) + " : Fitness: " + str(individual[1]))
+        print(f'Genome: {individual.genome} Fitness: {individual.fitness}')
 
     def evolve(self):
         '''
         Perform the evolutionary procedure.
         '''
-        best_solution = None
-        best_fitness = None
         last_fitness = None
         t0 = time.time()
         elapsed = 0
         terminate = False
+        silent = self.config.silent_algorithm
         rc = self.config.report_every_improvement
         for job in range(self.config.num_jobs):
-            best_fitness_job = None
             self.num_evaluations = 0
+            # evaluate the initial population
+            best_individual,_ = self.evaluate()
+            best_fitness = best_fitness_job = best_individual.fitness
             for generation in range(self.config.max_generations):
-                self.breed()
-                best_solution_gen, best_fitness_gen, is_ideal = self.evaluate()
+                # Selection of a parent if necessary
+                parent = best_individual
+                if not self.hyperparameters.strict_selection:
+                    parent = self.selection()
+                
+                # Population breeding
+                self.breed(parent)
+                
+                # Evaluation of the offspring
+                best_gen, is_ideal = self.evaluate()
+                best_gen_fitness = best_gen.fitness
 
-                if best_solution is None or self.problem.is_better(best_fitness_gen, best_fitness):
-                    best_solution = best_solution_gen
-                    best_fitness = best_fitness_gen
+                if self.problem.is_better(best_gen_fitness, best_fitness):
+                    best_individual = best_gen
+                    best_fitness = best_gen_fitness
 
-                if best_fitness_job is None or self.problem.is_better(best_fitness_gen, best_fitness_job):
-                    best_fitness_job = best_fitness_gen
+                if self.problem.is_better(best_gen_fitness, best_fitness_job):
+                    best_fitness_job = best_gen_fitness
 
-                if (not rc) or (best_fitness != last_fitness):
+                if (not silent) and ((rc and (best_fitness != last_fitness)) or (self.config.report_interval and (generation % self.config.report_interval == 0))):
                     last_fitness = best_fitness
-                    self.report_generation(silent = self.config.silent_algorithm,
+                    self.report_generation(silent=False,
                                         generation=generation,
                                         best_fitness=best_fitness,
-                                        report_interval=self.config.report_interval)
-                if is_ideal:
-                    break
-                t1 = time.time()
-                delta = t1 - t0
-                t0 = t1
-                elapsed += delta
-                if elapsed + delta >= self.config.max_time:
-                    terminate = True
+                                        report_interval=1)
+                
+                if is_ideal: # if the ideal solution is found, terminate    
                     break
 
+                if (generation & 15) == 0: # check periodically if the time limit is reached
+                    t1 = time.time()
+                    delta = t1 - t0
+                    t0 = t1
+                    elapsed += delta
+                    if elapsed + delta >= self.config.max_time:
+                        terminate = True
+                        break
 
             self.report_job(job = job,
                             num_evaluations=self.num_evaluations,
@@ -506,4 +523,4 @@ class TinyCGP(GPModel):
                             minimalistic_output=self.config.minimalistic_output)
             if terminate:
                 break
-        return best_solution
+        return best_individual

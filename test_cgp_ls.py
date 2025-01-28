@@ -133,6 +133,7 @@ class LS(Problem):
 functions = [NOT, ID, AND, OR, XOR, NAND, NOR, XNOR]
 #functions = [NOT, AND, OR, NAND, NOR, XNOR]
 functions = [ID, AND, XOR]
+functions = [NOT, ID, AND, OR, XOR]
 
 parity5 = """.model parity_5.blif
 .inputs i0 i1 i2 i3 i4
@@ -156,11 +157,11 @@ parity5 = """.model parity_5.blif
 problem  = LS(parity5)#'parity_5.blif')
 
 #uncomment to evolve 3-bit adder
-#problem = LS(requests.get('https://raw.githubusercontent.com/boolean-function-benchmarks/benchmarks/refs/heads/main/benchmarks/blif/add3.blif').text)
+problem = LS(requests.get('https://raw.githubusercontent.com/boolean-function-benchmarks/benchmarks/refs/heads/main/benchmarks/blif/add3.blif').text)
 
 config = CGPConfig(
     num_jobs=1,
-    max_generations=100000,
+    max_generations=500_000,
     stopping_criteria=0,
     minimizing_fitness=True,
     ideal_fitness = 0,
@@ -171,8 +172,8 @@ config = CGPConfig(
     max_arity = 2,
     num_inputs=problem.num_inputs,
     num_outputs=problem.num_outputs,
-    num_function_nodes=20,
-    report_interval=1,
+    num_function_nodes=30,
+    report_interval=5000,
     report_every_improvement=True,
     max_time=60000
 )
@@ -202,8 +203,8 @@ data = None
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 best = cgp.evolve()
 
-print('best', best)
+print('best', best.genome, best.fitness)
 
-print(cgp.evaluate_individual(best))
+print(cgp.evaluate_individual(best.genome))
 
-print('decode', cgp.expression(best))
+print('decode', cgp.expression(best.genome))
