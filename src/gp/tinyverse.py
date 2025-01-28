@@ -134,7 +134,7 @@ class Var(Function):
     '''
     Variable function class.
     '''
-    def __init__(self, index:int , name_:str = None):
+    def __init__(self, index: int = None, name_: str = None):
         self.const = False
         if name_ is None:
             name_ = 'Var'

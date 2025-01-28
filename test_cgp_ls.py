@@ -50,6 +50,7 @@ class LS(Problem):
         self.bdd = BDD()
 
         vars = [g for g in b.eachInput()]
+        self.input_variables = vars
         self.bdd.declare(*vars)
 
         g2v = {}
@@ -172,6 +173,7 @@ config = CGPConfig(
     num_outputs=problem.num_outputs,
     num_function_nodes=20,
     report_interval=1,
+    report_every_improvement=True,
     max_time=60000
 )
 
@@ -193,7 +195,7 @@ random.seed(142)
 #data, actual = benchmark.generate('KOZA1')
 
 #todo CONSTANTS
-terminals = [Var(i) for i in range(problem.num_inputs)]
+terminals = [Var(None, name_=n) for i,n in enumerate(problem.input_variables)]
 
 data = None
 

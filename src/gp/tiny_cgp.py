@@ -42,6 +42,7 @@ class CGPConfig(GPConfig):
     num_functions: int
     max_arity: int
     max_time: int
+    report_every_improvement: bool = False
 
     def init(self):
         self.genes_per_node = self.max_arity + 1
@@ -155,8 +156,8 @@ class TinyCGP(GPModel):
         '''
         Get the input name.
         '''
-
-        return str(self.input_value(index).name) + "(" + str(self.input_value(index)())+ ")"
+        idx = self.input_value(index)()
+        return f'{self.input_value(index).name}({idx})' if idx is not None else self.input_value(index).name
 
     def input_type(self, index: int) -> TerminalType:
         '''
@@ -462,9 +463,11 @@ class TinyCGP(GPModel):
         '''
         best_solution = None
         best_fitness = None
+        last_fitness = None
         t0 = time.time()
         elapsed = 0
         terminate = False
+        rc = self.config.report_every_improvement
         for job in range(self.config.num_jobs):
             best_fitness_job = None
             self.num_evaluations = 0
@@ -479,10 +482,12 @@ class TinyCGP(GPModel):
                 if best_fitness_job is None or self.problem.is_better(best_fitness_gen, best_fitness_job):
                     best_fitness_job = best_fitness_gen
 
-                self.report_generation(silent = self.config.silent_algorithm,
-                                       generation=generation,
-                                       best_fitness=best_fitness,
-                                       report_interval=self.config.report_interval)
+                if (not rc) or (best_fitness != last_fitness):
+                    last_fitness = best_fitness
+                    self.report_generation(silent = self.config.silent_algorithm,
+                                        generation=generation,
+                                        best_fitness=best_fitness,
+                                        report_interval=self.config.report_interval)
                 if is_ideal:
                     break
                 t1 = time.time()
