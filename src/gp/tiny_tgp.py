@@ -287,7 +287,6 @@ class TinyTGP(GPModel):
             for generation in range(self.config.max_generations):
                 self.breed()
                 best_fitness = self.evaluate()
-                #print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
                 self.report_generation(silent = self.config.silent_algorithm,
                                        generation=generation,
                                        best_fitness=best_fitness,
@@ -299,10 +298,11 @@ class TinyTGP(GPModel):
                 if elapsed + delta >= self.config.max_time:
                     terminate = True
                     break
-            #self.print_individual(self.best)
+                elif self.problem.is_ideal(best_fitness):
+                    terminate = True
+                    break
             if best_fitness_job is None or self.problem.is_better(best_fitness, best_fitness_job):
                     best_fitness_job = best_fitness
-            #print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
             self.report_job(job = job,
                             num_evaluations=self.num_evaluations,
                             best_fitness=best_fitness_job,
