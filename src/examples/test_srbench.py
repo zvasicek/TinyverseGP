@@ -1,4 +1,4 @@
-from src.benchmark.srbench import SRBench
+from src.benchmark.symbolic_regression.srbench import SRBench
 import numpy as np
 
 X = np.random.uniform(-10, 10, (100,2))

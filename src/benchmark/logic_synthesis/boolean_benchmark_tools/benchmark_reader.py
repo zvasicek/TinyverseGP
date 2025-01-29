@@ -15,8 +15,6 @@ import array
 
 #TODO Implement getter and setter, internal methods __repr__ and __len__
 
-__author__ = "Roman Kalkreuth"
-__email__ = 'roman.kalkreuth@rwth-aachen.de'
 
 @dataclass
 class TruthTable:

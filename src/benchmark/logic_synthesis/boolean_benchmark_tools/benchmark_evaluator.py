@@ -4,8 +4,6 @@ General Boolean Function Benchmark Suite (GBFS):
 https://dl.acm.org/doi/abs/10.1145/3594805.3607131
 """
 
-__author__ = "Roman Kalkreuth"
-__email__ = 'roman.kalkreuth@rwth-aachen.de'
 
 class BenchmarkEvaluator:
     """ Evaluator class that evaluates compressed and uncompressed output pairs

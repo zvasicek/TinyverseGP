@@ -1,10 +1,4 @@
-# GPBench TinyCGP 0.1
-# Roman Kalkreuth (roman.kalkreuth@rwth-aachen.de)
-# RWTH Aachen University (Germany)
 
-__author__ = 'Roman Kalkreuth'
-__version__ = '0.1'
-__email__ = 'roman.kalkreuth@rwth-aachen.de'
 
 import math
 import random

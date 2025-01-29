@@ -1,12 +1,3 @@
-# GPBench TinyGP 0.1
-# Fabricio Olivetti de Franca
-# Universidade Federal do ABC 
-# Based on tinyGP by Moshe Sipper - https://github.com/moshesipper/tiny_gp/
-
-__author__ = 'Fabricio Olivetti de Franca'
-__version__ = '0.1'
-__email__ = 'folivetti@ufabc.edu.br'
-
 import math
 import random
 import operator
