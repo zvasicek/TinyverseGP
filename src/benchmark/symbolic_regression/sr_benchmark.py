@@ -29,4 +29,4 @@ class SRBenchmark(Benchmark):
             case 'KOZA2':
                 return pow(args[0], 5) - 2 * pow(args[0], 3) + args[0]
             case 'KOZA3':
-                return pow(args[0], 5) - 2 * pow(args[0], 4) + pow(args[0], 2)
+                return pow(args[0], 6) - 2 * pow(args[0], 4) + pow(args[0], 2)
