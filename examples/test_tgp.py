@@ -1,10 +1,11 @@
-from src.gp.tiny_tgp import *
-from src.gp.loss import *
+from math import sqrt, pi
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
+
+from src.gp.tiny_tgp import *
+from src.gp.loss import *
 from src.gp.problem import Problem, BlackBox, PolicySearch
 from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
-from math import sqrt, pi
 
 print("Koza1 SR Benchmark")
 input("Press Enter to begin...")
@@ -15,8 +16,8 @@ config = GPConfig(
     stopping_criteria=1e-6,
     minimizing_fitness=True, # this should be used from the problem instance
     ideal_fitness=1e-6,  # this should be used from the problem instance
-    silent_algorithm=True,
-    silent_evolver=True,
+    silent_algorithm=False,
+    silent_evolver=False,
     minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
@@ -61,8 +62,8 @@ config = GPConfig(
     stopping_criteria=0.01,
     minimizing_fitness=False,
     ideal_fitness=0.01,
-    silent_algorithm=True,
-    silent_evolver=True,
+    silent_algorithm=False,
+    silent_evolver=False,
     minimalistic_output=True,
     num_outputs=4,
     report_interval=1,

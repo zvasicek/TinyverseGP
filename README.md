@@ -39,14 +39,70 @@ python3 -m venv env
 pip3 install -r requirements.txt
 ```
 
-To run the examples, you can use the following command:
+To run the examples, you can use one of the following command:
 
 ```bash
-python3 src/examples/test_tgp.py
+python3 -m examples.test_cgp
+python3 -m examples.test_tgp
+python3 -m examples.test_cgp_ls
+python3 -m examples.test_srbench
 ```
 
 or any other script in that folder.
 
 # Contributing
 
-The codebase is still in its early stages and contributions are welcome. If you have any suggestions, bug reports, or feature requests, please open an issue or submit a pull request.
+This repository is kept under a Github Organization to allow for a more inviting environment for contributions. The organization will not be tied to any specific institution and will be open to all contributors. If you want to contribute, please contact the maintainers to be added to the organization as a maintainer.
+The codebase is still in its early stages and contributions are welcome. If you have any suggestions, bug reports, or feature requests, please open an issue, submit a pull request or open a new discussion.
+
+## Creating a new representation
+
+To create a new representation, you can follow the following steps:
+
+- Create a new Python script in the `src/gp` folder with the implementation of the representation. As a convention, name the script `tiny_<first letter of the representation>gp.py`. For example, `tiny_tgp.py` for Tree-based Genetic Programming and `tiny_cgp.py` for Cartesian Genetic Programming.
+- Implement the representation as a class and create a `Tiny<first letter of the representation>GP` class that inherits from the `GPModel` class. The `GPModel` class is an abstract class that defines the interface for the different representations. This class should contain the following fields:
+
+- config: the configuration class inherited from Config abstract class.
+- hyperparameters: the hyperparameters class inherited from Hyperparameters abstract class.
+- problem: the problem class.
+- functions: a list of functions (non-terminals)
+
+- Implement the following methods in the `Tiny<first letter of the representation>GP` class:
+
+  - `fitness(self, individual)`: the fitness function of a single individual.
+  - `evolve(self)`: the evolution method that evolves the population.
+  - `selection(self)`: the selection method that selects individuals for recombination and perturbation.
+  - `predict(self, genome, observation)`: the prediction method that predicts the output of `genome` to a single `observation`.
+  - `expression(self, genome)`: the expression method that returns the expression represented by `genome`.
+
+To create a new problem domain, you can follow the following steps:
+
+- Update the file `src/gp/problem.py` with a new class that inherits from the `Problem` abstract class. This class should contain the following methods:
+  - `is_ideal(self, fitness)`: a method that returns True if the fitness reached an ideal state (i.e., known optima).
+  - `is_better(self, fitness1, fitness2)`: a method that returns True if `fitness1` is better than `fitness2`.
+  - `evaluate(self, genome, GPModel)`: a method that instructs how to evaluate a given `genome` using a `GPModel`
+
+A good starting point is to look at the `BlackBox` and `PolicySearch` classes in the `problem.py` file which gives examples of two very different problem domains.
+
+Finally, if you want to create an interface to an existing benchmark suite, you can look at the examples in:
+- `src/benchmark/symbolic_regression/srbench.py`: interface to the SRBench benchmark suite.
+
+# Roadmap
+
+See `Roadmap.md` for the current roadmap.
+
+# Collaborators
+
+See `Collaborators.md` for the current list of collaborators. Please, update this file after pull requests are merged describing your collaboration.
+
+# Citing 
+
+TBD 
+
+# LICENSE
+
+TBD
+
+# Acknowledgements
+
+TBD 

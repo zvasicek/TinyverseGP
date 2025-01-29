@@ -16,7 +16,7 @@ import requests
 from dd.autoref import BDD, Function
 Function.__xor__ = lambda self, other: self._apply('xor', other)
 
-from blif import BlifFile
+from src.benchmark.logic_synthesis.blif_parser.blif import BlifFile
 from src.gp.tinyverse import Function
 
 AND = Function(2, 'AND', lambda x,y : x & y)
