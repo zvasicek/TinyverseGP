@@ -5,12 +5,30 @@ from gymnasium.wrappers import FlattenObservation
 import statistics
 
 class GPAgent:
+    """
+    Agent class that is placed in reinforcement learning environments
+    """
+
     def __init__(self, env_: gym.Env, flatten_obs = True):
+        """
+        :param env_: Environment
+        :param flatten_obs: Option to flatten the obversation
+        """
         self.env = env_
         if flatten_obs:
             self.wrapped_env = FlattenObservation(self.env)
 
-    def evaluate_policy(self, policy, model, num_episodes = 1, wait_key=False):
+    def evaluate_policy(self, policy, model, num_episodes = 100, wait_key=False):
+        """
+        Evaluates a policy in an environment with the selected number of episodes.
+
+        :param policy: Candidate policy from the GP model
+        :param model: The GP model with which the policy is evolved
+        :param num_episodes: Number of episodes
+        :param wait_key: Wait key option to see the end result of an episode
+
+        :return: Mean of cumulative rewards
+        """
         rewards = []
         for episode in range(num_episodes):
             obs, info = self.env.reset()
@@ -32,6 +50,15 @@ class GPAgent:
         return statistics.mean(rewards)
 
     def get_action(self, policy: list[int], model: GPModel, obs):
+        """
+        Predicts the action of an agent equipped with a candidate policy based
+        on the given observation.
+
+        :param policy: candidate policy
+        :param model: GP model
+        :param obs: observation
+        :return:
+        """
         prediction = model.predict(policy, obs)
         maximum = max(prediction)
         return prediction.index(maximum)
