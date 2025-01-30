@@ -42,7 +42,6 @@ hyperparameters = CGPHyperparameters(
 
 config.init()
 random.seed(3)
-#print('seed:', random.getstate())
 
 loss = euclidean_distance
 benchmark = SRBenchmark()

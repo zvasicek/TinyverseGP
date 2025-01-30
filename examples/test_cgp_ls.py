@@ -109,7 +109,7 @@ class LS(Problem):
         observation = self.bdd_vars
         #print('observation', observation)	
         #prediction = model.predict(genome, observation)
-        prediction = model.predict_optimized_(genome, observation)
+        prediction = model.predict_optimized(genome, observation)
         #print('prediction', prediction)
 
         hd = 0

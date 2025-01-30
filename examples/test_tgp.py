@@ -3,6 +3,7 @@ import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
 
 from src.gp.tiny_tgp import *
+from src.gp.functions import *
 from src.gp.loss import *
 from src.gp.problem import Problem, BlackBox, PolicySearch
 from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
