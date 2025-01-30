@@ -1,7 +1,10 @@
+"""
+TinyCGP: A minimalistic implementation of Cartesian Genetic Programming for
+         TinyverseGP.
+"""
+
 import math
 import random
-import copy
-#import numpy as np
 import time
 
 from dataclasses import dataclass
@@ -555,7 +558,6 @@ class TinyCGP(GPModel):
 
         :return: best solution found after all jobs have been performed
         """
-        last_fitness = None
         best_individual = None
         t0 = time.time()
         elapsed = 0
@@ -587,9 +589,7 @@ class TinyCGP(GPModel):
                 if self.problem.is_better(best_gen_fitness, best_fitness_job):
                     best_fitness_job = best_gen_fitness
 
-                if (not silent) and ((rc and (best_fitness != last_fitness)) or (self.config.report_interval and (generation % self.config.report_interval == 0))):
-                    last_fitness = best_fitness
-                    self.report_generation(silent=False,
+                self.report_generation(silent=self.config.silent_algorithm,
                                         generation=generation,
                                         best_fitness=best_fitness,
                                         report_interval=1)

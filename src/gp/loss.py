@@ -1,9 +1,17 @@
+"""
+Provides various commonly used loss functions used as distance metrics
+to calculate the fitness on candidate programs.
+"""
 import math
 
 def hamming_distance(x: dict, y: dict) -> int:
-    '''
+    """
     Calculate the Hamming distance between two vectors.
-    '''
+
+    :param x:
+    :param y:
+    :return:
+    """
     if len(x) != len(y):
         raise ValueError("Dimensions do not match.")
     dist = 0
@@ -13,9 +21,13 @@ def hamming_distance(x: dict, y: dict) -> int:
 
 
 def euclidean_distance(x: dict, y: dict) -> float:
-    '''
+    """
     Calculate the Euclidean distance between two vectors.
-    '''
+
+    :param x:
+    :param y:
+    :return:
+    """
     if len(x) != len(y):
         raise ValueError("Dimensions do not match.")
     dist = 0.0

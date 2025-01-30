@@ -1,3 +1,7 @@
+"""
+Collection of base classes to be used by the GP modules.
+"""
+
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass

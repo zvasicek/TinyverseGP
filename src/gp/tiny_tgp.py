@@ -1,19 +1,8 @@
-import math
 import random
-import operator
 import copy
 import time
-
-from abc import ABC
-from abc import abstractmethod
-from typing import List, Any
-from dataclasses import dataclass
-
-from src.gp.tinyverse import GPModel, GPConfig, GPHyperparameters
-from src.gp.functions import *
 from src.gp.problem import *
 from src.gp.tinyverse import *
-from src.benchmark.benchmark import *
 
 class Node:
     '''

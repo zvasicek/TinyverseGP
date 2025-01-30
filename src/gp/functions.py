@@ -1,22 +1,37 @@
+"""
+Implementation of arithmetic, logical and comparative functions
+that are commonly used to curate the GP function set.
+"""
+
 from src.gp.tinyverse import Function
 import operator
 
 def f2b(input: float):
-    '''
-    Converts a float to a boolean
-    '''
+    """
+    Converts a float to a boolean.
+
+    :param input:
+    :return:
+    """
     return True if input > 0 else False
 
 def b2f(input: bool):
-    '''
-    Converts a boolean to a float
-    '''
+    """
+    Converts a boolean to a float.
+
+    :param input:
+    :return:
+    """
     return 1.0 if input else -1.0
 
 def pdiv(x, y):
-    '''
-    Protected Division
-    '''
+    """
+    Performs a protected division.
+
+    :param x:
+    :param y:
+    :return:
+    """
     return x / y if y > 0 else 1.0
 
 # Arithmetic Functions
@@ -35,7 +50,6 @@ XOR = Function(2, 'XOR', lambda x,y : int(x) ^ int(y))
 XNOR = Function(2, 'XNOR', lambda x,y : ~(int(x) ^ int(y)))
 
 # Policy Search / Classification
-
 LT = Function(2, 'LT', lambda x,y : b2f(x < y))
 LTE = Function(2, 'LTE', lambda x,y : b2f(x <= y))
 GT = Function(2, 'GT', lambda x,y : b2f(x > y))
