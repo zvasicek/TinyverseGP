@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from typing import List, Any
 
 class GPModel(ABC):
-    '''
-    Abstract class for Genetic Programming models.
-    It describes the minimum requirements for a GP model.
-    '''
+    """
+    Abstract based class for tiny GP representation modules.
+    It describes the minimum requirements for a GP model that is
+    integrated in the framework.
+    """
     best_fitness: float
+    num_evaluation: float
 
     def fitness(self, individual):
         '''
