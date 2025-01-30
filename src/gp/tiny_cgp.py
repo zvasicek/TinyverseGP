@@ -12,9 +12,9 @@ from src.gp.problem import Problem
 
 @dataclass
 class CGPHyperparameters(Hyperparameters):
-    '''
-    Hyperparameters for CGP 
-    '''
+    """
+    Specialized hyperparameter space for CGP.
+    """
     mu: int
     lmbda: int
     population_size: int
@@ -25,9 +25,9 @@ class CGPHyperparameters(Hyperparameters):
 
 @dataclass
 class CGPConfig(GPConfig):
-    '''
-    Configuration for CGP 
-    '''
+    """
+    Specialized configuration to run CGP.
+    """
     num_inputs: int
     num_outputs: int
     num_function_nodes: int
@@ -41,30 +41,29 @@ class CGPConfig(GPConfig):
         self.num_genes = (self.genes_per_node * self.num_function_nodes)  + self.num_outputs
 
 class Individual:
-    '''
-    CGP individual
-    '''
+    """
+    Class that is used to represent a CGP individual.
+    A CGP individual is formally represented as a tuple consisting of
+    the genome and the fitness value.
+    """
     def __init__(self, genome: list[int], fitness: float = None):
         self.genome = genome
         self.fitness = fitness
 
 class TinyCGP(GPModel):
-    '''
-    TinyCGP class
-    '''
-
+    """
+    Main class of the tiny CGP module that derives from GPModel and
+    implements all related fundamental mechanisms tun run CGP.
+    """
     class GeneType(Enum):
-        '''
-        Enum for gene types
-        '''
+        """
+        Enum for the gene type that are used for the CGP encoding
+        """
         FUNCTION = 0
         CONNECTION = 1
         OUTPUT = 2
 
     class TerminalType(Enum):
-        '''
-        Enum for terminal types
-        '''
         VARIABLE = 0
         CONSTANT = 1
 
@@ -82,25 +81,29 @@ class TinyCGP(GPModel):
         self.init_inputs(terminals_)
         self.init_population()
 
-    def init_population(self):
-        '''
-        Initialize the population. 
-        '''
+    def init_population(self) -> list :
+        """
+        Initialization routine that creates and inits
+        the individuals for the first generation.
+
+        :return: list of individuals
+        """
         self.population.clear()
         for _ in range(self.hyperparameters.population_size):
             individual = self.init_individual()
             self.population.append(individual)
 
     def init_individual(self) -> Individual:
-        '''
-        Initialize an individual.
-        '''
+        """
+        Creates and initializes an individual.
+        :return CGP individual
+        """
         return Individual(self.init_genome())
 
     def init_inputs(self, terminals_: list):
-        '''
-        Initialize the inputs.
-        '''
+        """
+        Initializes the inputs by taking the passed terminals.
+        """
         for index, terminal in enumerate(terminals_):
             if isinstance(terminal, Var):
                 self.inputs[index] = (terminal, self.TerminalType.VARIABLE)
@@ -108,15 +111,19 @@ class TinyCGP(GPModel):
                 self.inputs[index] = (terminal, self.TerminalType.CONSTANT)
 
     def init_genome(self) -> list[int]:
-        '''
-        Initialize a genome.
-        '''
+        """
+        Initializes the genome by initializing each gene w.r.t. its type.
+        :return: List of genes
+        """
         return [self.init_gene(i) for i in range(self.config.num_genes)]
 
     def init_gene(self, position: int) -> int:
-        '''
-        Initialize a gene.
-        '''
+        """
+        Initializes a gene at a specified position.
+
+        :param position: position of the gene in the genotype.
+        :return: gene
+        """
         gene_type = self.phenotype(position)
         levels_back =  self.hyperparameters.levels_back
         if gene_type == self.GeneType.CONNECTION:
@@ -132,9 +139,11 @@ class TinyCGP(GPModel):
             return rand
 
     def phenotype(self, position: int) -> GeneType:
-        '''
-        Determine the phenotype of a gene.
-        '''
+        """
+        Return the phenotype of a gene.
+        :param position: gene position in the genome
+        :return: gene type
+        """
         if position >= self.config.num_function_nodes * (self.config.max_arity + 1):
             return self.GeneType.OUTPUT
         else:
@@ -142,22 +151,31 @@ class TinyCGP(GPModel):
                 else self.GeneType.CONNECTION
 
     def input_value(self, index: int) -> any:
-        '''
-        Get the input value.
-        '''
+        """
+        Returns the input at a specified index.
+
+        :param index: input index
+        :return:input value
+        """
         return self.inputs[index][0]
 
     def input_name(self, index: int) -> str:
-        '''
-        Get the input name.
-        '''
+        """
+        Returns the name of an index at a specified index.
+
+        :param index: input index
+        :return:input name
+        """
         idx = self.input_value(index)()
         return f'{self.input_value(index).name}({idx})' if idx is not None else self.input_value(index).name
 
     def input_type(self, index: int) -> TerminalType:
-        '''
-        Get the input type.
-        '''
+        """
+        Returns the type of an index at a specified index.
+
+        :param index: input index
+        :return:input type
+        """
         return self.inputs[index][1]
 
     def node_number(self, position: int) -> int:
