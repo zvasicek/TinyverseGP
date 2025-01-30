@@ -179,28 +179,42 @@ class TinyCGP(GPModel):
         return self.inputs[index][1]
 
     def node_number(self, position: int) -> int:
-        '''
-        Get the node number.
-        '''
+        """
+        Returns the node number at a specified position.
+
+        :param position: position of the gene in the genome
+        :return: node number where the gene belongs to
+        """
         return math.floor(position / (self.config.max_arity + 1)) + self.config.num_inputs
 
     def node_position(self, node_num: int) -> int:
-        '''
-        Get the node position.
-        '''
+        """
+        Returns the position of a node based on its number.
+
+        :param node_num: number of the node in the genome
+        :return: node position in the genome
+        """
         return (node_num - self.config.num_inputs) * (self.config.max_arity + 1)
 
     def node_function(self, node_num: int, genome: list[int]) -> int:
-        '''
-        Get the node function.
-        '''
+        """
+        Returns the function of the node at the given node number.
+
+        :param node_num: Number of the node
+        :param genome: Genome of the individual
+        :return: function gene value
+        """
         position = self.node_position(node_num)
         return genome[position]
 
-    def node_connections(self, node_num: int, genome: list[int]) -> []:
-        '''
-        Get the node connections.
-        '''
+    def node_connections(self, node_num: int, genome: list[int]) -> list:
+        """
+        Get the input connection genes of a node at the given node number.
+
+        :param node_num: Number of the node
+        :param genome: Genome of the individual
+        :return: List connection gene values
+        """
         position = self.node_position(node_num)
         inputs = []
         for count in range(self.config.max_arity):
@@ -208,9 +222,12 @@ class TinyCGP(GPModel):
         return inputs
 
     def outputs(self, genome: list[int]) -> list[int]:
-        '''
-        Get the outputs.
-        '''
+        """
+        Return the output genes.
+
+        :param genome: Genome of an individual
+        :return: List of output genes
+        """
         outputs = []
         for output_pos in range(self.config.num_genes - 1,
                                 self.config.num_genes - self.config.num_outputs - 1, -1):
@@ -219,9 +236,13 @@ class TinyCGP(GPModel):
         return outputs
 
     def max_gene(self, position: int):
-        '''
-        Get the maximum gene.
-        '''
+        """
+        Return the maximum gene value that is specified at a
+        position in the genome.
+
+        :param position: Gene position
+        :return: Maximum gene value
+        """
         if self.phenotype(position) == self.GeneType.OUTPUT:
             return self.config.num_inputs + self.config.num_functions - 1
         elif self.phenotype(position) == self.GeneType.CONNECTION:
@@ -230,15 +251,17 @@ class TinyCGP(GPModel):
             return self.node_number(position) - 1
 
     def fitness(self, individual: Individual) -> float:
-        '''
-        Get the fitness of an individual.
-        '''
+        """
+        Return the fitness value of an individual.
+        """
         return individual.fitness
 
     def evaluate(self) -> (Individual, bool):
-        '''
-        Evaluate the population.
-        '''
+        """
+        Evaluates the population.
+
+        :returns: the best solution discovered in the population
+        """
         best = None
         for individual in self.population:
             genome = individual.genome
@@ -260,23 +283,27 @@ class TinyCGP(GPModel):
         return best, False
 
     def evaluate_individual(self, genome:list[int]) -> float:
-        '''
-        Evaluate an individual.
-        '''
+        """
+        Evaluate an individual against the problem.
+
+        :param genome: the genome of an individual
+        :return: fitness of the individual
+        """
         self.num_evaluations += 1
         return self.problem.evaluate(genome, self)
 
     def evaluate_observation(self, genome: list[int], observation):
-        '''
-        Evaluate an observation.
-        '''
+        """
+        Evaluates an observation (of a dataset or environment)
+
+        :param genome: Genome of an individual
+        :param observation: Given observation
+        :return: Prediction based on the genome and observation
+        """
         paths = self.decode(genome)
         return self.predict(genome, observation, paths)
 
     def evaluate_node(self, node_num: int, genome: list[int], args: list) -> float:
-        '''
-        Evaluate a node.
-        '''
         function = self.node_function(node_num, genome)
         arity = self.functions[function].arity
         if arity < len(args):
@@ -284,9 +311,6 @@ class TinyCGP(GPModel):
         return self.functions[function](*args)
 
     def predict_optimized_(self, genome: list[int], observation: list, paths=None) -> list:
-        '''
-        Predict the output for a single observation.
-        '''
         maxidx = self.config.genes_per_node * self.config.num_function_nodes
         step = self.config.genes_per_node
         
@@ -307,9 +331,6 @@ class TinyCGP(GPModel):
         return [node_values[genome[maxidx+i]] for i in range(self.config.num_outputs)]
 
     def predict(self, genome: list[int], observation: list, paths=None) -> list:
-        '''
-        Predict the output for a single observation.
-        '''
         node_map = dict()
         prediction = []
 
@@ -337,9 +358,6 @@ class TinyCGP(GPModel):
         return prediction
 
     def active_nodes(self, genome: list[int]):
-        '''
-        Get the current active nodes of the genome.
-        '''
         nodes = dict()
 
         for position in range(self.config.num_genes - 1,
@@ -358,9 +376,6 @@ class TinyCGP(GPModel):
         return sorted(nodes.keys())
 
     def decode(self, genome: list[int]):
-        '''
-        Decode the genome.
-        '''
         paths = []
         nodes = dict()
         for output_pos in range(self.config.num_genes - 1,
@@ -379,9 +394,6 @@ class TinyCGP(GPModel):
         return paths
 
     def breed(self, parent : Individual = None):
-        '''
-        Breed the population from a given parent.
-        '''
         self.population.clear()
         self.population.append(parent)
         for _ in range(self.hyperparameters.lmbda):
@@ -391,9 +403,6 @@ class TinyCGP(GPModel):
             self.population.append(offspring)
 
     def selection(self) -> list:
-        '''
-        Select a random individual among the best solutions.
-        '''
         sorted_pop = sorted(self.population, key=lambda ind: ind.fitness, reverse=not self.config.minimizing_fitness)
         count = 0
         if not self.hyperparameters.strict_selection:
@@ -409,9 +418,6 @@ class TinyCGP(GPModel):
         return sorted_pop[parent]
 
     def mutation(self, genome: list[int]):
-        '''
-        Mutates the genome 
-        '''
         if self.hyperparameters.mutation_rate is not None:
             for index, gene in enumerate(genome):
                 if random.random() < self.hyperparameters.mutation_rate:
@@ -425,9 +431,6 @@ class TinyCGP(GPModel):
             raise ValueError("Either mutation_rate or mutation_rate_genes must be set")
 
     def expression(self, genome: list[int]) -> list[str]:
-        '''
-        Returns the expression of the genome as a list of strings, one for each output.
-        '''
 
         def generate_expr_map(genome: list[int], active_nodes=None):
             if active_nodes is None:
@@ -473,9 +476,6 @@ class TinyCGP(GPModel):
         print(f'Genome: {individual.genome} Fitness: {individual.fitness}')
 
     def evolve(self):
-        '''
-        Perform the evolutionary procedure.
-        '''
         last_fitness = None
         t0 = time.time()
         elapsed = 0
