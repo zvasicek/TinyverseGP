@@ -12,41 +12,55 @@ class GPModel(ABC):
     best_fitness: float
     num_evaluation: float
 
-    def fitness(self, individual):
-        '''
-        Fitness function of a single individual.
-        '''
+    def fitness(self, individual) -> Any:
+        """
+        Fitness function that evaluates a single individual.
+        """
         return individual[1]
 
     @abstractmethod
-    def evolve(self):
-        '''
-        Evolve the population.
-        '''
+    def evolve(self)  -> Any:
+        """
+        Main evolution loop that is used to run instances
+        of a GP model.
+        """
         pass
 
-    def selection(self):
-        '''
-        Selection of individuals for recombination and perturbation.
-        '''
-        pass
-
-    @abstractmethod
-    def predict(self):
-        '''
-        Predict the output of the best individual.
-        '''
+    def selection(self) -> Any:
+        """
+        Implementation of the selection mechanism.
+        Commonly returns an individual object or the position
+        of an individual in the population.
+        """
         pass
 
     @abstractmethod
-    def expression(self):
-        '''
-        Return the expression of the best individual.
-        '''
+    def predict(self) -> Any:
+        """
+        The respective prediction method is implemented here.
+        """
+        pass
+
+    @abstractmethod
+    def expression(self) -> Any:
+        """
+        Returns a human-readable solution of a evolved candidate solution.
+        Return value can be a string or a list of strings.
+        """
         pass
 
     def report_job(self, job: int, num_evaluations: int, best_fitness: float,
                    silent_evolver: bool, minimalistic_output: bool):
+        """
+        Report the status of a job after has been executed.
+
+        :param job: job number
+        :param num_evaluations: Number of evaluations the run lasted
+        :param best_fitness: Best fitness found during the run
+        :param silent_evolver: Switch for activating/deactivating the report function
+        :param minimalistic_output: Swith for minimalistic output
+        :return:
+        """
         if not silent_evolver:
             if not minimalistic_output:
                 print("Job #" + str(job) + " - Evaluations: " + str(num_evaluations) +
@@ -55,24 +69,32 @@ class GPModel(ABC):
                 print(str(num_evaluations) + ";" + str(best_fitness))
 
     def report_generation(self, silent: bool, generation: int, best_fitness: float, report_interval: int):
+        """
+        Reports the status of a generation.
+
+        :param silent: Switch for activating/deactivating the report function
+        :param generation: Generation number
+        :param best_fitness: Best fitness found so far
+        :param report_interval: Interval after which the generation status is reported
+        """
         if not silent and generation % report_interval == 0:
             print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
 
 @dataclass
 class Config(ABC):
-    '''
+    """
     Abstract class for configuration classes.
-    '''
+    """
     def dictionary(self) -> dict:
         return self.__dict__
 
 @dataclass
 class GPConfig(Config):
-    '''
-    Configuration class for Genetic Programming models.
+    """
+    Configuration class for GP models.
     This class contains the common configuration parameters for GP models related to 
-    execution and stopping criteria.
-    '''
+    execution and output of a run.
+    """
     num_jobs: int
     max_generations: int
     stopping_criteria: float
@@ -87,9 +109,9 @@ class GPConfig(Config):
 
 @dataclass
 class Hyperparameters(ABC):
-    '''
-    Abstract class for hyperparameters classes.
-    '''
+    """
+    Base class for the GP hyperparamters.
+    """
     def dictionary(self) -> dict:
         return self.__dict__
 
@@ -108,14 +130,14 @@ class GPHyperparameters(Hyperparameters):
 
 @dataclass
 class Function():
-    '''
-    Abstract class for function classes.
+    """
+    Main class used for representing functions, variables or constants.
     It contains information about arity, a string representation for the function, 
     and the function itself.
     The method `call` is used to call the function with the given arguments.
     The method `custom` is meant to make the function compatible with sympy, if
     None is passed, it will use the defaults.
-    '''
+    """
     name: str
     arity: int
     function: callable
@@ -133,9 +155,9 @@ class Function():
 
 
 class Var(Function):
-    '''
-    Variable function class.
-    '''
+    """
+    Class for representing variables.
+    """
     def __init__(self, index: int = None, name_: str = None):
         self.const = False
         if name_ is None:
@@ -144,9 +166,9 @@ class Var(Function):
 
 
 class Const(Function):
-    '''
-    Constant function class.
-    '''
+    """
+    Class for representing terminals.
+    """
     def __init__(self, value):
         self.const = True
         Function.__init__(self, 0, 'Const', lambda: value)
