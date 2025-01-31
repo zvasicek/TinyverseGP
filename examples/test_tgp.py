@@ -1,3 +1,7 @@
+"""
+Example module to test TGP with symbolic regression and policy search problems.
+"""
+
 from math import sqrt, pi
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation

@@ -1,3 +1,7 @@
+"""
+Example module to test TGP with SRBench.
+"""
+
 from src.benchmark.symbolic_regression.srbench import SRBench
 import numpy as np
 

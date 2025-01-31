@@ -1,3 +1,7 @@
+"""
+Example module to test CGP with symbolic regression and policy search problems.
+"""
+
 from src.gp.tiny_cgp import *
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
