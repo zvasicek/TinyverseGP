@@ -162,7 +162,7 @@ class Function():
 
 class Var(Function):
     """
-    Class for representing variables.
+    Class for representing variable terminals.
     """
     def __init__(self, index: int = None, name_: str = None):
         self.const = False
@@ -173,7 +173,7 @@ class Var(Function):
 
 class Const(Function):
     """
-    Class for representing terminals.
+    Class for representing constant terminals.
     """
     def __init__(self, value):
         self.const = True
