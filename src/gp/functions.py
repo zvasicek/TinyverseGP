@@ -9,28 +9,18 @@ import operator
 def f2b(input: float):
     """
     Converts a float to a boolean.
-
-    :param input:
-    :return:
     """
     return True if input > 0 else False
 
 def b2f(input: bool):
     """
     Converts a boolean to a float.
-
-    :param input:
-    :return:
     """
     return 1.0 if input else -1.0
 
 def pdiv(x, y):
     """
     Performs a protected division.
-
-    :param x:
-    :param y:
-    :return:
     """
     return x / y if y > 0 else 1.0
 

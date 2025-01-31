@@ -123,10 +123,10 @@ class Hyperparameters(ABC):
 
 @dataclass
 class GPHyperparameters(Hyperparameters):
-    '''
+    """
     Hyperparameters class for Genetic Programming models.
     This class is responsible for storing the tunable hyperparameters of the GP model.
-    '''
+    """
     pop_size: int
     max_size: int
     max_depth: int
