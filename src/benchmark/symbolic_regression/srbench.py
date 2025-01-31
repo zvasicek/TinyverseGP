@@ -1,4 +1,6 @@
-# Description: This file contains the SRBench class which is used to define the configuration of the symbolic regression benchmarking problem.
+"""
+This file contains the SRBench class which is used to define the configuration of the symbolic regression benchmarking problem.
+"""
 
 from src.gp.functions import ADD, SUB, MUL, DIV
 from src.gp.tinyverse import Const, Var, GPConfig, GPHyperparameters

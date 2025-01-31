@@ -1,3 +1,7 @@
+"""
+Benchmark representation module for logic synthesis.
+"""
+
 from src.benchmark.benchmark import Benchmark
 
 class LSBenchmark(Benchmark):
@@ -5,6 +9,7 @@ class LSBenchmark(Benchmark):
     Class for representing logic synthesis benchmarks. Receives
     an generator function that is used to create the dataset.
     """
+
     def __init__(self, generator_ : callable, args_: list):
         self.generator = generator_
         self.args = args_

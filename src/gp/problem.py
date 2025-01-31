@@ -55,8 +55,8 @@ class Problem(ABC):
 @dataclass
 class BlackBox(Problem):
     """
-    A black-box problem where the fitness is calculated by a loss function
-    of a set of examples of input and output.
+    Represents a black-box problem where the fitness is calculated by a loss function
+    on a dataset of observations and the actual (objective) function values.
     """
     observations: list
     actual: list
@@ -72,10 +72,16 @@ class BlackBox(Problem):
 
     def evaluate(self, genome, model:GPModel) -> float:
         """
+        Evaluates the genome of a GP individual on the dataset with the
+        given GP model.
 
-        :param genome:
-        :param model:
-        :return:
+        The predictions made by the model are used to calculate the cost
+        function value.
+
+        :param genome: Genome of the individual
+        :param model: Selected GP model
+
+        :return: cost function value
         """
         predictions = []
         for observation in self.observations:
@@ -85,9 +91,11 @@ class BlackBox(Problem):
 
     def cost(self, predictions: list) -> float:
         """
+        Calculates the cost function value based on the
+        selected loss function that has been passed to the class.
 
-        :param predictions:
-        :return:
+        :param predictions: Set of predictions made by the model
+        :return: cost function value
         """
         cost = 0.0
         for index, _ in enumerate(predictions[0]):
@@ -96,8 +104,11 @@ class BlackBox(Problem):
 
 class PolicySearch(Problem):
     """
-    A reinforcement learning problem where the fitness is calculated by the
+    Representation of the policy search problem where the fitness is calculated by the
     average reward of the policy.
+
+    A instance of the GPAgent class is used to evaluate a candidate policy within the respective
+    environment.
     """
     agent: GPAgent
     num_episodes: int

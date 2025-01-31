@@ -144,6 +144,7 @@ class TinyCGP(GPModel):
     def phenotype(self, position: int) -> GeneType:
         """
         Return the phenotype of a gene.
+
         :param position: gene position in the genome
         :return: gene type
         """

@@ -1,3 +1,8 @@
+"""
+TinyGP: A minimalistic implementation of tree-based Genetic Programming for
+         TinyverseGP.
+"""
+
 import random
 import copy
 import time

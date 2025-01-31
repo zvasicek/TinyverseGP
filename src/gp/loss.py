@@ -4,13 +4,13 @@ to calculate the fitness on candidate programs.
 """
 import math
 
-def hamming_distance(x: dict, y: dict) -> int:
+def hamming_distance(x: list, y: list) -> int:
     """
     Calculate the Hamming distance between two vectors.
 
-    :param x:
-    :param y:
-    :return:
+    :param x: Set of (pseudo-boolean) values
+    :param y: Set of (pseudo-boolean) values
+    :return: hamming distance
     """
     if len(x) != len(y):
         raise ValueError("Dimensions do not match.")
@@ -18,15 +18,16 @@ def hamming_distance(x: dict, y: dict) -> int:
     for xi, yi in zip(x, y):
         if xi != yi:
             dist += 1
+    return dist
 
 
-def euclidean_distance(x: dict, y: dict) -> float:
+def euclidean_distance(x: list, y: list) -> float:
     """
-    Calculate the Euclidean distance between two vectors.
+    Calculate the Euclidean distance between two sets of values.
 
-    :param x:
-    :param y:
-    :return:
+    :param x: Set of integers or real values
+    :param y: Set of integers or real values
+    :return: euclidean distance
     """
     if len(x) != len(y):
         raise ValueError("Dimensions do not match.")

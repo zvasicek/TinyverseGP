@@ -1,3 +1,7 @@
+"""
+Benchmark representation module for symbolic regression.
+"""
+
 from src.benchmark.benchmark import Benchmark
 
 class PSBenchmark(Benchmark):

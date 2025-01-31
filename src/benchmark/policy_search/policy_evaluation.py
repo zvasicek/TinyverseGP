@@ -1,3 +1,10 @@
+"""
+Benchmark representation module for policy search.
+
+- GPAgent: Class is used to represent a agent that is equipped with a candidate policy
+
+"""
+
 import gymnasium as gym
 from src.gp.tinyverse import GPModel
 from gymnasium.wrappers import FlattenObservation

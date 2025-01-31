@@ -1,5 +1,7 @@
 """
-Collection of base classes to be used by the GP modules.
+TinyverseGP: A modular cross-domain benchmark system for Genetic Programming.
+             The tinyverse module includes a collections of base classes to be used by the GP modules.
+             and therefore represent the fundamental model architecture of TinyverseGP.
 """
 
 from abc import ABC
