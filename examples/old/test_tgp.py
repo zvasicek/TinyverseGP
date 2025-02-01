@@ -19,7 +19,7 @@ config = GPConfig(
     num_jobs=1,
     max_generations=100,
     stopping_criteria=1e-6,
-    minimizing_fitness=True, # this should be used from the problem instance
+    minimizing_fitness=True,  # this should be used from the problem instance
     ideal_fitness=1e-6,  # this should be used from the problem instance
     silent_algorithm=False,
     silent_evolver=False,
@@ -38,15 +38,15 @@ hyperparameters = GPHyperparameters(
     tournament_size=2
 )
 
-#random.seed(42)
+# random.seed(42)
 
 loss = euclidean_distance
 benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA1')
 functions = [ADD, SUB, MUL, DIV]
-terminals = [Var(0), Const(1)]#, Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)]
+terminals = [Var(0), Const(1)]  # , Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)]
 
-problem  = BlackBox(data, actual, loss, 1e-6, True)
+problem = BlackBox(data, actual, loss, 1e-6, True)
 
 tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
 tgp.evolve()
@@ -84,10 +84,10 @@ hyperparameters = GPHyperparameters(
     tournament_size=2
 )
 
-problem = PolicySearch(env=env, ideal_= 100, minimizing_=False)
+problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
 tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
 policy = tgp.evolve()
 
 env = gym.make("LunarLander-v3", render_mode="human")
-problem = PolicySearch(env=env, ideal_= 100, minimizing_=False)
-problem.evaluate(policy, tgp, num_episodes = 1, wait_key=True)
+problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
+problem.evaluate(policy, tgp, num_episodes=1, wait_key=True)

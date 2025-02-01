@@ -1,0 +1,56 @@
+"""
+Example module to test CGP with policy search problems.
+"""
+
+from src.gp.tiny_cgp import *
+import gymnasium as gym
+from gymnasium.wrappers import FlattenObservation
+from src.gp.problem import PolicySearch
+from src.gp.functions import *
+from src.gp.tinyverse import Var, Const
+from math import sqrt, pi
+
+env = gym.make("LunarLander-v3")
+wrapped_env = FlattenObservation(env)
+functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
+terminals = ([Var(i) for i in range(wrapped_env.observation_space.shape[0])]
+             + [Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)])
+
+config = CGPConfig(
+    num_jobs=1,
+    max_generations=10,
+    stopping_criteria=100,
+    minimizing_fitness=False,
+    ideal_fitness=100,
+    silent_algorithm=False,
+    silent_evolver=False,
+    minimalistic_output=True,
+    num_functions=len(functions),
+    max_arity=3,
+    num_inputs=wrapped_env.observation_space.shape[0],
+    num_outputs=4,
+    num_function_nodes=50,
+    report_interval=1,
+    max_time=60
+)
+config.init()
+
+hyperparameters = CGPHyperparameters(
+    mu=1,
+    lmbda=32,
+    population_size=33,
+    levels_back=10,
+    mutation_rate=0.05,
+    strict_selection=True
+)
+
+problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
+cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
+policy = cgp.evolve()
+
+env.close()
+
+env = gym.make("LunarLander-v3", render_mode="human")
+problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
+problem.evaluate(policy, cgp, num_episodes=1, wait_key=True)
+env.close()
