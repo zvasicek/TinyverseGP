@@ -31,7 +31,7 @@ class CGPHyperparameters(Hyperparameters):
 @dataclass
 class CGPConfig(GPConfig):
     """
-    Specialized configuration to run CGP.
+    Specialized GP configuration that is needed to run CGP.
     """
     num_inputs: int
     num_outputs: int
@@ -46,16 +46,21 @@ class CGPConfig(GPConfig):
         self.num_genes = (self.genes_per_node * self.num_function_nodes) + self.num_outputs
 
 
-class Individual:
+class CGPIndividual:
     """
     Class that is used to represent a CGP individual.
-    A CGP individual is formally represented as a tuple consisting of
+    Formally a GP individual can be represented as a tuple consisting of
     the genome and the fitness value.
+
+    Additionally, the CGP individual can store the path that are encoded in the genotype to
+    avoid unnecessary evaluation costs by re-evaluating and re-visiting nodes in the
+    decoding routine.
     """
 
-    def __init__(self, genome: list[int], fitness: float = None):
-        self.genome = genome
-        self.fitness = fitness
+    def __init__(self, genome_: list[int], fitness_: float = None, paths_ = None):
+        self.genome = genome_
+        self.fitness = fitness_
+        self.paths = paths_
 
 
 class TinyCGP(GPModel):
@@ -78,7 +83,7 @@ class TinyCGP(GPModel):
 
     def __init__(self, problem_: Problem, functions_: list, terminals_: list,
                  config_: CGPConfig, hyperparameters_: Hyperparameters):
-        self.num_evaluations = None
+        self.num_evaluations = 0
         self.population = []
         self.functions = functions_
         self.function2arity = [f.arity for f in functions_]
@@ -87,6 +92,7 @@ class TinyCGP(GPModel):
         self.config = config_
         self.hyperparameters = hyperparameters_
         self.inputs = dict()
+        self.current_paths = None
         self.init_inputs(terminals_)
         self.init_population()
 
@@ -102,16 +108,18 @@ class TinyCGP(GPModel):
             individual = self.init_individual()
             self.population.append(individual)
 
-    def init_individual(self) -> Individual:
+    def init_individual(self) -> CGPIndividual:
         """
         Creates and initializes an individual.
         :return CGP individual
         """
-        return Individual(self.init_genome())
+        return CGPIndividual(self.init_genome())
 
     def init_inputs(self, terminals_: list):
         """
         Initializes the inputs by taking the passed terminals.
+
+        :param terminals_: Terminal symbols passed to the CGP class.
         """
         for index, terminal in enumerate(terminals_):
             if isinstance(terminal, Var):
@@ -122,7 +130,7 @@ class TinyCGP(GPModel):
     def init_genome(self) -> list[int]:
         """
         Initializes the genome by initializing each gene w.r.t. its type.
-        :return: List of genes
+        :return: list of genes
         """
         return [self.init_gene(i) for i in range(self.config.num_genes)]
 
@@ -226,10 +234,7 @@ class TinyCGP(GPModel):
         :return: List connection gene values
         """
         position = self.node_position(node_num)
-        inputs = []
-        for count in range(self.config.max_arity):
-            inputs.append(genome[position + count + 1])
-        return inputs
+        return genome[position + 1: position + self.config.max_arity + 1]
 
     def outputs(self, genome: list[int]) -> list[int]:
         """
@@ -238,12 +243,7 @@ class TinyCGP(GPModel):
         :param genome: Genome of an individual
         :return: List of output genes
         """
-        outputs = []
-        for output_pos in range(self.config.num_genes - 1,
-                                self.config.num_genes - self.config.num_outputs - 1, -1):
-            output = genome[output_pos]
-            outputs.append(output)
-        return outputs
+        return genome[len(genome) - self.config.num_outputs: len(genome)]
 
     def max_gene(self, position: int):
         """
@@ -260,13 +260,13 @@ class TinyCGP(GPModel):
         else:
             return self.node_number(position) - 1
 
-    def fitness(self, individual: Individual) -> float:
+    def fitness(self, individual: CGPIndividual) -> float:
         """
         Return the fitness value of an individual.
         """
         return individual.fitness
 
-    def evaluate(self) -> (Individual, bool):
+    def evaluate(self) -> (CGPIndividual, bool):
         """
         Evaluates the population.
 
@@ -294,12 +294,13 @@ class TinyCGP(GPModel):
 
     def evaluate_individual(self, genome: list[int]) -> float:
         """
-        Evaluate an individual against the problem.
+        Evaluates an individual against the problem.
 
         :param genome: the genome of an individual
         :return: fitness of the individual
         """
         self.num_evaluations += 1
+        self.current_paths = None
         return self.problem.evaluate(genome, self)
 
     def evaluate_observation(self, genome: list[int], observation):
@@ -329,46 +330,51 @@ class TinyCGP(GPModel):
             args = args[:arity]
         return self.functions[function](*args)
 
-    def predict(self, genome: list[int], observation: list, paths=None) -> list:
+    def predict(self, genome: list[int], observation: list) -> list:
         """
         Makes prediction based on a given observation and the paths
-        of the decoded individual. If the paths are not obtained already
-        the individual is decoded. 
+        of the decoded individual.
+
+        Decodes the paths that are encoded in the genome if not obtained already
+        to avoid unnecessary iterations.
+
+        Makes use the memoization to avoid re-evaluation of function nodes.
 
         :param genome: The genome of the individual
         :param observation: Current observation
-        :param paths: Decoded paths of the graph
-        :return: Set of predicted values
+        :return: set of predicted values
         """
         node_map = dict()
         prediction = []
 
-        if paths is None:
-            paths = self.decode_paths(genome)
+        if self.current_paths is None:
+            self.current_paths = self.decode_paths_optimized(genome)
 
-        for count, path in enumerate(paths):
-            cost = 0.0
-            for node_num in path:
-                if node_num not in node_map.keys():
-                    if node_num < self.config.num_inputs:
-                        if self.terminals[node_num].const:
-                            node_map[node_num] = self.terminals[node_num]()
-                        else:
-                            node_map[node_num] = observation[self.terminals[node_num]()]
-                    else:
-                        arguments = []
-                        connections = self.node_connections(node_num, genome)
-                        for connection in connections:
-                            argument = node_map[connection]
-                            arguments.append(argument)
-                        node_map[node_num] = self.evaluate_node(node_num, genome, arguments)
-                cost = node_map[node_num]
-            prediction.append(cost)
+        for path in self.current_paths:
+           cost = 0.0
+           for node_num in path:
+               if node_num not in node_map.keys():
+                   if node_num < self.config.num_inputs:
+                       if self.terminals[node_num].const:
+                           node_map[node_num] = self.terminals[node_num]()
+                       else:
+                           node_map[node_num] = observation[self.terminals[node_num]()]
+                   else:
+                       node_pos = self.node_position(node_num)
+                       function = genome[node_pos]
+                       connections = [gene for gene in genome[node_pos + 1:node_pos
+                                                                             + self.function2arity[function] + 1]]
+                       args = [node_map[connection] for connection in connections]
+                       node_map[node_num] = self.functions[function](*args)
+               cost = node_map[node_num]
+           prediction.append(cost)
         return prediction
 
-    def predict_optimized(self, genome: list[int], observation: list, paths=None) -> list:
+    def predict_iter(self, genome: list[int], observation: list) -> list:
         """
-        Optimized version of the prediction method that uses
+        Iterative forward prediction for CGP that calculates and stores the node values
+        iteratively. The calculated node values are stored in a list and reused when the
+        function node is evaluated again as an node argument.
 
         :param genome: The genome of the individual
         :param observation: Current observation
@@ -403,58 +409,76 @@ class TinyCGP(GPModel):
         :param reverse: Reverse ordering of node numbers
         :return: Set of active node number
         """
-        nodes = dict()
-        step = -1
+        nodes_active = dict()
 
-        start = self.config.num_genes - 1
-        stop = self.config.num_genes - self.config.num_outputs - 1
-        for position in range(start, stop, step):
-            node_num = genome[position]
+        for node_num in self.outputs(genome):
             if node_num >= self.config.num_inputs:
-                nodes[node_num] = True
+                nodes_active[node_num] = True
 
         start = self.config.num_genes - self.config.num_outputs - 1
         stop = 0
+        step = -1
         for position in range(start, stop, step):
             node_num = self.node_number(position)
-            if (node_num in nodes.keys()
+            if (node_num in nodes_active.keys()
                     and self.phenotype(position) == self.GeneType.CONNECTION):
                 gene = genome[position]
                 if gene >= self.config.num_inputs:
-                    nodes[gene] = True
-        return sorted(nodes.keys(), reverse=False)
+                    nodes_active[gene] = True
+        return sorted(nodes_active.keys(), reverse=reverse)
 
     def decode_paths(self, genome: list[int]) -> list[list[int]]:
         """
-        Decodes the genome and stores the path as
-        sequences of active nodes.
+        Decodes the paths and stores these as sequences of active fucntion nodes.
 
         :param genome: Genome of an individual
         :return: decoded paths
         """
         paths = []
-        nodes = dict()
-        step = -1
+        node_map = dict()
+        step = - self.config.genes_per_node
 
-        start = self.config.num_genes - 1
-        stop = self.config.num_genes - self.config.num_outputs - 1
-        for output_pos in range(start, stop, step):
-            nodes.clear()
-            node_num = genome[output_pos]
-            nodes[node_num] = True
+        for node_num in self.outputs(genome):
+            node_map.clear()
+            node_map[node_num] = True
 
             start = self.config.num_genes - self.config.num_outputs - 1
             stop = 0
             for gene_pos in range(start, stop, step):
-                if (self.node_number(gene_pos) in nodes.keys()
-                        and self.phenotype(gene_pos) == self.GeneType.CONNECTION):
-                    gene = genome[gene_pos]
-                    nodes[gene] = True
-            path = sorted(nodes.keys())
+                node_num = self.node_number(gene_pos)
+                if node_num in node_map:
+                    for connection in self.node_connections(node_num, genome):
+                        node_map[connection] = True
+            path = sorted(node_map.keys())
             paths.append(path)
         return paths
 
-    def breed(self, parent: Individual = None):
+    def decode_paths_optimized(self, genome: list[int]) -> list[list[int]]:
+        """
+        Optimized decoding variant for problems with a high number of outputs
+        that makes use of the active nodes determination to obtain the paths in the graph
+        more efficiently.
+
+        :param genome: Genome of the individuals
+        :return: paths of the graph
+        """
+        nodes_active = self.active_nodes(genome, reverse=True)
+        paths = []
+        node_map = dict()
+
+        for output in self.outputs(genome):
+            node_map.clear()
+            node_map[output] = True
+
+            for node_num in nodes_active:
+                if node_num in node_map:
+                    for connection in self.node_connections(node_num, genome):
+                        node_map[connection] = True
+            path = sorted(node_map.keys())
+            paths.append(path)
+        return paths
+
+    def breed(self, parent: CGPIndividual = None):
         """
         Breeds lambda individuals with the point mutation operator
         and adds them to the population
@@ -465,7 +489,7 @@ class TinyCGP(GPModel):
         self.population.append(parent)
         for _ in range(self.hyperparameters.lmbda):
             # mutation requires fitness calculation, so we need to genome only
-            offspring = Individual(parent.genome.copy())
+            offspring = CGPIndividual(parent.genome.copy())
             self.mutation(offspring.genome)
             self.population.append(offspring)
 
@@ -499,19 +523,15 @@ class TinyCGP(GPModel):
         with CGP. A selected gene is resampled uniformly in its valid range.
 
         :param genome: Genome of the individual to be mutated
-        :return: mutated genome
+        :return: the mutated genome
         """
         if self.hyperparameters.mutation_rate is not None:
-            for index, gene in enumerate(genome):
-                if random.random() < self.hyperparameters.mutation_rate:
-                    genome[index] = self.init_gene(index)
-        elif self.hyperparameters.mutation_rate_genes is not None:
-            mg = random.randint(1, self.hyperparameters.mutation_rate_genes)
-            for _ in range(mg):
-                index = random.randint(0, self.config.num_genes - 1)
-                genome[index] = self.init_gene(index)
+            num_genes = int(self.hyperparameters.mutation_rate * self.config.num_genes)
+            for _ in range(num_genes):
+                gene_pos = random.randint(0, self.config.num_genes - 1)
+                genome[gene_pos] = self.init_gene(gene_pos)
         else:
-            raise ValueError("Either mutation_rate or mutation_rate_genes must be set")
+            raise ValueError("The mutation_rate must be set")
 
     def expression(self, genome: list[int]) -> list[str]:
         """
@@ -609,7 +629,7 @@ class TinyCGP(GPModel):
                 self.report_generation(silent=self.config.silent_algorithm,
                                        generation=generation,
                                        best_fitness=best_fitness,
-                                       report_interval=1)
+                                       report_interval=self.config.report_interval)
 
                 if is_ideal:  # if the ideal solution is found, terminate
                     break
