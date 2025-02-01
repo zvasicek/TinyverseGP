@@ -46,9 +46,8 @@ class Problem(ABC):
         This method implements how to evaluate the genome using the model.
         It is problem-specific and should be implemented by the user.
 
-        :param genome:
-        :param model:
-        :return:
+        :param genome: Genome of the individual
+        :param model: The respective GP model that is used
         """
         pass
 
@@ -134,7 +133,7 @@ class ProgramSynthesis(Problem):
     is based on the hamming distance between the binary predictions and the actual values in the
     dataset.
     """
-    def __init__(self, dataset_, minimizing_: bool):
+    def __init__(self, dataset_, minimizing_: bool = False):
         self.dataset = dataset_
         self.minimizing = minimizing_
 
@@ -147,22 +146,16 @@ class ProgramSynthesis(Problem):
     def binary_step(self, x, threshold = 0.5):
         return 0 if self.sigmoid(x) <= threshold else 1
 
-    def evaluate(self, candidate, evaluator):
-        predictions = self.predict(candidate,evaluator)
-        return self.cost(predictions)
-
-    def predict(self, candidate, evaluator):
+    def evaluate(self, genome, model ):
         predictions = []
         for observation in self.dataset:
-            predictions.append(self.predict_obs(candidate,evaluator, observation[0]))
-        return predictions
-
-    def predict_obs(self, candidate, evaluator, obs):
-        return self.binary_step(evaluator(candidate, obs))
+            prediction = model.predict(genome, observation)
+            prediction = self.binary_step(prediction[0])
+            predictions.append(prediction)
+        return self.cost(predictions)
 
     def cost(self, predictions):
         cost = 0
-        for i, observation in enumerate(self.dataset):
-            prediction = predictions[i]
-            cost += (1 if observation[1] == prediction else 0)
+        for i, prediction in enumerate(predictions):
+            cost += (1 if prediction == self.dataset[i][1] else 0)
         return cost
