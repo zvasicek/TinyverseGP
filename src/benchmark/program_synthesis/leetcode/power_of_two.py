@@ -13,7 +13,13 @@ examples = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024,
 def isPowerOfTwo(n):
     return n > 0 and bin(n).count('1') == 1
 
-def generate_dataset(n, m):
+def gen_power_of_two(n, m):
+    """
+
+    :param n:
+    :param m:
+    :return:
+    """
     powers = [int(math.pow(2,i)) for i in range(n + 1)]
     dataset = [(power, 1) for power in powers]
     max = 2 ** n

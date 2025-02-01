@@ -5,7 +5,13 @@ examples = [1, 3, 9, 27, 81, 243, 729, 2187, 6561, 19683, 59049,
             177147, 531441, 1594323, 4782969, 14348907, 43046721,
             129140163, 387420489, 1162261467, 3486784401]
 
-def generate_dataset(n, m):
+def gen_power_of_three(n, m):
+    """
+
+    :param n:
+    :param m:
+    :return:
+    """
     powers = [int(math.pow(3,i)) for i in range(n + 1)]
     dataset = [(power, 1) for power in powers]
     max = 2 ** n

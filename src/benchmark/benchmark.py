@@ -5,21 +5,13 @@ from dataclasses import dataclass
 @dataclass
 class Benchmark(ABC):
     """
-    Abstract base class for benchmarks.
+    Abstract base class for the representation of benchmarks.
     """
 
     @abstractmethod
-    def generate(self, benchmark: str):
+    def generate(self, args: any):
         """
         Generator function that creates the benchmark with respect to the
         problem type.
-        """
-        pass
-
-    @abstractmethod
-    def objective(self, benchmark: str, args: list):
-        """
-        Calculates actual values of an objective function that is going to
-        be approximated
         """
         pass

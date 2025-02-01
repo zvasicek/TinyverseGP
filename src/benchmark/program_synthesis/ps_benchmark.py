@@ -1,15 +1,17 @@
 """
-Benchmark representation module for symbolic regression.
+Benchmark representation module for program synthesis.
 """
 
 from src.benchmark.benchmark import Benchmark
 
+
 class PSBenchmark(Benchmark):
     """
     Represents a program synthesis benchmark that is
-    represented with examples/counterexamples
+    represented with examples/counterexamples.
     """
     generator: callable
+    examples: list
     args: list
     dataset: list
 
@@ -21,18 +23,25 @@ class PSBenchmark(Benchmark):
     def generate(self):
         self.dataset = self.generator(*self.args)
 
-    def generate_counterexamples(self, examples: list, n: int):
+    @staticmethod
+    def generate_counterexamples(examples: list, n: int):
         """
-        Calculates the counter examples based on the set of (positive) examples
+        Calculates the counter examples based on the set of (positive) examples.
+
         :param n: Number of counter examples to be generated
+        :return list of counterexamples
         """
         counterexamples = [i for i in range(n) if n not in examples]
         return counterexamples
 
-    def generate_dataset(self, examples: list, n: int):
+    @staticmethod
+    def generate_dataset(examples: list, n: int):
         """
-        Generate a dataset of n examples
+        Generates a labeled dataset of n examples.
+
+        :param examples: List with examples‚
         :param n: Number of examples
+        :return dataset
         """
         dataset = []
         for i in range(n):
