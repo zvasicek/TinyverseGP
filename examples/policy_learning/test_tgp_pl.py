@@ -1,5 +1,18 @@
 """
 Example module to test TGP with policy search problems.
+Evolves a policy for the Gymnasium Lunar Lander environment.
+
+TGP is used with multiple trees.
+
+https://gymnasium.farama.org/environments/box2d/lunar_lander/
+
+The Lunar Lander has the following specifications that are adapted to
+the GP mode in this example:
+
+Action space: Discrete(4)
+
+Observation space: Box([ -2.5 -2.5 -10. -10. -6.2831855 -10. -0. -0. ],
+                       [ 2.5 2.5 10. 10. 6.2831855 10. 1. 1. ], (8,), float32)
 """
 
 from math import sqrt, pi

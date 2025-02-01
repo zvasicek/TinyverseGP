@@ -1,5 +1,11 @@
 """
 Example module to test CGP with program synthesis problems.
+
+Attempts to evolve a solution for the numbers of two problem that
+is provided on Leetcode.com:
+
+https://leetcode.com/problems/power-of-two/description/
+
 """
 
 from src.gp.tiny_cgp import *

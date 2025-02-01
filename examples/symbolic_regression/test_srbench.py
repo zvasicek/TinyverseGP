@@ -1,5 +1,10 @@
 """
-Example module to test TGP with SRBench.
+Example module to test TinyverseGP on SRBench.
+
+More information about SRBench can be obtained here:
+
+https://cavalab.org/srbench/
+https://github.com/cavalab/srbench/tree/master
 """
 
 from src.benchmark.symbolic_regression.srbench import SRBench

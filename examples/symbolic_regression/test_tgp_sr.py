@@ -1,5 +1,15 @@
 """
 Example module to test TGP with symbolic regression problems.
+
+Attempts to evolve a solution for the Koza-1 benchmkark which is
+a quartic polynomial: x^4 + x^3 + x^2 + x
+
+The problem is specified in the following paper:
+https://dl.acm.org/doi/10.1145/2330163.2330273
+
+Please note: This benchmark is nowadays considered a toy problem and
+no serious benchmark. It only serves as an example for SR as an application
+domain for TinyverseGP:
 """
 
 from src.gp.tiny_tgp import *
@@ -31,7 +41,7 @@ hyperparameters = GPHyperparameters(
     tournament_size=2
 )
 
-loss = euclidean_distance
+loss = absolute_distance
 benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA1')
 functions = [ADD, SUB, MUL, DIV]
