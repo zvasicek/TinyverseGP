@@ -1,4 +1,4 @@
-# TinyverseGP: minimalistic implementations of different representations for Genetic Programming 
+# TinyverseGP: Minimalistic implementations of different representations for Genetic Programming 
 
 TinyverseGP is a collection of minimalistic implementations of different representations for Genetic Programming. The goal is to provide a simple and easy-to-understand codebase with the following goals in mind:
 
@@ -42,10 +42,14 @@ pip3 install -r requirements.txt
 To run the examples, you can use one of the following command:
 
 ```bash
-python3 -m examples.test_cgp
-python3 -m examples.test_tgp
-python3 -m examples.test_cgp_ls
-python3 -m examples.test_srbench
+python3 -m examples.symbolic_regression.test_cgp_sr
+python3 -m examples.symbolic_regression.test_tgp_sr
+python3 -m examples.logic_synthesis.test_cgp_ls
+python3 -m examples.logic_synthesis.test_tgp_ls
+python3 -m examples.policy_learning.test_cgp_pl
+python3 -m examples.policy_learning.test_tgp_pl
+python3 -m examples.program_synthesis.test_cgp_ps
+python3 -m examples.program_synthesis.test_tgp_ps
 ```
 
 or any other script in that folder.
