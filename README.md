@@ -59,7 +59,7 @@ or any other script in that folder.
 This repository is kept under a Github Organization to allow for a more inviting environment for contributions. The organization will not be tied to any specific institution and will be open to all contributors. If you want to contribute, please contact the maintainers to be added to the organization as a maintainer.
 The codebase is still in its early stages and contributions are welcome. If you have any suggestions, bug reports, or feature requests, please open an issue, submit a pull request or open a new discussion.
 
-## Creating a new representation
+## Creating a new representation module
 
 To create a new representation, you can follow the following steps:
 
@@ -78,6 +78,8 @@ To create a new representation, you can follow the following steps:
   - `selection(self)`: the selection method that selects individuals for recombination and perturbation.
   - `predict(self, genome, observation)`: the prediction method that predicts the output of `genome` to a single `observation`.
   - `expression(self, genome)`: the expression method that returns the expression represented by `genome`.
+
+## Creating a new problem domain module
 
 To create a new problem domain, you can follow the following steps:
 
