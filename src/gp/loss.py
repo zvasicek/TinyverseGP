@@ -5,6 +5,7 @@ to calculate the fitness on candidate programs.
 import math
 import numpy as np
 
+# Loss functions commonly used to evaluate symbolic regression models
 
 def absolute_error(x, y):
     return np.abs(np.subtract(x, y))
@@ -17,6 +18,39 @@ def mean_squared_error(x, y):
 def root_mean_squared_error(x, y):
     return math.sqrt(mean_squared_error(x, y))
 
+def euclidean_distance(x: list, y: list) -> float:
+    """
+    Calculate the Euclidean distance between two sets of values.
+
+    :param x: Set of integers or real values
+    :param y: Set of integers or real values
+    :return: euclidean distance
+    """
+    if len(x) != len(y):
+        raise ValueError("Dimensions do not match.")
+    dist = 0.0
+    for xi, yi in zip(x, y):
+        dist += math.pow(xi - yi, 2)
+    return math.sqrt(dist)
+
+
+def absolute_distance(x: list, y: list) -> float:
+    """
+    Calculate the absolute distance between two sets of values.
+
+    :param x: Set of integers or real values
+    :param y: Set of integers or real values
+    :return: absolute distance
+    """
+    if len(x) != len(y):
+        raise ValueError("Dimensions do not match.")
+    dist = 0.0
+    for xi, yi in zip(x, y):
+        dist += absolute_error(xi, yi)
+    return dist
+
+
+# Hamming distance is commonly used for logic synthesis
 
 def hamming_distance(x: list, y: list) -> int:
     """
@@ -55,33 +89,3 @@ def hamming_distance_bitwise(x: list, y: list, bin_length: int = 32) -> int:
             cmp = cmp >> 1
     return dist
 
-def euclidean_distance(x: list, y: list) -> float:
-    """
-    Calculate the Euclidean distance between two sets of values.
-
-    :param x: Set of integers or real values
-    :param y: Set of integers or real values
-    :return: euclidean distance
-    """
-    if len(x) != len(y):
-        raise ValueError("Dimensions do not match.")
-    dist = 0.0
-    for xi, yi in zip(x, y):
-        dist += math.pow(xi - yi, 2)
-    return math.sqrt(dist)
-
-
-def absolute_distance(x: list, y: list) -> float:
-    """
-    Calculate the absolute distance between two sets of values.
-
-    :param x: Set of integers or real values
-    :param y: Set of integers or real values
-    :return: absolute distance
-    """
-    if len(x) != len(y):
-        raise ValueError("Dimensions do not match.")
-    dist = 0.0
-    for xi, yi in zip(x, y):
-        dist += absolute_error(xi, yi)
-    return dist

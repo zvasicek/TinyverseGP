@@ -118,6 +118,7 @@ class Hyperparameters(ABC):
     """
     Base class for the GP hyperparamters.
     """
+
     def dictionary(self) -> dict:
         return self.__dict__
 

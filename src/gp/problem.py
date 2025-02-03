@@ -1,5 +1,11 @@
 """
-Implements various problem types supported by TinyverseGP
+Implements various problem types supported by TinyverseGP.
+
+Currently, the following problem types are provided:
+- BlackBox: Used for symbolic regression and logic synthesis
+- PolicySearch: Used for reinforcement learning problems
+- ProgramSynthesis: Used for the provided coding problems
+
 """
 
 import gymnasium as gym
@@ -23,8 +29,8 @@ class Problem(ABC):
         Check if the fitness reached an ideal state.
         This can prompt an early stop in the optimization process.
 
-        :param fitness:
-        :return:
+        :param fitness: fitness of the candidate individual
+        :return: ideal fitness status
         """
         return fitness <= self.ideal if self.minimizing \
             else fitness >= self.ideal
@@ -34,9 +40,9 @@ class Problem(ABC):
         Check if the first fitness is better than the second.
         It takes into consideration whether the problem is minimizing or maximizing.
 
-        :param fitness1:
-        :param fitness2:
-        :return:
+        :param fitness1: fitness of the first individual
+        :param fitness2: fitness of the second individual
+        :return: status if fitness1 is better than fitness2
         """
         return fitness1 < fitness2 if self.minimizing \
             else fitness1 > fitness2
