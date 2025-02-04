@@ -1,7 +1,9 @@
 """
-Implements various problem types supported by TinyverseGP.
+Implements various problem types supported by TinyverseGP to
+approach various problem domains with the benchmarking package.
 
 Currently, the following problem types are provided:
+
 - BlackBox: Used for symbolic regression and logic synthesis
 - PolicySearch: Used for reinforcement learning problems
 - ProgramSynthesis: Used for the provided coding problems

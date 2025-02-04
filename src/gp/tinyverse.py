@@ -2,6 +2,17 @@
 TinyverseGP: A modular cross-domain benchmark system for Genetic Programming.
              The tinyverse module includes a collections of base classes to be used by the GP modules.
              and therefore represent the fundamental model architecture of TinyverseGP.
+
+             - GPModel: Abstract base class for GP representations
+             - Config: Abstract base class for the GP configuration
+                - GPConfig: Basic config class that considers fundamental
+                            settings needed to run GP
+             - Hyperparameters: Abstract base class for the hyperparameters
+                - GPHyperparameters: Basic HP's often needed for the configuration of GP
+             - Function: Base class for the representation of a non-terminal symbol
+                         which is part of the function set
+                    - Var:  Derived class for the representation of variable terminal symbols
+                    - Const: Derived class for the representation of const terminal symbols
 """
 
 from abc import ABC

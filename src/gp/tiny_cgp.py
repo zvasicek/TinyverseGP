@@ -1,6 +1,10 @@
 """
 TinyCGP: A minimalistic implementation of Cartesian Genetic Programming for
          TinyverseGP.
+
+         Genome representation: Standard integer-based CGP
+         Mutation operator: Point mutation
+         Search algorithm: 1+lambda ES with non-strict selection option
 """
 
 import math
@@ -17,7 +21,7 @@ from src.gp.problem import Problem
 @dataclass
 class CGPHyperparameters(Hyperparameters):
     """
-    Specialized hyperparameter space for CGP.
+    Specialized hyperparameter configuration space for CGP.
     """
     mu: int
     lmbda: int
@@ -411,6 +415,8 @@ class TinyCGP(GPModel):
         """
         nodes_active = dict()
 
+        # All function nodes referenced by the output genes
+        # are active nodes
         for node_num in self.outputs(genome):
             if node_num >= self.config.num_inputs:
                 nodes_active[node_num] = True
@@ -418,18 +424,23 @@ class TinyCGP(GPModel):
         start = self.config.num_genes - self.config.num_outputs - 1
         stop = 0
         step = -1
+        # Iterate backwards over all genes of the function nodes
         for position in range(start, stop, step):
             node_num = self.node_number(position)
+            # Continue only if the current position is a connection genes
+            # and when the node is already known to be active
             if (node_num in nodes_active.keys()
                     and self.phenotype(position) == self.GeneType.CONNECTION):
                 gene = genome[position]
+                # Store only node numbers of active function nodes
                 if gene >= self.config.num_inputs:
                     nodes_active[gene] = True
         return sorted(nodes_active.keys(), reverse=reverse)
 
     def decode_paths(self, genome: list[int]) -> list[list[int]]:
         """
-        Decodes the paths and stores these as sequences of active fucntion nodes.
+        Decodes the paths of the given genome and stores these as sequences
+        of active function nodes.
 
         :param genome: Genome of an individual
         :return: decoded paths
@@ -438,16 +449,23 @@ class TinyCGP(GPModel):
         node_map = dict()
         step = - self.config.genes_per_node
 
+        # Iterate over the outputs of the genome
         for node_num in self.outputs(genome):
             node_map.clear()
             node_map[node_num] = True
 
             start = self.config.num_genes - self.config.num_outputs - 1
             stop = 0
+            # Iterate backwards over the genes of the function nodes
             for gene_pos in range(start, stop, step):
                 node_num = self.node_number(gene_pos)
+                # Continue only if the node is linked to the path that
+                # leads to the current output
                 if node_num in node_map:
+                    # Iterate over the connection genes
                     for connection in self.node_connections(node_num, genome):
+                        # Store the node status of the connections in
+                        # the node map
                         node_map[connection] = True
             path = sorted(node_map.keys())
             paths.append(path)
@@ -466,29 +484,37 @@ class TinyCGP(GPModel):
         paths = []
         node_map = dict()
 
+        # Iterate over all outputs
         for output in self.outputs(genome):
             node_map.clear()
             node_map[output] = True
 
+            # Visit all active nodes that are linked with path that
+            # lead to the current output
             for node_num in nodes_active:
                 if node_num in node_map:
                     for connection in self.node_connections(node_num, genome):
+                        # Use a node map to track the nodes
                         node_map[connection] = True
+            # Obtain the path from the node map
             path = sorted(node_map.keys())
             paths.append(path)
         return paths
 
     def breed(self, parent: CGPIndividual = None):
         """
-        Breeds lambda individuals with the point mutation operator
-        and adds them to the population
+        Breeds lambda individuals with point mutation
+        and adds them to the population.
+
+        The genome is cloned before the mutation so that is
+        guaranteed that the mutation is performed on the offspring's
+        genome.
 
         :param parent: Individual selected to be the parent
         """
         self.population.clear()
         self.population.append(parent)
         for _ in range(self.hyperparameters.lmbda):
-            # mutation requires fitness calculation, so we need to genome only
             offspring = CGPIndividual(parent.genome.copy())
             self.mutation(offspring.genome)
             self.population.append(offspring)
