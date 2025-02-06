@@ -10,10 +10,8 @@ TinyCGP: A minimalistic implementation of Cartesian Genetic Programming for
 import math
 import random
 import time
-
 from dataclasses import dataclass
 from enum import Enum
-
 from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var
 from src.gp.problem import Problem
 
@@ -75,13 +73,16 @@ class TinyCGP(GPModel):
 
     class GeneType(Enum):
         """
-        Enum for the gene type that are used for the CGP encoding
+        Enum for the gene type that are used for the CGP encoding.
         """
         FUNCTION = 0
         CONNECTION = 1
         OUTPUT = 2
 
     class TerminalType(Enum):
+        """
+        Enum used to specify the type of terminal symbols.
+        """
         VARIABLE = 0
         CONSTANT = 1
 
@@ -115,6 +116,7 @@ class TinyCGP(GPModel):
     def init_individual(self) -> CGPIndividual:
         """
         Creates and initializes an individual.
+
         :return CGP individual
         """
         return CGPIndividual(self.init_genome())
@@ -134,16 +136,18 @@ class TinyCGP(GPModel):
     def init_genome(self) -> list[int]:
         """
         Initializes the genome by initializing each gene w.r.t. its type.
+
         :return: list of genes
         """
         return [self.init_gene(i) for i in range(self.config.num_genes)]
 
     def init_gene(self, position: int) -> int:
         """
-        Initializes a gene at a specified position.
+        Initializes a gene at a specified position and returns the
+        respective value.
 
         :param position: position of the gene in the genotype.
-        :return: gene
+        :return: gene value
         """
         gene_type = self.phenotype(position)
         levels_back = self.hyperparameters.levels_back
@@ -240,7 +244,7 @@ class TinyCGP(GPModel):
         position = self.node_position(node_num)
         return genome[position + 1: position + self.config.max_arity + 1]
 
-    def outputs(self, genome: list[int]) -> list[int]:
+    def get_outputs(self, genome: list[int]) -> list[int]:
         """
         Return the output genes.
 
@@ -315,7 +319,7 @@ class TinyCGP(GPModel):
         :param observation: Given observation
         :return: Prediction based on the genome and observation
         """
-        paths = self.decode_paths(genome)
+        paths = self.decode(genome)
         return self.predict(genome, observation, paths)
 
     def evaluate_node(self, node_num: int, genome: list[int], args: list) -> float:
@@ -352,7 +356,7 @@ class TinyCGP(GPModel):
         prediction = []
 
         if self.current_paths is None:
-            self.current_paths = self.decode_paths_optimized(genome)
+            self.current_paths = self.decode_optimized(genome)
 
         for path in self.current_paths:
            cost = 0.0
@@ -417,7 +421,7 @@ class TinyCGP(GPModel):
 
         # All function nodes referenced by the output genes
         # are active nodes
-        for node_num in self.outputs(genome):
+        for node_num in self.get_outputs(genome):
             if node_num >= self.config.num_inputs:
                 nodes_active[node_num] = True
 
@@ -437,7 +441,7 @@ class TinyCGP(GPModel):
                     nodes_active[gene] = True
         return sorted(nodes_active.keys(), reverse=reverse)
 
-    def decode_paths(self, genome: list[int]) -> list[list[int]]:
+    def decode(self, genome: list[int]) -> list[list[int]]:
         """
         Decodes the paths of the given genome and stores these as sequences
         of active function nodes.
@@ -450,7 +454,7 @@ class TinyCGP(GPModel):
         step = - self.config.genes_per_node
 
         # Iterate over the outputs of the genome
-        for node_num in self.outputs(genome):
+        for node_num in self.get_outputs(genome):
             node_map.clear()
             node_map[node_num] = True
 
@@ -471,7 +475,7 @@ class TinyCGP(GPModel):
             paths.append(path)
         return paths
 
-    def decode_paths_optimized(self, genome: list[int]) -> list[list[int]]:
+    def decode_optimized(self, genome: list[int]) -> list[list[int]]:
         """
         Optimized decoding variant for problems with a high number of outputs
         that makes use of the active nodes determination to obtain the paths in the graph
@@ -485,7 +489,7 @@ class TinyCGP(GPModel):
         node_map = dict()
 
         # Iterate over all outputs
-        for output in self.outputs(genome):
+        for output in self.get_outputs(genome):
             node_map.clear()
             node_map[output] = True
 
@@ -529,7 +533,8 @@ class TinyCGP(GPModel):
 
         :return: parent individual
         """
-        sorted_pop = sorted(self.population, key=lambda ind: ind.fitness, reverse=not self.config.minimizing_fitness)
+        sorted_pop = sorted(self.population, key=lambda ind: ind.fitness,
+                            reverse=not self.config.minimizing_fitness)
         count = 0
         if not self.hyperparameters.strict_selection:
             best_fitness = sorted_pop[0].fitness
@@ -570,8 +575,8 @@ class TinyCGP(GPModel):
 
         def generate_expr_map(genome: list[int], active_nodes=None) -> dict:
             """
-            Generates the map for the subexpressions of the nodes that are used
-            to compose the expression.
+            Generates a map of subexpressions for each node that is later used
+            to compose the symbolic expression.
 
             :param genome: Genome of the individual
             :param active_nodes: List of active function nodes
@@ -601,7 +606,7 @@ class TinyCGP(GPModel):
         expr_map = generate_expr_map(genome)
         expressions = []
 
-        outputs = self.outputs(genome)
+        outputs = self.get_outputs(genome)
 
         for output in outputs:
             if output < self.config.num_inputs:

@@ -51,7 +51,7 @@ hyperparameters = GPHyperparameters(
 
 loss = hamming_distance_bitwise
 data = truth_table.inputs
-actual = truth_table.outputs
+actual = truth_table.get_outputs
 problem = BlackBox(data, actual, loss, 0, True)
 
 tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)

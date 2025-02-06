@@ -6,6 +6,8 @@ Benchmark representation module for policy search.
 """
 
 import gymnasium as gym
+
+from src.benchmark.benchmark import Benchmark
 from src.gp.tinyverse import GPModel
 from gymnasium.wrappers import FlattenObservation
 
@@ -64,8 +66,9 @@ class GPAgent:
         :param policy: candidate policy
         :param model: GP model
         :param obs: observation
-        :return:
+        :return: predicted agent that is being performed by the agent
         """
         prediction = model.predict(policy, obs)
         maximum = max(prediction)
         return prediction.index(maximum)
+

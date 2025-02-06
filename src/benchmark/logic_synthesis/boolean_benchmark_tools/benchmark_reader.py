@@ -13,9 +13,6 @@ from os import path
 from dataclasses import dataclass
 import array
 
-#TODO Implement getter and setter, internal methods __repr__ and __len__
-
-
 @dataclass
 class TruthTable:
     """
