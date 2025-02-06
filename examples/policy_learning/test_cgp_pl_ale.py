@@ -1,0 +1,67 @@
+"""
+Example module to test CGP with policy search problems.
+Evolves a policy for Pong from the Gymnasium Atari Learning Environment:
+
+https://ale.farama.org/
+https://ale.farama.org/environments/
+
+https://ale.farama.org/environments/pong/
+
+Pong has the following specifications that are adapted to
+the GP mode in this example:
+
+Action space: Discrete(6)
+
+Observation space: Box(0, 255, (210, 160, 3), uint8)
+"""
+
+from src.benchmark.policy_search.pl_benchmark import PLBenchmark
+from src.gp.tiny_cgp import *
+import gymnasium as gym
+from src.gp.problem import PolicySearch
+from src.gp.functions import *
+
+env = gym.make("ALE/Pong-v5", frameskip=1, difficulty=0)
+benchmark = PLBenchmark(env, ale_=True)
+functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, LT, GT, EQ, MIN, MAX, IF]
+terminals = benchmark.gen_terminals()
+num_inputs = benchmark.len_observation_space()
+num_outputs = benchmark.len_action_space()
+
+config = CGPConfig(
+    num_jobs=1,
+    max_generations=100,
+    stopping_criteria=100,
+    minimizing_fitness=False,
+    ideal_fitness=100,
+    silent_algorithm=False,
+    silent_evolver=False,
+    minimalistic_output=True,
+    num_functions=len(functions),
+    max_arity=3,
+    num_inputs=num_inputs,
+    num_outputs=num_outputs,
+    num_function_nodes=50,
+    report_interval=1,
+    max_time=99999
+)
+config.init()
+
+hyperparameters = CGPHyperparameters(
+    mu=1,
+    lmbda=1,
+    population_size=2,
+    levels_back=10,
+    mutation_rate=0.05,
+    strict_selection=True
+)
+
+problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
+cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
+policy = cgp.evolve()
+env.close()
+
+env = gym.make("ALE/Pong-v5", render_mode="human")
+problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
+problem.evaluate(policy, cgp, num_episodes=1, wait_key=True)
+env.close()
