@@ -15,14 +15,21 @@ Action space: Discrete(6)
 Observation space: Box(0, 255, (210, 160, 3), uint8)
 """
 
-from src.benchmark.policy_search.pl_benchmark import PLBenchmark
+from src.benchmark.policy_search.pl_benchmark import PLBenchmark, ALEArgs
 from src.gp.tiny_cgp import *
 import gymnasium as gym
 from src.gp.problem import PolicySearch
 from src.gp.functions import *
 
+ale_args = ALEArgs(noop_max=30,
+                   frame_skip=4,
+                   screen_size=32,
+                   grayscale_obs=True,
+                   terminal_on_life_loss=True,
+                   scale_obs=False)
+
 env = gym.make("ALE/Pong-v5", frameskip=1, difficulty=0)
-benchmark = PLBenchmark(env, ale_=True)
+benchmark = PLBenchmark(env, ale_=True, ale_args=ale_args)
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, LT, GT, EQ, MIN, MAX, IF]
 terminals = benchmark.gen_terminals()
 num_inputs = benchmark.len_observation_space()
@@ -41,7 +48,7 @@ config = CGPConfig(
     max_arity=3,
     num_inputs=num_inputs,
     num_outputs=num_outputs,
-    num_function_nodes=50,
+    num_function_nodes=100,
     report_interval=1,
     max_time=99999
 )
@@ -51,7 +58,7 @@ hyperparameters = CGPHyperparameters(
     mu=1,
     lmbda=1,
     population_size=2,
-    levels_back=10,
+    levels_back=100,
     mutation_rate=0.05,
     strict_selection=True
 )
