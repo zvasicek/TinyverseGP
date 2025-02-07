@@ -47,6 +47,7 @@ python3 -m examples.symbolic_regression.test_tgp_sr
 python3 -m examples.logic_synthesis.test_cgp_ls
 python3 -m examples.logic_synthesis.test_tgp_ls
 python3 -m examples.policy_learning.test_cgp_pl
+python3 -m examples.policy_learning.test_cgp_pl_ale
 python3 -m examples.policy_learning.test_tgp_pl
 python3 -m examples.program_synthesis.test_cgp_ps
 python3 -m examples.program_synthesis.test_tgp_ps
