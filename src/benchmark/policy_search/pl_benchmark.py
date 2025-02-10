@@ -1,5 +1,9 @@
 """
 Benchmark representation module for policy learning benchmarks.
+
+ - ALEArgs: Arguments for the Atari preprocessing
+ - PLBenchmark: Class to represent a PL benchmark, performs the preprocessing for
+                ALE and non-ALE environments with a wrapper
 """
 
 from dataclasses import dataclass
@@ -15,7 +19,7 @@ from src.gp.tinyverse import Var
 class ALEArgs:
     """
     Arguments for the preprocessing of
-    Gymnasium Atari Learning Environments (ALE)
+    Gymnasium Arcade Learning Environment (A.L.E).
     """
     noop_max: int
     frame_skip: int
@@ -31,22 +35,26 @@ class PLBenchmark(Benchmark):
     The ALE environments are ony supported with RGB or grayscale observation space.
     """
 
-    def __init__(self, env_: gym.Env, ale_=False, ale_args: ALEArgs = None):
+    def __init__(self, env_: gym.Env, ale_=False, ale_args: ALEArgs = None, flatten_obs_ = True):
         self.env = env_
+        self.wrapped_env = env_
         self.ale = ale_
+        self.flatten_obs = flatten_obs_
         self.generate(args=ale_args)
+
 
     def generate(self, args: any):
         """
         Wraps the Gym environment either into a flat wrapper or into a
         Atari preprocessing wrapper.
 
-        :param args:
-        :return:
+        The observation space is flatten is its declared true at time
+        of instantiation.
+
+        :param args: Atari arguments for processing
+        :return: preprocessed environment
         """
-        if not self.ale:
-            self.wrapped_env = FlattenObservation(self.env)
-        else:
+        if self.ale:
             if args is not None:
                 self.wrapped_env = gym.wrappers.AtariPreprocessing(self.env,
                                                                    noop_max=args.noop_max,
@@ -57,6 +65,11 @@ class PLBenchmark(Benchmark):
                                                                    scale_obs=args.scale_obs)
             else:
                 self.wrapped_env = gym.wrappers.AtariPreprocessing(self.env)
+        else:
+            self.wrapped_env = self.env
+
+            if self.flatten_obs:
+                self.wrapped_env = FlattenObservation(self.wrapped_env)
             # self.wrapped_env = gym.wrappers.FrameStack(self.wrapped_env, 4)
 
     def len_observation_space(self):
