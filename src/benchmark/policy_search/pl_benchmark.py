@@ -9,6 +9,7 @@ Benchmark representation module for policy learning benchmarks.
 from dataclasses import dataclass
 
 import gymnasium as gym
+
 from src.benchmark.benchmark import Benchmark
 from gymnasium.wrappers import FlattenObservation
 from ale_py import ALEInterface
@@ -27,6 +28,7 @@ class ALEArgs:
     grayscale_obs: int
     terminal_on_life_loss: int
     scale_obs: int
+    frame_stack: int
 
 class PLBenchmark(Benchmark):
     """
@@ -68,9 +70,12 @@ class PLBenchmark(Benchmark):
         else:
             self.wrapped_env = self.env
 
-            if self.flatten_obs:
-                self.wrapped_env = FlattenObservation(self.wrapped_env)
-            # self.wrapped_env = gym.wrappers.FrameStack(self.wrapped_env, 4)
+        if args.frame_stack > 0:
+            self.wrapped_env = gym.wrappers.FrameStackObservation(self.wrapped_env, 4)
+
+        if self.flatten_obs:
+            self.wrapped_env = FlattenObservation(self.wrapped_env)
+
 
     def len_observation_space(self):
         """

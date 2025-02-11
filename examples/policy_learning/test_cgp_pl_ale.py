@@ -25,10 +25,11 @@ ale_args = ALEArgs(noop_max=30,
                    screen_size=32,
                    grayscale_obs=True,
                    terminal_on_life_loss=True,
-                   scale_obs=False)
+                   scale_obs=False,
+                   frame_stack=4)
 
 env = gym.make("ALE/Pong-v5", frameskip=1, difficulty=0)
-benchmark = PLBenchmark(env, ale_=True, ale_args=ale_args)
+benchmark = PLBenchmark(env, ale_=True, ale_args=ale_args, flatten_obs_= False)
 wrapped_env = benchmark.wrapped_env
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, LT, GT, EQ, MIN, MAX, IF]
 terminals = benchmark.gen_terminals()
