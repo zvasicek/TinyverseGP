@@ -19,6 +19,11 @@ from src.gp.tiny_cgp import *
 import gymnasium as gym
 from src.gp.problem import PolicySearch
 from src.gp.functions import *
+import warnings
+import numpy
+
+if numpy.version.version[0] == "2":
+    warnings.warn("Using NumPy version >=2 can lead to overflow.")
 
 ale_args = ALEArgs(noop_max=30,
                    frame_skip=4,

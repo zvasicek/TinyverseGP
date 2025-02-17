@@ -21,6 +21,11 @@ from gymnasium.wrappers import FlattenObservation
 from src.gp.tiny_tgp import *
 from src.gp.functions import *
 from src.gp.problem import PolicySearch
+import warnings
+import numpy
+
+if numpy.version.version[0] == "2":
+    warnings.warn("Using NumPy version >=2 can lead to overflow.")
 
 env = gym.make("LunarLander-v3")
 wrapped_env = FlattenObservation(env)

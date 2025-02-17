@@ -20,6 +20,11 @@ from src.gp.problem import PolicySearch
 from src.gp.functions import *
 from src.gp.tinyverse import Var, Const
 from math import sqrt, pi
+import warnings
+import numpy
+
+if numpy.version.version[0] == "2":
+    warnings.warn("Using NumPy version >=2 can lead to overflow.")
 
 env = gym.make("LunarLander-v3")
 wrapped_env = FlattenObservation(env)
