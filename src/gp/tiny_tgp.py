@@ -236,20 +236,26 @@ class TinyTGP(GPModel):
         :return: the recombined `Node`
         '''
         def pick_from(n: Node, ix: int) -> Node:
+            # if we reached the desired node, return it     
             if ix == 0:
                 return n
             tryout = None
             ix = ix - 1
+            # for each children     
             for iy in range(n.function.arity):
+                # try to pick the specified node
                 tryout = pick_from(n.children[iy], ix)
                 ix = ix - node_size(n.children[iy])
+                # if we found it, break the loop and return it, otherwise, keep searching     
                 if tryout is not None:
                     break
             return tryout
 
         def assemble(n1: Node, n2: Node, ix: int) -> Node:
+            # if we found the node we want to replace, return the replacement piece     
             if ix == 0:
                 return n2
+            # otherwise, copy the node and call assemble to copy the children of n1         
             new_node = copy.deepcopy(n1)
             children = []
             ix = ix - 1
@@ -257,8 +263,9 @@ class TinyTGP(GPModel):
                 children.append(assemble(child, n2, ix) if ix > 0 else child)
                 ix = ix - node_size(child)
             return Node(n1.function, children)
-
+        # extract the subtree from the second parent at a random node
         piece2 = pick_from(p2, random.choice(range(node_size(p2))))
+        # replace the subtree of p1 at a random point with `piece2`
         return assemble(p1, piece2, random.choice(range(node_size(p1))))
 
     def mutation(self, n: list, max_depth: int, size: int):
@@ -279,25 +286,29 @@ class TinyTGP(GPModel):
 
         :return: the mutate `Node`
         '''
+        # pick a random node     
         n_nodes = node_size(n)
         ix = random.choice(range(n_nodes))
 
         def traverse(n: Node, iy: int, maxD: int, sz: int) -> Node:
+            # if we reached the node, apply grow to generate a new subtree     
             if iy == 0:
                 return self.tree_random_grow(1, maxD, sz)
+            # this should never happen         
             if iy < 0:
                 return copy.deepcopy(n)
             children = []
             iy = iy - 1
             maxD = maxD - 1
             sz = sz - 1
+            # if we are not there yet, keep applying traverse to each childre adjusting the current maximum depth and size     
             for child in n.children:
                 children.append(traverse(child, iy, maxD, sz))
                 iy = iy - node_size(children[-1])
                 maxD = maxD - 1
                 sz = sz - node_size(children[-1])
             return Node(n.function, children)
-
+        # run traverse until it reaches the ix-th node 
         return traverse(n, ix, max_depth, size)
 
     def expression(self, genome: list) -> list[str]:
@@ -308,9 +319,12 @@ class TinyTGP(GPModel):
         '''
 
         def print_node(node: Node):
+            # if the node is terminal, just print the value enclosed in "()"     
             if len(node.children) == 0:
                 return node.function.name + "(" + str(node.function()) + ")"
             else:
+                # otherwise, call print_node recursively for each children and 
+                # concatenate the strings     
                 args = [print_node(child) for child in node.children]
                 return node.function.name + "(" + ", ".join(args) + ")"
 
@@ -335,15 +349,21 @@ class TinyTGP(GPModel):
 
         TODO: implement this in the base class as a default for every algorithm.
         """
+        # measure the current time     
         t0 = time.time()
         elapsed = 0
         terminate = False
         best_fitness_job = None
+        # for each job, if running parallel executions     
         for job in range(self.config.num_jobs):
             best_fitness = None
+            # run for a maximum of generations     
             for generation in range(self.config.max_generations):
+                # breed     
                 self.breed()
+                # evaluate the new population
                 best_fitness = self.evaluate()
+                # `report_generation` will handle the reporting of every generation according to the config     
                 self.report_generation(silent = self.config.silent_algorithm,
                                        generation=generation,
                                        best_fitness=best_fitness,
@@ -352,12 +372,15 @@ class TinyTGP(GPModel):
                 delta = t1-t0
                 t0 = t1
                 elapsed += delta
+                # if elapsed time is larger than the maximum time, terminate 
                 if elapsed + delta >= self.config.max_time:
                     terminate = True
                     break
+                # if we found the ideal fitness, terminate         
                 elif self.problem.is_ideal(best_fitness):
                     terminate = True
                     break
+            # update the current best between runs and report             
             if best_fitness_job is None or self.problem.is_better(best_fitness, best_fitness_job):
                     best_fitness_job = best_fitness
             self.report_job(job = job,
