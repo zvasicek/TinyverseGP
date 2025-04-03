@@ -12,6 +12,10 @@ from src.gp.tinyverse import *
 class Node:
     '''
     Node class for the tree representation of the genome.
+
+    Each node of a tree is represented as a function and a list of Nodes, that
+    will serve as the arguments to that function.
+    NOTE: the list of children must be of the same arity of the function.
     '''
     def __init__(self, function: Any, children: List[Any]):
         self.function = function
@@ -29,7 +33,7 @@ def node_size(node: Node) -> int:
 class TinyTGP(GPModel):
     '''
     Main class of the tiny TGP module that derives from GPModel and
-    implements all related fundamental mechanisms tun run TGP.
+    implements all related fundamental mechanisms to run TGP.
     '''
     config: Config
     hyperparameters: Hyperparameters
@@ -37,16 +41,17 @@ class TinyTGP(GPModel):
     functions: list[Function]
 
     def __init__(self, problem_: object, functions_: list[Function], terminals_: list[Function], config: Config, hyperparameters: Hyperparameters):
-        self.functions = functions_
-        self.terminals = terminals_
-        self.problem = problem_
-        self.hyperparameters = hyperparameters
-        self.config = config
-        self.best = None
-        self.num_evaluations = 0
+        self.functions = functions_ # the list of available functions
+        self.terminals = terminals_ # the list of terminal nodes
+        self.problem = problem_ # an instance to a problem. This allows us to handle different problems transparently
+        self.hyperparameters = hyperparameters # hyperparameters
+        self.config = config # overall configuration
+        self.best = None  # to keep the best program found so far
+        self.num_evaluations = 0 # conter of number of evaluations
+        # initial population using ramped half-and-half
         self.population = [[genome, 0.0] 
                             for genome in self.init_ramped_half_half(self.hyperparameters.pop_size, 1, self.hyperparameters.max_depth, self.hyperparameters.max_size)]
-        self.evaluate()
+        self.evaluate() # evaluates the initial population
 
 
     def tree_random_full(self, max_depth: int, size: int) -> Node:
@@ -55,8 +60,12 @@ class TinyTGP(GPModel):
 
         :returns: `Node`
         """
+        # if we reached the maximum depth or there are only two or less nodes available
+        # according to size, we sample a terminal node.
         if max_depth == 0 or size < 2:
             return Node(random.choice(self.terminals), [])
+        # otherwise we sample a non-terminal node and generate the children recursively,
+        # reducing the depth by one and splitting the maximum size available by all children
         n = random.choice(self.functions)
         children = [self.tree_random_full(max_depth - 1, size // n.arity - 1) for _ in range(n.arity)]
         return Node(n, children)
@@ -67,11 +76,15 @@ class TinyTGP(GPModel):
 
         :returns: `Node`
         """
+        # if we cannot add more non-terminals, sample a terminal
         if max_depth <= 1 or size < 2:
             return Node(random.choice(self.terminals), [])
+        # if we are already at the minimum depth, sample a terminal with 50% chance                 
         if min_depth <= 0 and random.random() < 0.5:
             return Node(random.choice(self.terminals), [])
         else:
+            # Let's sample a non-terminal and generate
+            # n.arity children calling `tree_random_grow` recursively and adjusting the maximum depth and size.
             n = random.choice(self.functions)
             size = size - n.arity
             children = []
@@ -86,12 +99,18 @@ class TinyTGP(GPModel):
         Initialize the population with the ramped half-and-half method.
         It will create one tree per output.
 
+        Creates an almost equal number of trees from min_depth to max_depth
+        while taking turns between grow and full method.
+        This is supposed to ensure a variability of tree sizes and balance.
+
         :return: a list of lists of `Node`
         '''
         pop = []
         for md in range(min_depth, max_depth + 1):
             grow = True
             for _ in range(int(num_pop / (max_depth - 3 + 1))):
+                # the individual may be represented by multiple trees
+                # if the problem requires multiple outputs
                 trees = []
                 for _ in range(self.config.num_outputs):
                     if grow:
@@ -110,13 +129,15 @@ class TinyTGP(GPModel):
         :return: a `float` value of the best fitness
         '''
         best = None
+        # For each individual in the population 
         for ix, individual in enumerate(self.population):
-            genome = individual[0]
-            fitness = self.evaluate_individual(genome)
-            self.population[ix][1] = fitness
-
+            genome = individual[0]  # extract the genome
+            fitness = self.evaluate_individual(genome) # evaluate it
+            self.population[ix][1] = fitness # assign the fitness
+            # update the population best solution
             if best is None or self.problem.is_better(fitness, best):
                 best = fitness
+            # update the best solution of all time
             if self.best is None or self.problem.is_better(fitness, self.best[1]):
                 self.best = [copy.copy(genome), fitness]
         return best
@@ -127,8 +148,8 @@ class TinyTGP(GPModel):
 
         :return: a `float` representing the fitness of that individual.
         '''
-        self.num_evaluations += 1
-        f = self.problem.evaluate(genome, self)
+        self.num_evaluations += 1  # update the evaluation counter
+        f = self.problem.evaluate(genome, self) # evaluate the solution using the problem instance
         if self.best is None or self.problem.is_better(f, self.best[1]):
             self.best = [copy.copy(genome), f]
         return f
@@ -141,14 +162,19 @@ class TinyTGP(GPModel):
         '''
         def eval_node(node: Node):
             if node.function.arity == 0:
+                # if the node is a constant, return its value
                 if node.function.const:
                     return node.function()
                 else:
+                    # if it is a variable, returns the corresponding value from the observation
                     return observation[node.function()]
             else:
+                # if it is a function, firt evaluate the children and then
+                # call the function passing the evaluated children as arguments.
                 args = [eval_node(child) for child in node.children]
                 return node.function(*args)
 
+        # if the genome is a multi-tree (to induce multiple outputs), apply eval_node to each tree
         return [eval_node(g) for g in genome]
 
     def breed(self):
@@ -156,8 +182,11 @@ class TinyTGP(GPModel):
         Breed the population by first selecting a set of pair of parents and then
         applying crossover and mutation operators.
         '''
+        # Select n pairs of parents using tournament selection, n is the population size minus 1 (so we have space for the best individual)
         parents = [[self.selection(), self.selection()] for _ in range(self.hyperparameters.pop_size-1)]
+        # replace the current population by perturbing the sampled parents     
         self.population = [self.perturb(*parent) for parent in parents]
+        # keep the best solution in the population 
         self.population.append([copy.copy(self.best[0]), self.best[1]])
 
     def perturb(self, parent1: Node, parent2: Node) -> list:
@@ -166,10 +195,12 @@ class TinyTGP(GPModel):
 
         :return: a list of the `genome` and `None` representing the unevaluated fitness.
         '''
+        # applies the crossover with `self.hyperparameters.cx_rate` probability, otherwise return the first parent
         genome = self.crossover(parent1, parent2) if random.random() <= self.hyperparameters.cx_rate else parent1
+        # applies mutation with `self.hyperparameters.mutation_rate` probability to the current offspring
         genome = self.mutation(genome, self.hyperparameters.max_depth,
                                self.hyperparameters.max_size) if random.random() <= self.hyperparameters.mutation_rate else genome
-        return [genome, None]
+        return [genome, None] # returns the unevaluated offspring
 
     def selection(self) -> Node:
         '''
@@ -177,7 +208,9 @@ class TinyTGP(GPModel):
 
         :return: a selected `Node` from the population.
         '''
+        # samples `self.hyperparameters.tournament_size` solutions completely at random
         parents = [random.choice(self.population) for _ in range(self.hyperparameters.tournament_size)]
+        # return the best of this sample whether it is a minimization or maximization problem     
         if self.problem.minimizing:
             return min(parents, key=lambda ind: ind[1])[0]
         else:
@@ -190,6 +223,7 @@ class TinyTGP(GPModel):
 
         :return: the recombined trees
         '''
+        # chose the tree to apply crossover if we have multiple trees     
         ix = random.choice(range(self.config.num_outputs))
         n = [copy.copy(p) for p in p1]
         n[ix] = self.subtree_crossover(p1[ix], p2[ix])
