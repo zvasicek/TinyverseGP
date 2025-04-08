@@ -108,8 +108,8 @@ TBD
 
 # LICENSE
 
-TBD
+GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 
 # Acknowledgements
 
-TBD 
+This work was supported by by an Alexander von Humboldt Professorship in AI held by Holger Hoos, the Czech Science Foundation project 25-15490S and Conselho Nacional de Desenvolvimento Cient\'{i}fico e Tecnol\'{o}gico (CNPq) grant 301596/2022-0.
