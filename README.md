@@ -112,4 +112,4 @@ This work is under GNU General Public License, Version 3.
 
 # Acknowledgements
 
-This work was supported b an Alexander von Humboldt Professorship in AI held by Holger Hoos, the Czech Science Foundation project 25-15490S and Conselho Nacional de Desenvolvimento Cient\'{i}fico e Tecnol\'{o}gico (CNPq) grant 301596/2022-0.
+This work was supported b an Alexander von Humboldt Professorship in AI held by Holger Hoos, the Czech Science Foundation project 25-15490S and Conselho Nacional de Desenvolvimento Cientifico e Tecnologico (CNPq) grant 301596/2022-0.
