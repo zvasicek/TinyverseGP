@@ -1,7 +1,11 @@
 # Collaborators
 
-Anon 1 - Initial implementation of the TineverseGP framework, including the initial implementation of the TinyCGP representations.
-Anon 2 - Initial implementation of the TinyTGP representation and inclusion of SRBench interface.
-Anon 3 - Inclusion of Policy search problem domain. 
-Anon 3 - Inclusion of Logic Synthesis problem domain.
-Anon 4 and Anon 5 - Inclusion of the interface of Hyperparameters automatic configuration.
+Roman Kalkreuth (RWTH Aachen, Germany) - Initial implementation of the TineverseGP framework, including the initial implementation of the TinyCGP representations.
+
+Fabricio Olivetti de Franca (Fabricio Olivetti (Universida de Federal do ABC) - Initial implementation of the TinyTGP representation and inclusion of SRBench interface.
+
+Julian Dierkes (RWTH Aachen, Germany) - Inclusion of Policy search problem domain. 
+
+Zdenek Vasicek (Brno University, Czech Republic) - Inclusion of Logic Synthesis problem domain.
+
+Marie Anastacio, Anja Jankovic (RWTH Aachen, Germany) - Inclusion of the interface of Hyperparameters automatic configuration.
