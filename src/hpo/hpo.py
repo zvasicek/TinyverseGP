@@ -1,7 +1,10 @@
-from src.gp.tinyverse import GPModel
+from src.gp.tinyverse import GPModel, Hyperparameters
 
 class Hpo:
-    def __init__(self, gpmodel):
-        self.gpmodel=gpmodel
+    def optimise(gpmodel : GPModel):
+        
+        #run SMAC here
+        
+        pass
     
     

@@ -28,6 +28,8 @@ class GPModel(ABC):
     """
     best_fitness: float
     num_evaluation: float
+    
+    hyperparameters: Hyperparameters
 
     def fitness(self, individual) -> Any:
         """
