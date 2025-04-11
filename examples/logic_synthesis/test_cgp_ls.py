@@ -56,7 +56,7 @@ hyperparameters = CGPHyperparameters(
 config.init()
 
 data = truth_table.inputs
-actual = truth_table.get_outputs
+actual = truth_table.outputs
 loss = hamming_distance_bitwise
 problem = BlackBox(data, actual, loss, 0, True)
 
