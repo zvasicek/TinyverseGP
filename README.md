@@ -1,6 +1,6 @@
 # TinyverseGP: Minimalistic implementations of different representations for Genetic Programming 
 
-*Freezed branch that is no longer under active development and serves as an archifact for the GECCO'25 TinyverseGP poster. The most recent version of TinyverseGP can be obtained from the main branch.*
+*Locked branch that is no longer under active development and serves as an archifact for the GECCO'25 TinyverseGP poster. The most recent version of TinyverseGP can be obtained from the main branch.*
 
 TinyverseGP is a collection of minimalistic implementations of different representations for Genetic Programming. The goal is to provide a simple and easy-to-understand codebase with the following goals in mind:
 
