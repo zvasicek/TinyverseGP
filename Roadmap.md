@@ -6,23 +6,23 @@ This document describes the current roadmap for the project. The roadmap is divi
 
 The short-term goals are the immediate tasks that need to be completed to reach the next milestone. The short-term goals are:
 
-[] Implement the Linear-based Genetic Programming representation.
-[] Implement the Push-based Genetic Programming representation.
-[] Implement the Grammar-based Genetic Programming representation.
-[] Implement the Hyperparameters automatic configuration interface.
-[] Complete the Logic Synthesis problem domain.
-[] Finish the documentation of the project.
-[] Implement the unit tests for the project.
-[] Run a first set of experiments in different domains.
+- [ ] Implement the Linear-based Genetic Programming representation.
+- [ ] Implement the Push-based Genetic Programming representation.
+- [ ] Implement the Grammar-based Genetic Programming representation.
+- [ ] Implement the Hyperparameters automatic configuration interface.
+- [ ] Complete the Logic Synthesis problem domain.
+- [ ] Finish the documentation of the project.
+- [ ] Implement the unit tests for the project.
+- [ ] Run a first set of experiments in different domains.
 
 ## Medium-term goals 
 
 The medium-term goals are the tasks that are planned to be completed for the next milestones. The medium-term goals are:
 
-[] Curate a set of benchmarks for the project.
-[] Debug and optimize the current implementations.
-[] Run a complete experiment in each problem domain.
-[] Report the results.
+- [ ] Curate a set of benchmarks for the project.
+- [ ] Debug and optimize the current implementations.
+- [ ] Run a complete experiment in each problem domain.
+- [ ] Report the results.
 
 ## Long-term goals
 
