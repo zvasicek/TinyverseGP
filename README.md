@@ -7,7 +7,7 @@ TinyverseGP is a collection of minimalistic implementations of different represe
 - **Extensible**: The codebase should be easy to extend and modify, so that it can be used as a basis for further research and experimentation.
 - **Benchmarking**: The codebase should be able to run on standard benchmark problems and datasets, so that it can be used to compare different representations and algorithms.
 
-The codebase is written in Python trying to keep the requirements to a minimal. The codebase is organized into different modules, each of which implements a different representation for Genetic Programming. The following representations are currently implemented:
+The codebase is written in Python trying to keep the requirements to a minimal. The codebase is organised into different modules, each of which implements a different representation for Genetic Programming. The following representations are currently implemented:
 
 - Tree-based Genetic Programming (TGP) (also known as Koza-style): the programs are represented as trees. This version supports multi-tree chromosomes, where each individual is represented by a set of trees when the problem requires multiple outputs.
 - Cartesian Genetic Programming (CGP): the programs are represented graphs and naturally encodes multiple outputs with shared components.
@@ -57,7 +57,7 @@ or any other script in that folder.
 
 # Contributing
 
-This repository is kept under a Github Organization to allow for a more inviting environment for contributions. The organization will not be tied to any specific institution and will be open to all contributors. If you want to contribute, please contact the maintainers to be added to the organization as a maintainer.
+This repository is kept under a Github Organization to allow for a more inviting environment for contributions. The organisation will not be tied to any specific institution and will be open to all contributors. If you want to contribute, please contact the maintainers to be added to the organisation as a maintainer.
 The codebase is still in its early stages and contributions are welcome. If you have any suggestions, bug reports, or feature requests, please open an issue, submit a pull request or open a new discussion.
 
 ## Creating a new representation module
