@@ -1,4 +1,4 @@
-*Unstable testing branch for the integration of hyperparameter optimisation (HPO) and automated machine learning (AutoML)*
+*Unstable testing branch used for the integration of hyperparameter optimisation (HPO) and automated machine learning (AutoML).*
 
 # TinyverseGP: Minimalistic implementations of different representations for Genetic Programming
 
