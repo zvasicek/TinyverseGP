@@ -93,6 +93,7 @@ A good starting point is to look at the `BlackBox` and `PolicySearch` classes in
 
 Finally, if you want to create an interface to an existing benchmark suite, you can look at the examples in:
 - `src/benchmark/symbolic_regression/srbench.py`: interface to the SRBench benchmark suite.
+- `src/benchmark/logic_synthesis/boolean_benchmark_tools/`: interface and evaluator for the GFBS benchmarks.
 
 # Roadmap
 
