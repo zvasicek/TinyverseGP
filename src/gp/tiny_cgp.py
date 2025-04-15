@@ -297,6 +297,8 @@ class TinyCGP(GPModel):
             if self.problem.is_better(fitness, best_fitness):
                 best = individual
                 best_fitness = fitness
+        
+        self.best_fitness = best_fitness
 
         return best, False
 

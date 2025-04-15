@@ -20,84 +20,6 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import List, Any
 
-class GPModel(ABC):
-    """
-    Abstract based class for tiny GP representation modules.
-    It describes the minimum requirements for a GP model that is
-    integrated in the framework.
-    """
-    best_fitness: float
-    num_evaluation: float
-    
-    hyperparameters: Hyperparameters
-
-    def fitness(self, individual) -> Any:
-        """
-        Fitness function that evaluates a single individual.
-        """
-        return individual[1]
-
-    @abstractmethod
-    def evolve(self)  -> Any:
-        """
-        Main evolution loop that is used to run instances
-        of a GP model.
-        """
-        pass
-
-    def selection(self) -> Any:
-        """
-        Implementation of the selection mechanism.
-        Commonly returns an individual object or the position
-        of an individual in the population.
-        """
-        pass
-
-    @abstractmethod
-    def predict(self) -> Any:
-        """
-        The respective prediction method is implemented here.
-        """
-        pass
-
-    @abstractmethod
-    def expression(self) -> Any:
-        """
-        Returns a human-readable solution of a evolved candidate solution.
-        Return value can be a string or a list of strings.
-        """
-        pass
-
-    def report_job(self, job: int, num_evaluations: int, best_fitness: float,
-                   silent_evolver: bool, minimalistic_output: bool):
-        """
-        Report the status of a job after has been executed.
-
-        :param job: job number
-        :param num_evaluations: Number of evaluations the run lasted
-        :param best_fitness: Best fitness found during the run
-        :param silent_evolver: Switch for activating/deactivating the report function
-        :param minimalistic_output: Swith for minimalistic output
-        :return:
-        """
-        if not silent_evolver:
-            if not minimalistic_output:
-                print("Job #" + str(job) + " - Evaluations: " + str(num_evaluations) +
-                      " - Best Fitness: " + str(best_fitness))
-            else:
-                print(str(num_evaluations) + ";" + str(best_fitness))
-
-    def report_generation(self, silent: bool, generation: int, best_fitness: float, report_interval: int):
-        """
-        Reports the status of a generation.
-
-        :param silent: Switch for activating/deactivating the report function
-        :param generation: Generation number
-        :param best_fitness: Best fitness found so far
-        :param report_interval: Interval after which the generation status is reported
-        """
-        if not silent and generation % report_interval == 0:
-            print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
 
 @dataclass
 class Config(ABC):
@@ -192,4 +114,83 @@ class Const(Function):
     def __init__(self, value):
         self.const = True
         Function.__init__(self, 0, 'Const', lambda: value)
+
+
+class GPModel(ABC):
+    """
+    Abstract based class for tiny GP representation modules.
+    It describes the minimum requirements for a GP model that is
+    integrated in the framework.
+    """
+    best_fitness: float
+    num_evaluation: float
+    hyperparameters: Hyperparameters
+
+    def fitness(self, individual) -> Any:
+        """
+        Fitness function that evaluates a single individual.
+        """
+        return individual[1]
+
+    @abstractmethod
+    def evolve(self)  -> Any:
+        """
+        Main evolution loop that is used to run instances
+        of a GP model.
+        """
+        pass
+
+    def selection(self) -> Any:
+        """
+        Implementation of the selection mechanism.
+        Commonly returns an individual object or the position
+        of an individual in the population.
+        """
+        pass
+
+    @abstractmethod
+    def predict(self) -> Any:
+        """
+        The respective prediction method is implemented here.
+        """
+        pass
+
+    @abstractmethod
+    def expression(self) -> Any:
+        """
+        Returns a human-readable solution of a evolved candidate solution.
+        Return value can be a string or a list of strings.
+        """
+        pass
+
+    def report_job(self, job: int, num_evaluations: int, best_fitness: float,
+                   silent_evolver: bool, minimalistic_output: bool):
+        """
+        Report the status of a job after has been executed.
+
+        :param job: job number
+        :param num_evaluations: Number of evaluations the run lasted
+        :param best_fitness: Best fitness found during the run
+        :param silent_evolver: Switch for activating/deactivating the report function
+        :param minimalistic_output: Swith for minimalistic output
+        :return:
+        """
+        if not silent_evolver:
+            if not minimalistic_output:
+                print("Job #" + str(job) + " - Evaluations: " + str(num_evaluations) +
+                      " - Best Fitness: " + str(best_fitness))
+            else:
+                print(str(num_evaluations) + ";" + str(best_fitness))
+
+    def report_generation(self, silent: bool, generation: int, best_fitness: float, report_interval: int):
+        """
+        Reports the status of a generation.
+
+        :param silent: Switch for activating/deactivating the report function
+        :param generation: Generation number
+        :param best_fitness: Best fitness found so far
+        :param report_interval: Interval after which the generation status is reported
+        """
+        if not silent and generation % report_interval == 0:
+            print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
 

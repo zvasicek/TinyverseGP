@@ -8,3 +8,4 @@ sympy==1.13.3
 requests==2.32.3
 opencv-python==4.11.0.86
 ale_py==0.10.1
+smac==2.3.1
