@@ -63,5 +63,5 @@ cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 
 opt_hyperparameters = Hpo.optimise(cgp)
 print(opt_hyperparameters)
-# TODO change cgp hyperparameters for the best found before evolving
+cgp.hyperparameters = opt_hyperparameters
 cgp.evolve()

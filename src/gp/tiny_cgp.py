@@ -627,8 +627,8 @@ class TinyCGP(GPModel):
                                        best_fitness=best_fitness,
                                        report_interval=self.config.report_interval)
 
-                if is_ideal:  # if the ideal solution is found, terminate
-                    break
+                #if is_ideal:  # if the ideal solution is found, terminate
+                #    break
 
                 if (generation & 15) == 0:  # check periodically if the time limit is reached
                     t1 = time.time()

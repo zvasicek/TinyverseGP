@@ -40,6 +40,101 @@ class GPLogging:
     best_individual: GPIndividual
     num_evaluation: float
 
+@dataclass
+class Config(ABC):
+    """
+    Abstract class for configuration classes.
+    """
+    def dictionary(self) -> dict:
+        return self.__dict__
+
+@dataclass
+class GPConfig(Config):
+    """
+    Configuration class for GP models.
+    This class contains the common configuration parameters for GP models related to
+    execution and output of a run.
+    """
+    num_jobs: int
+    max_generations: int
+    stopping_criteria: float
+    minimizing_fitness: bool
+    ideal_fitness: float
+    silent_algorithm: bool
+    silent_evolver: bool
+    minimalistic_output: bool
+    num_outputs: int
+    report_interval: int
+    max_time: int
+
+@dataclass
+class Hyperparameters(ABC):
+    """
+    Base class for the GP hyperparamters.
+    """
+
+    def dictionary(self) -> dict:
+        return self.__dict__
+
+@dataclass
+class GPHyperparameters(Hyperparameters):
+    """
+    Hyperparameters class for Genetic Programming models.
+    This class is responsible for storing the tunable hyperparameters of the GP model.
+    """
+    pop_size: int
+    max_size: int
+    max_depth: int
+    mutation_rate: float
+    cx_rate: float
+    tournament_size: int
+
+@dataclass
+class Function():
+    """
+    Main class used for representing functions, variables or constants.
+    It contains information about arity, a string representation for the function,
+    and the function itself.
+    The method `call` is used to call the function with the given arguments.
+    The method `custom` is meant to make the function compatible with sympy, if
+    None is passed, it will use the defaults.
+    """
+    name: str
+    arity: int
+    function: callable
+    custom: callable
+
+    def __init__(self, arity_, name_, function_, custom_=None):
+        self.function = function_
+        self.name = name_
+        self.arity = arity_
+        self.custom = custom_
+
+    def __call__(self, *args) -> Any:
+        assert (len(args) == self.arity)
+        return self.function(*args)
+
+
+class Var(Function):
+    """
+    Class for representing variable terminals.
+    """
+    def __init__(self, index: int = None, name_: str = None):
+        self.const = False
+        if name_ is None:
+            name_ = 'Var'
+        Function.__init__(self, 0, name_, lambda: index)
+
+
+class Const(Function):
+    """
+    Class for representing constant terminals.
+    """
+    def __init__(self, value):
+        self.const = True
+        Function.__init__(self, 0, 'Const', lambda: value)
+
+
 class GPModel(ABC):
     """
     Abstract based class for tiny GP representation modules.
@@ -49,6 +144,7 @@ class GPModel(ABC):
     best_individual: GPIndividual
     num_evaluation: float
     population: List[GPIndividual]
+    Hyperparameters: GPHyperparameters
     
     def evaluate(self) -> GPIndividual:
         """
@@ -146,98 +242,4 @@ class GPModel(ABC):
         """
         if not silent and generation % report_interval == 0:
             print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
-
-@dataclass
-class Config(ABC):
-    """
-    Abstract class for configuration classes.
-    """
-    def dictionary(self) -> dict:
-        return self.__dict__
-
-@dataclass
-class GPConfig(Config):
-    """
-    Configuration class for GP models.
-    This class contains the common configuration parameters for GP models related to
-    execution and output of a run.
-    """
-    num_jobs: int
-    max_generations: int
-    stopping_criteria: float
-    minimizing_fitness: bool
-    ideal_fitness: float
-    silent_algorithm: bool
-    silent_evolver: bool
-    minimalistic_output: bool
-    num_outputs: int
-    report_interval: int
-    max_time: int
-
-@dataclass
-class Hyperparameters(ABC):
-    """
-    Base class for the GP hyperparamters.
-    """
-
-    def dictionary(self) -> dict:
-        return self.__dict__
-
-@dataclass
-class GPHyperparameters(Hyperparameters):
-    """
-    Hyperparameters class for Genetic Programming models.
-    This class is responsible for storing the tunable hyperparameters of the GP model.
-    """
-    pop_size: int
-    max_size: int
-    max_depth: int
-    mutation_rate: float
-    cx_rate: float
-    tournament_size: int
-
-@dataclass
-class Function():
-    """
-    Main class used for representing functions, variables or constants.
-    It contains information about arity, a string representation for the function,
-    and the function itself.
-    The method `call` is used to call the function with the given arguments.
-    The method `custom` is meant to make the function compatible with sympy, if
-    None is passed, it will use the defaults.
-    """
-    name: str
-    arity: int
-    function: callable
-    custom: callable
-
-    def __init__(self, arity_, name_, function_, custom_=None):
-        self.function = function_
-        self.name = name_
-        self.arity = arity_
-        self.custom = custom_
-
-    def __call__(self, *args) -> Any:
-        assert (len(args) == self.arity)
-        return self.function(*args)
-
-
-class Var(Function):
-    """
-    Class for representing variable terminals.
-    """
-    def __init__(self, index: int = None, name_: str = None):
-        self.const = False
-        if name_ is None:
-            name_ = 'Var'
-        Function.__init__(self, 0, name_, lambda: index)
-
-
-class Const(Function):
-    """
-    Class for representing constant terminals.
-    """
-    def __init__(self, value):
-        self.const = True
-        Function.__init__(self, 0, 'Const', lambda: value)
 

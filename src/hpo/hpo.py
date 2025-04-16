@@ -38,7 +38,7 @@ class Hpo:
             for c in config.keys():
                 setattr(gpmodel.hyperparameters,c,config[c])
             gpmodel.evolve()
-            return gpmodel.best_fitness
+            return gpmodel.best_individual.fitness
         
         # Scenario object specifying the optimization environment
         scenario = Scenario(configspace, deterministic=True, n_trials=10)
