@@ -14,6 +14,14 @@ from sklearn.model_selection import cross_val_score
 class Hpo:
     
     def optimise(gpmodel_ : GPModel):
+        """_summary_
+
+        Args:
+            gpmodel_ (GPModel): the model to be optimised
+
+        Returns:
+            GPHyperparameters: the configuration to be used
+        """
         # WARNING : This configuration space is only to test with tinyCGP
         # TODO : include the actual config spaces
         configspace = ConfigurationSpace({"mu": (0.2, 1.0),
@@ -38,8 +46,11 @@ class Hpo:
         # Use SMAC to find the best configuration/hyperparameters
         smac = HyperparameterOptimizationFacade(scenario, train)
         incumbent = smac.optimize()
+        incHP = copy.deepcopy(gpmodel_.hyperparameters)
+        for c in  incumbent.keys():
+            setattr(incHP,c,incumbent[c])
         
-        return incumbent
+        return incHP
 
 
 
