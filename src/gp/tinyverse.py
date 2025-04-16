@@ -34,13 +34,13 @@ class GPIndividual(ABC):
         self.genome = genome_
         self.fitness = fitness_
 
-    @abstractmethod
-    def genome_to_str(self):
-        pass
+#    @abstractmethod
+#    def genome_to_str(self):
+#        pass
 
-    @abstractmethod
-    def str_to_genome(self):
-        pass
+#    @abstractmethod
+#    def str_to_genome(self):
+#        pass
 
 @dataclass
 class GPLogging:
@@ -54,15 +54,45 @@ class GPModel(ABC):
     It describes the minimum requirements for a GP model that is
     integrated in the framework.
     """
-    best_fitness: float
+    best_individual: GPIndividual
     num_evaluation: float
+    population: List[GPIndividual]
+    
+    def evaluate(self) -> GPIndividual:
+        """
+        Evaluates the population.
 
-    def fitness(self, individual) -> Any:
+        :returns: the best solution discovered in the population
+        """
+        best = None
+        for individual in self.population:
+            genome = individual.genome
+            if (individual.fitness is None):
+                individual.fitness = self.evaluate_individual(genome)
+            fitness = individual.fitness
+
+            if self.problem.is_ideal(fitness):
+                return individual, True
+
+            if best is None:
+                best = individual
+                best_fitness = fitness
+
+            if self.problem.is_better(fitness, best_fitness):
+                best = individual
+                best_fitness = fitness
+        
+        self.best = best
+
+        return best
+        
+    @abstractmethod
+    def evaluate_individual(self,genome:GPIndividual) -> float:
         """
         Fitness function that evaluates a single individual.
         """
-        return individual[1]
-
+        pass
+    
     @abstractmethod
     def evolve(self)  -> Any:
         """
@@ -140,7 +170,7 @@ class GPConfig(Config):
     This class contains the common configuration parameters for GP models related to
     execution and output of a run.
     """
-    seed: int
+#    seed: int
     num_jobs: int
     max_generations: int
     stopping_criteria: float
@@ -151,10 +181,10 @@ class GPConfig(Config):
     minimalistic_output: bool
     num_outputs: int
     report_interval: int
-    checkpoint_interval: int
-    checkpoint_dir: str
+#    checkpoint_interval: int
+#    checkpoint_dir: str
     max_time: int
-    erc: list
+#    erc: list
 
 @dataclass
 class Hyperparameters(ABC):

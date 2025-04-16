@@ -266,40 +266,6 @@ class TinyCGP(GPModel):
         else:
             return self.node_number(position) - 1
 
-    def fitness(self, individual: CGPIndividual) -> float:
-        """
-        Return the fitness value of an individual.
-        """
-        return individual.fitness
-
-    def evaluate(self) -> (CGPIndividual, bool):
-        """
-        Evaluates the population.
-
-        :returns: the best solution discovered in the population
-        """
-        best = None
-        for individual in self.population:
-            genome = individual.genome
-            if (individual.fitness is None):
-                individual.fitness = self.evaluate_individual(genome)
-            fitness = individual.fitness
-
-            if self.problem.is_ideal(fitness):
-                return individual, True
-
-            if best is None:
-                best = individual
-                best_fitness = fitness
-
-            if self.problem.is_better(fitness, best_fitness):
-                best = individual
-                best_fitness = fitness
-        
-        self.best_fitness = best_fitness
-
-        return best, False
-
     def evaluate_individual(self, genome: list[int]) -> float:
         """
         Evaluates an individual against the problem.
@@ -635,7 +601,7 @@ class TinyCGP(GPModel):
         for job in range(self.config.num_jobs):
             self.num_evaluations = 0
             # Evaluate the initial population
-            best_individual, _ = self.evaluate()
+            best_individual = self.evaluate()
             best_fitness = best_fitness_job = best_individual.fitness
             for generation in range(self.config.max_generations):
                 # Selection of a parent if necessary
@@ -647,7 +613,7 @@ class TinyCGP(GPModel):
                 self.breed(parent)
 
                 # Evaluation of the offspring
-                best_gen, is_ideal = self.evaluate()
+                best_gen = self.evaluate()
                 best_gen_fitness = best_gen.fitness
 
                 if self.problem.is_better(best_gen_fitness, best_fitness):
