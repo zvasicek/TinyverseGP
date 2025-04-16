@@ -50,8 +50,6 @@ hyperparameters = CGPHyperparameters(
 )
 config.init()
 
-hyperparameters.to_yaml()
-
 loss = absolute_distance
 benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA3')
