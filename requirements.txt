@@ -9,3 +9,5 @@ requests==2.32.3
 opencv-python==4.11.0.86
 ale_py==0.10.1
 smac==2.3.1
+PyYAML~=6.0.2
+ConfigSpace~=1.2.1
