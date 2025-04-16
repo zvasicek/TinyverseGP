@@ -19,6 +19,7 @@ from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import List, Any
+import yaml
 
 class GPIndividual(ABC):
     genome: any
@@ -33,12 +34,6 @@ class GPIndividual(ABC):
     def __init__(self, genome_: any, fitness_: any = None):
         self.genome = genome_
         self.fitness = fitness_
-
-@dataclass
-class GPLogging:
-    best_fitness: float
-    best_individual: GPIndividual
-    num_evaluation: float
 
 @dataclass
 class Config(ABC):
@@ -76,6 +71,13 @@ class Hyperparameters(ABC):
     def dictionary(self) -> dict:
         return self.__dict__
 
+    def __post_init__(self):
+        self.bounds = dict()
+
+    def to_yaml(self):
+        with open("hp.yml", "w") as file:
+            yaml.dump(self.bounds, file, default_flow_style=False)
+
 @dataclass
 class GPHyperparameters(Hyperparameters):
     """
@@ -83,11 +85,20 @@ class GPHyperparameters(Hyperparameters):
     This class is responsible for storing the tunable hyperparameters of the GP model.
     """
     pop_size: int
-    max_size: int
-    max_depth: int
     mutation_rate: float
     cx_rate: float
     tournament_size: int
+
+    def __post_init__(self):
+        self.bounds["pop_size"] = (10, 5000)
+        self.bounds["mutation_rate"] = (0.0, 1.0)
+        self.bounds["cx_rate"] = (0.0, 1.0)
+        self.bounds["tournament_size"] = (2, 9)
+
+#    @abstractmethod
+#    def set_bounds_specific(self):
+#        pass
+
 
 @dataclass
 class Function():
@@ -144,7 +155,7 @@ class GPModel(ABC):
     best_individual: GPIndividual
     num_evaluation: float
     population: List[GPIndividual]
-    Hyperparameters: GPHyperparameters
+    hyperparameters: GPHyperparameters
     
     def evaluate(self) -> GPIndividual:
         """

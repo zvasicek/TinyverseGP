@@ -12,7 +12,7 @@ import random
 import time
 from dataclasses import dataclass
 from enum import Enum
-from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var, GPIndividual
+from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var, GPIndividual, GPHyperparameters
 from src.gp.problem import Problem
 
 
@@ -29,6 +29,12 @@ class CGPHyperparameters(Hyperparameters):
     mutation_rate: float = None
     mutation_rate_genes: int = None
 
+    def __post_init__(self):
+        Hyperparameters.__post_init__(self)
+        self.bounds["mu"] = (1, 1)
+        self.bounds["lmbda"] = (1, 1024)
+        self.bounds["strict_selection"] = (True, False)
+        self.bounds["mutation_rate"] = (0.0, 1.0)
 
 @dataclass
 class CGPConfig(GPConfig):
@@ -84,7 +90,7 @@ class TinyCGP(GPModel):
         CONSTANT = 1
 
     def __init__(self, problem_: Problem, functions_: list, terminals_: list,
-                 config_: CGPConfig, hyperparameters_: Hyperparameters):
+                 config_: CGPConfig, hyperparameters_: CGPHyperparameters):
         self.num_evaluations = 0
         self.population = []
         self.functions = functions_

@@ -9,6 +9,18 @@ import time
 from src.gp.problem import *
 from src.gp.tinyverse import *
 
+@dataclass
+class TGPHyperparameters(GPHyperparameters):
+    """
+    Specialized hyperparameter configuration space for TGP.
+    """
+    max_size: int
+    max_depth: int
+
+    def __post_init__(self):
+        GPHyperparameters.__post_init__(self)
+
+
 class Node:
     '''
     Node class for the tree representation of the genome.
@@ -35,12 +47,13 @@ class TinyTGP(GPModel):
     Main class of the tiny TGP module that derives from GPModel and
     implements all related fundamental mechanisms to run TGP.
     '''
-    config: Config
-    hyperparameters: Hyperparameters
+    config: GPConfig
+    hyperparameters: TGPHyperparameters
     problem: Problem
     functions: list[Function]
 
-    def __init__(self, problem_: object, functions_: list[Function], terminals_: list[Function], config: Config, hyperparameters: Hyperparameters):
+    def __init__(self, problem_: object, functions_: list[Function], terminals_: list[Function],
+                 config: GPConfig, hyperparameters: TGPHyperparameters):
         self.functions = functions_ # the list of available functions
         self.terminals = terminals_ # the list of terminal nodes
         self.problem = problem_ # an instance to a problem. This allows us to handle different problems transparently
