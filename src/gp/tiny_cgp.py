@@ -12,7 +12,7 @@ import random
 import time
 from dataclasses import dataclass
 from enum import Enum
-from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var
+from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var, GPIndividual
 from src.gp.problem import Problem
 
 
@@ -48,7 +48,7 @@ class CGPConfig(GPConfig):
         self.num_genes = (self.genes_per_node * self.num_function_nodes) + self.num_outputs
 
 
-class CGPIndividual:
+class CGPIndividual(GPIndividual):
     """
     Class that is used to represent a CGP individual.
     Formally a GP individual can be represented as a tuple consisting of
@@ -58,10 +58,8 @@ class CGPIndividual:
     avoid unnecessary evaluation costs by re-evaluating and re-visiting nodes in the
     decoding routine.
     """
-
-    def __init__(self, genome_: list[int], fitness_: float = None, paths_ = None):
-        self.genome = genome_
-        self.fitness = fitness_
+    def __init__(self, genome_: list[int], fitness_: any = None, paths_ = None):
+        super.__init__(genome_, fitness_)
         self.paths = paths_
 
 
