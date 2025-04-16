@@ -34,14 +34,6 @@ class GPIndividual(ABC):
         self.genome = genome_
         self.fitness = fitness_
 
-#    @abstractmethod
-#    def genome_to_str(self):
-#        pass
-
-#    @abstractmethod
-#    def str_to_genome(self):
-#        pass
-
 @dataclass
 class GPLogging:
     best_fitness: float
@@ -170,7 +162,6 @@ class GPConfig(Config):
     This class contains the common configuration parameters for GP models related to
     execution and output of a run.
     """
-#    seed: int
     num_jobs: int
     max_generations: int
     stopping_criteria: float
@@ -181,10 +172,7 @@ class GPConfig(Config):
     minimalistic_output: bool
     num_outputs: int
     report_interval: int
-#    checkpoint_interval: int
-#    checkpoint_dir: str
     max_time: int
-#    erc: list
 
 @dataclass
 class Hyperparameters(ABC):
