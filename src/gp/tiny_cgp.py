@@ -59,9 +59,8 @@ class CGPIndividual(GPIndividual):
     decoding routine.
     """
     def __init__(self, genome_: list[int], fitness_: any = None, paths_ = None):
-        super.__init__(genome_, fitness_)
+        GPIndividual.__init__(self,genome_, fitness_)
         self.paths = paths_
-
 
 class TinyCGP(GPModel):
     """
