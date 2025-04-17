@@ -105,7 +105,7 @@ See [Collaborators.md](Collaborators.md) for the current list of collaborators. 
 
 # Accepted peer-reviewed work
 
-A short paper that proposes the first prototype of TinyverseGP  has been accepted for poster presentation at the [Genetic and Evolutionary Computation Conference](https://gecco-2025.sigevo.org/HomePage) (GECCO'25). 
+A short paper that proposes the first prototype of TinyverseGP  has been accepted for poster presentation at the [Genetic and Evolutionary Computation Conference](https://gecco-2025.sigevo.org/HomePage) (GECCO'25). The paper can be obtained from [arXiv](https://arxiv.org/abs/2504.10253). 
 
 > Roman Kalkreuth, Fabricio Olivetti de França, Julian Dierkes, Marie Anastacio, Anja Jankovic, Zdenek Vasicek, and Holger Hoos. 2025. TinyverseGP: Towards a Modular Cross-domain Benchmarking Framework for Genetic Programming. In Genetic and Evolutionary Computation Conference (GECCO ’25 Companion), July 14–18, 2025, Malaga, Spain. ACM, New York, NY, USA, 4 pages. https://doi.org/10.1145/3712255.3726697
 
