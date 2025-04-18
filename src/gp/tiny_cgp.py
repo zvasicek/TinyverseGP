@@ -31,10 +31,10 @@ class CGPHyperparameters(Hyperparameters):
 
     def __post_init__(self):
         Hyperparameters.__post_init__(self)
-        self.bounds["mu"] = (1, 1)
-        self.bounds["lmbda"] = (1, 1024)
-        self.bounds["strict_selection"] = (True, False)
-        self.bounds["mutation_rate"] = (0.0, 1.0)
+        self.space["mu"] = (1, 4)
+        self.space["lmbda"] = (1, 1024)
+        self.space["strict_selection"] = [True, False]
+        self.space["mutation_rate"] = (0.0, 1.0)
 
 @dataclass
 class CGPConfig(GPConfig):
@@ -91,6 +91,7 @@ class TinyCGP(GPModel):
 
     def __init__(self, problem_: Problem, functions_: list, terminals_: list,
                  config_: CGPConfig, hyperparameters_: CGPHyperparameters):
+        super().__init__()
         self.num_evaluations = 0
         self.population = []
         self.functions = functions_
@@ -620,6 +621,9 @@ class TinyCGP(GPModel):
                 # Evaluation of the offspring
                 best_gen = self.evaluate()
                 best_gen_fitness = best_gen.fitness
+
+                if self.problem.is_ideal(best_gen_fitness):
+                    break
 
                 if self.problem.is_better(best_gen_fitness, best_fitness):
                     best_individual = best_gen

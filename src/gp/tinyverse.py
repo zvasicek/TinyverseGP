@@ -18,7 +18,8 @@ TinyverseGP: A modular cross-domain benchmark system for Genetic Programming.
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import List, Any
+from typing import List, Any, Generic
+from src.gp.types import HPType
 import yaml
 
 class GPIndividual(ABC):
@@ -31,7 +32,7 @@ class GPIndividual(ABC):
     the genome and the fitness value.
     """
 
-    def __init__(self, genome_: any, fitness_: any = None):
+    def __init__(self, genome_: any = None, fitness_: any = None):
         self.genome = genome_
         self.fitness = fitness_
 
@@ -63,6 +64,13 @@ class GPConfig(Config):
     max_time: int
 
 @dataclass
+class Hyperparameter(ABC, Generic[HPType]):
+    name: str
+    lower: HPType
+    upper: HPType
+    type: HPType
+
+@dataclass
 class Hyperparameters(ABC):
     """
     Base class for the GP hyperparamters.
@@ -72,11 +80,11 @@ class Hyperparameters(ABC):
         return self.__dict__
 
     def __post_init__(self):
-        self.bounds = dict()
+        self.space = dict()
 
     def to_yaml(self):
         with open("hp.yml", "w") as file:
-            yaml.dump(self.bounds, file, default_flow_style=False)
+            yaml.dump(self.space, file, default_flow_style=False)
 
 @dataclass
 class GPHyperparameters(Hyperparameters):
@@ -90,15 +98,11 @@ class GPHyperparameters(Hyperparameters):
     tournament_size: int
 
     def __post_init__(self):
-        self.bounds["pop_size"] = (10, 5000)
-        self.bounds["mutation_rate"] = (0.0, 1.0)
-        self.bounds["cx_rate"] = (0.0, 1.0)
-        self.bounds["tournament_size"] = (2, 9)
-
-#    @abstractmethod
-#    def set_bounds_specific(self):
-#        pass
-
+        Hyperparameters.__post_init__(self)
+        self.space["pop_size"] = (10, 5000)
+        self.space["mutation_rate"] = (0.0, 1.0)
+        self.space["cx_rate"] = (0.0, 1.0)
+        self.space["tournament_size"] = (2, 9)
 
 @dataclass
 class Function():
@@ -156,6 +160,9 @@ class GPModel(ABC):
     num_evaluation: float
     population: List[GPIndividual]
     hyperparameters: GPHyperparameters
+
+    def __init__(self):
+        self.best_individual = GPIndividual()
     
     def evaluate(self) -> GPIndividual:
         """
@@ -166,12 +173,12 @@ class GPModel(ABC):
         best = None
         for individual in self.population:
             genome = individual.genome
-            if (individual.fitness is None):
+            if individual.fitness is None:
                 individual.fitness = self.evaluate_individual(genome)
             fitness = individual.fitness
 
             if self.problem.is_ideal(fitness):
-                return individual, True
+                return individual
 
             if best is None:
                 best = individual
@@ -180,7 +187,6 @@ class GPModel(ABC):
             if self.problem.is_better(fitness, best_fitness):
                 best = individual
                 best_fitness = fitness
-        
         self.best = best
 
         return best
