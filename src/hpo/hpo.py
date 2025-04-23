@@ -11,7 +11,7 @@ class Hpo:
     that are provided within TinverseGP.
     """
 
-    def optimise_smac(gpmodel_: GPModel) -> GPHyperparameters:
+    def optimise_smac(gpmodel_: GPModel, n_trials_=10) -> GPHyperparameters:
         """
         Runs HPO with SMAC.
 
@@ -36,7 +36,7 @@ class Hpo:
         cs = ConfigurationSpace(space)
 
         # Scenario object specifying the optimization environment
-        scenario = Scenario(cs, deterministic=True, n_trials=10)
+        scenario = Scenario(cs, deterministic=True, n_trials=n_trials_)
 
         # Use SMAC to find the best configuration/hyperparameters
         smac = HyperparameterOptimizationFacade(scenario, train)

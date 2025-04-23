@@ -60,7 +60,7 @@ problem = BlackBox(data, actual, loss, 1e-6, True)
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 
 ## hpo with smac, test
-opt_hyperparameters = Hpo.optimise_smac(cgp)
+opt_hyperparameters = Hpo.optimise_smac(cgp,25)
 print(opt_hyperparameters)
 #cgp.hyperparameters = opt_hyperparameters
-#cgp.evolve()
+cgp.evolve()

@@ -187,7 +187,7 @@ class GPModel(ABC):
             if self.problem.is_better(fitness, best_fitness):
                 best = individual
                 best_fitness = fitness
-        self.best = best
+        self.best_individual = best
 
         return best
         
