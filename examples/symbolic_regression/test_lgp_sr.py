@@ -43,7 +43,7 @@ def main():
         report_interval=1,
         max_time=60,
         num_inputs=1,
-        num_registers=8,
+        num_registers=4,
     )
 
     hyperparameters = LGPHyperparameters(
@@ -53,18 +53,10 @@ def main():
 
     loss = absolute_distance
     data, actual = SRBenchmark().generate('KOZA3')
-    ic(data)
-    ic(actual)
+    problem = BlackBox(data, actual, loss, 1e-6, True)
 
-    # problem = BlackBox(data, actual, loss, 1e-6, True)
-    lgp = TinyLGP()
-    # cgp.evolve()
-
-    genome = [
-        Instruction('R0', ADD, ('I0', 0)),
-    ]
-    ic(lgp.predict(genome, data))
-    ic(lgp.expression(genome))
+    lgp = TinyLGP(problem, functions, config, hyperparameters)
+    lgp.evolve()
 
 
 if __name__ == '__main__':
