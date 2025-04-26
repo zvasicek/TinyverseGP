@@ -152,7 +152,7 @@ class TinyLGP(GPModel):
             LGPIndividual(self._create_random_genome(), None)
             for i in range(self.hyperparameters.mu)
         ]
-        self.evaluate()
+        best = self.evaluate()
 
         stopping_conditions = list()
         if self.config.max_generations is not None:
@@ -162,7 +162,10 @@ class TinyLGP(GPModel):
             w1, l1 = self.tournament_selection()
             w2, l2 = self.tournament_selection()
             offspring1, offspring2 = self.crossover(self.population[w1], self.population[w2])
-            # TODO Mutation?
+            if random.random() < 0.1:
+                self.mutate(offspring1)
+                self.mutate(offspring2)
+
             offspring1.fitness = self.evaluate_individual(offspring1.genome)
             offspring2.fitness = self.evaluate_individual(offspring2.genome)
             # SURVIVAL
@@ -172,10 +175,25 @@ class TinyLGP(GPModel):
             tmp = [offspring2, self.population[l2]]
             self._sort(tmp)
             self.population[l2] = tmp[0]
-            self._sort(self.population)
-            ic(self.population[0])
 
-    def crossover(self, individual1: LGPIndividual, individual2: LGPIndividual):
+            self._sort(self.population)
+            if self.population[0].fitness != best:
+                best = self.population[0].fitness
+                ic(self.population[0])
+
+    def mutate(self, individual: LGPIndividual) -> LGPIndividual:
+        pos = random.randint(0, len(individual.genome) - 1)
+        if random.random() < 0.5:
+            return LGPIndividual(individual.genome[:pos] + individual.genome[pos + 1 :], None)
+        else:
+            instruction = self._create_random_genome(min_len=1, max_len=1)
+            return LGPIndividual(
+                individual.genome[:pos] + instruction + individual.genome[pos:], None
+            )
+
+    def crossover(
+        self, individual1: LGPIndividual, individual2: LGPIndividual
+    ) -> tuple[LGPIndividual, LGPIndividual]:
         cut1 = random.randint(0, len(individual1.genome) - 1)
         cut2 = random.randint(0, len(individual2.genome) - 1)
         offspring1 = individual1.genome[:cut1] + individual2.genome[cut2:]

@@ -36,7 +36,7 @@ def main():
     )
     config = LGPConfig(
         num_jobs=1,
-        max_generations=10_000 + hyperparameters.mu,
+        max_generations=1_000_000 + hyperparameters.mu,
         stopping_criteria=1e-6,
         minimizing_fitness=True,
         ideal_fitness=1e-6,
