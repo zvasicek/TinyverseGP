@@ -93,7 +93,7 @@ class LGPIndividual:
     fitness: float | None = None
 
     def __str__(self):
-        return f"l={len(self.genome)},f={self.fitness}"
+        return f"0x{id(self):x}:l={len(self.genome)},f={self.fitness}"
 
     def __repr__(self):
         return str(self)
@@ -134,8 +134,12 @@ class TinyLGP(GPModel):
             f'I{n}' for n in range(len(self.problem.observations[0]))
         ]
         for i in range(random.randint(min_len, max_len)):
-            dest = random.choice(possible_destinations)
-            operator = random.choice(self.functions)
+            if random.random() < 0.8:
+                dest = random.choice(possible_destinations)
+                operator = random.choice(self.functions)
+            else:
+                dest = None
+                operator = random.choice(LGP_CONDITIONS)
             operands = [
                 (
                     random.choice(possible_operands)
@@ -179,7 +183,7 @@ class TinyLGP(GPModel):
             self._sort(self.population)
             if self.population[0].fitness != best:
                 best = self.population[0].fitness
-                ic(self.population[0])
+                ic(self.num_evaluations, self.population[0])
 
     def mutate(self, individual: LGPIndividual) -> LGPIndividual:
         pos = random.randint(0, len(individual.genome) - 1)
@@ -204,11 +208,18 @@ class TinyLGP(GPModel):
         registers = {f'R{n}': 0.0 for n in range(10)} | {
             f'I{n}': v for n, v in enumerate(observation)
         }
+        skip_next = False
         for instruction in genome:
-            # if the operand is the name of a register use the value in the register, otherwise use it diretly
-            registers[instruction.dest] = instruction.operator(
-                *[registers[r] if r in registers else r for r in instruction.operands]
-            )
+            if skip_next:
+                skip_next = False
+            else:
+                value = instruction.operator(
+                    *[registers[r] if r in registers else r for r in instruction.operands]
+                )
+                if instruction.dest is not None:
+                    registers[instruction.dest] = value
+                elif not value:
+                    skip_next = True
         return [registers['R0']]
 
     def expression(self, genome: Sequence[Instruction]) -> Any:
