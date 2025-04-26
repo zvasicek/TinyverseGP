@@ -38,15 +38,15 @@ class LGPHyperparameters(Hyperparameters):
     """
 
     mu: int
-    lambda_: int
+    tournament_size: int
     # levels_back: int
     # strict_selection: bool
     # mutation_rate: float = None
     # mutation_rate_genes: int = None
 
-    def __init__(self, *, mu=10, lambda_=20, **kwargs):
+    def __init__(self, *, mu=10, tournament_size=2, **kwargs):
         self.mu = mu
-        self.lambda_ = lambda_
+        self.tournament_size = tournament_size
         super().__init__(**kwargs)
 
 
@@ -93,7 +93,7 @@ class LGPIndividual:
     fitness: float | None = None
 
     def __str__(self):
-        return f"len={len(self.genome)},fit={self.fitness}"
+        return f"l={len(self.genome)},f={self.fitness}"
 
     def __repr__(self):
         return str(self)
@@ -153,7 +153,34 @@ class TinyLGP(GPModel):
             for i in range(self.hyperparameters.mu)
         ]
         self.evaluate()
-        ic(self.population)
+
+        stopping_conditions = list()
+        if self.config.max_generations is not None:
+            stopping_conditions.append(lambda: self.num_evaluations >= self.config.max_generations)
+
+        while all(not f() for f in stopping_conditions):
+            w1, l1 = self.tournament_selection()
+            w2, l2 = self.tournament_selection()
+            offspring1, offspring2 = self.crossover(self.population[w1], self.population[w2])
+            # TODO Mutation?
+            offspring1.fitness = self.evaluate_individual(offspring1.genome)
+            offspring2.fitness = self.evaluate_individual(offspring2.genome)
+            # SURVIVAL
+            tmp = [offspring1, self.population[l1]]
+            self._sort(tmp)
+            self.population[l1] = tmp[0]
+            tmp = [offspring2, self.population[l2]]
+            self._sort(tmp)
+            self.population[l2] = tmp[0]
+            self._sort(self.population)
+            ic(self.population[0])
+
+    def crossover(self, individual1: LGPIndividual, individual2: LGPIndividual):
+        cut1 = random.randint(0, len(individual1.genome) - 1)
+        cut2 = random.randint(0, len(individual2.genome) - 1)
+        offspring1 = individual1.genome[:cut1] + individual2.genome[cut2:]
+        offspring2 = individual2.genome[:cut2] + individual1.genome[cut1:]
+        return LGPIndividual(offspring1, None), LGPIndividual(offspring2, None)
 
     def predict(self, genome: Sequence[Instruction], observation: list):
         registers = {f'R{n}': 0.0 for n in range(10)} | {
@@ -187,11 +214,19 @@ class TinyLGP(GPModel):
         for individual in self.population:
             if individual.fitness is None:
                 individual.fitness = self.evaluate_individual(individual.genome)
-        if self.config.minimizing_fitness:
-            self.population.sort(key=lambda i: i.fitness)
-        else:
-            self.population.sort(key=lambda i: i.fitness, reverse=True)
+        self._sort(self.population)
         return self.population[0].fitness
+
+    def _sort(self, individuals: list[LGPIndividual]):
+        individuals.sort(key=lambda i: i.fitness, reverse=not self.config.minimizing_fitness)
+
+    def tournament_selection(self) -> tuple[int, int]:
+        """Return indexes of winner and loser"""
+        for i, individual in enumerate(self.population):
+            individual.idx = i
+        candidates = random.choices(self.population, k=self.hyperparameters.tournament_size)
+        self._sort(candidates)
+        return candidates[0].idx, candidates[-1].idx
 
     def evaluate_individual(self, genome: Sequence[Instruction]) -> float:
         """

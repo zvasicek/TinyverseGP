@@ -31,9 +31,12 @@ def main():
     functions = ARITHMETIC_FUNCTIONS
     terminals = [Var(0), Const(1)]
 
+    hyperparameters = LGPHyperparameters(
+        mu=1000,
+    )
     config = LGPConfig(
         num_jobs=1,
-        max_generations=100,
+        max_generations=10_000 + hyperparameters.mu,
         stopping_criteria=1e-6,
         minimizing_fitness=True,
         ideal_fitness=1e-6,
@@ -44,11 +47,6 @@ def main():
         max_time=60,
         num_inputs=1,
         num_registers=4,
-    )
-
-    hyperparameters = LGPHyperparameters(
-        mu=10,
-        lambda_=30,
     )
 
     loss = absolute_distance
