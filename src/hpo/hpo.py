@@ -1,9 +1,60 @@
+from abc import ABC, abstractmethod
 from src.gp.tinyverse import GPModel, GPHyperparameters
 from ConfigSpace import Configuration, ConfigurationSpace
 from smac import HyperparameterOptimizationFacade, Scenario
-from sklearn.svm import SVC
-from sklearn.model_selection import cross_val_score
 import copy
+
+
+class HPOInterface(ABC):
+    """
+    Abstract class that is used to implement methods for running HPO with GP models
+    that are provided within TinverseGP.
+    """
+
+    @abstractmethod
+    def optimise(self, gpmodel_: GPModel, *params):
+        pass
+
+
+class SMACInterface(HPOInterface):
+
+    def optimise(self, gpmodel_: GPModel, n_trials_=10) -> GPHyperparameters:
+        """
+        Runs HPO with SMAC (https://github.com/automl/SMAC3)
+
+        Args:
+            gpmodel_ (GPModel): the GP model to be optimised
+            n_trials_: Number of trials in the SMAC optimisation environment
+
+        Returns:
+            GPHyperparameters: the hyperparameter configuration to be used
+        """
+
+        def train(config: Configuration, seed: int = 0) -> float:
+            gpmodel = copy.deepcopy(gpmodel_)
+            for c in config.keys():
+                setattr(gpmodel.hyperparameters, c, config[c])
+            gpmodel.evolve()
+            return gpmodel.best_individual.fitness
+
+        # Obtain the hyperparameter (HP) space from the GP model
+        self.paramspace = gpmodel_.hyperparameters.space
+
+        # Use the HP space to init the configuration space (CS)
+        self.configspace = ConfigurationSpace(self.paramspace)
+
+        # Scenario object specifying the optimization environment
+        self.scenario = Scenario(self.configspace, deterministic=True, n_trials=n_trials_)
+
+        # Use SMAC to find the best configuration/hyperparameters
+        smac = HyperparameterOptimizationFacade(self.scenario, train)
+        incumbent = smac.optimize()
+
+        inc_hp = copy.deepcopy(gpmodel_.hyperparameters)
+        for c in incumbent.keys():
+            setattr(inc_hp, c, incumbent[c])
+        return inc_hp
+
 
 class Hpo:
     """

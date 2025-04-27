@@ -1,15 +1,5 @@
 """
-Example module to test CGP with symbolic regression problems.
-
-Attempts to evolve a solution for the Koza-1 benchmkark which is
-a quartic polynomial: x^4 + x^3 + x^2 + x
-
-The problem is specified in the following paper:
-https://dl.acm.org/doi/10.1145/2330163.2330273
-
-Please note: This benchmark is nowadays considered a toy problem and
-no serious benchmark. It only serves as an example for SR as an application
-domain for TinyverseGP:
+Example script to perform HPO via SMAC for CGP on a simple (toy) symbolic regression problem.
 """
 
 from src.gp.tiny_cgp import *
@@ -18,7 +8,7 @@ from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
 from src.gp.functions import *
 from src.gp.loss import *
 from src.gp.tinyverse import Var, Const
-from src.hpo.hpo import Hpo
+from src.hpo.hpo import Hpo, SMACInterface
 
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
@@ -54,13 +44,12 @@ config.init()
 loss = absolute_distance
 benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA3')
+trials = 25
 
 problem = BlackBox(data, actual, loss, 1e-6, True)
-
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
+interface = SMACInterface()
 
-## hpo with smac, test
-opt_hyperparameters = Hpo.optimise_smac(cgp,25)
+## Perform HPO via SMAC
+opt_hyperparameters = interface.optimise(cgp,trials)
 print(opt_hyperparameters)
-#cgp.hyperparameters = opt_hyperparameters
-cgp.evolve()

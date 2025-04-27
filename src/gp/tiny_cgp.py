@@ -64,9 +64,14 @@ class CGPIndividual(GPIndividual):
     avoid unnecessary evaluation costs by re-evaluating and re-visiting nodes in the
     decoding routine.
     """
+    genome: list[int]
+    fitness: any
+    paths: list
+
     def __init__(self, genome_: list[int], fitness_: any = None, paths_ = None):
         GPIndividual.__init__(self,genome_, fitness_)
         self.paths = paths_
+
 
 class TinyCGP(GPModel):
     """
@@ -632,7 +637,7 @@ class TinyCGP(GPModel):
                 if self.problem.is_better(best_gen_fitness, best_fitness_job):
                     best_fitness_job = best_gen_fitness
 
-                self.report_generation(silent=self.config.silent_algorithm,
+                self.report_generation(silent_algorithm=self.config.silent_algorithm,
                                        generation=generation,
                                        best_fitness=best_fitness,
                                        report_interval=self.config.report_interval)

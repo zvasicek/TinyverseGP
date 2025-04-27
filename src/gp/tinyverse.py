@@ -23,18 +23,24 @@ from src.gp.types import HPType
 import yaml
 
 class GPIndividual(ABC):
-    genome: any
-    fitness: any
-
     """
     Class that is used to represent a GP individual.
     Formally a GP individual can be represented as a tuple consisting of
     the genome and the fitness value.
     """
+    genome: any
+    fitness: any
+    evaluated: bool
 
     def __init__(self, genome_: any = None, fitness_: any = None):
         self.genome = genome_
         self.fitness = fitness_
+
+        if fitness_ is None:
+            self.evaluated = False
+
+    def list(self):
+        return [self.genome, self.fitness]
 
 @dataclass
 class Config(ABC):
@@ -248,15 +254,15 @@ class GPModel(ABC):
             else:
                 print(str(num_evaluations) + ";" + str(best_fitness))
 
-    def report_generation(self, silent: bool, generation: int, best_fitness: float, report_interval: int):
+    def report_generation(self, silent_algorithm: bool, generation: int, best_fitness: float, report_interval: int):
         """
         Reports the status of a generation.
 
-        :param silent: Switch for activating/deactivating the report function
+        :param silent_algorithm: Switch for activating/deactivating the report function
         :param generation: Generation number
         :param best_fitness: Best fitness found so far
         :param report_interval: Interval after which the generation status is reported
         """
-        if not silent and generation % report_interval == 0:
+        if not silent_algorithm and generation % report_interval == 0:
             print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
 

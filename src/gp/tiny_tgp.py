@@ -9,18 +9,6 @@ import time
 from src.gp.problem import *
 from src.gp.tinyverse import *
 
-@dataclass
-class TGPHyperparameters(GPHyperparameters):
-    """
-    Specialized hyperparameter configuration space for TGP.
-    """
-    max_size: int
-    max_depth: int
-
-    def __post_init__(self):
-        GPHyperparameters.__post_init__(self)
-
-
 class Node:
     '''
     Node class for the tree representation of the genome.
@@ -32,6 +20,24 @@ class Node:
     def __init__(self, function: Any, children: List[Any]):
         self.function = function
         self.children = children
+
+@dataclass
+class TGPHyperparameters(GPHyperparameters):
+    """
+    Specialized hyperparameter configuration space for TGP.
+    """
+    max_size: int
+    max_depth: int
+
+    def __post_init__(self):
+        GPHyperparameters.__post_init__(self)
+
+class TGPIndividual(GPIndividual):
+    genome: list[Node]
+    fitness: any
+
+    def __init__(self, genome_: list[int], fitness_: any = None):
+        GPIndividual.__init__(self,genome_, fitness_)
 
 def node_size(node: Node) -> int:
     '''
@@ -52,7 +58,7 @@ class TinyTGP(GPModel):
     problem: Problem
     functions: list[Function]
 
-    def __init__(self, problem_: object, functions_: list[Function], terminals_: list[Function],
+    def __init__(self, problem_: Problem, functions_: list[Function], terminals_: list[Function],
                  config: GPConfig, hyperparameters: TGPHyperparameters):
         self.functions = functions_ # the list of available functions
         self.terminals = terminals_ # the list of terminal nodes
@@ -63,7 +69,9 @@ class TinyTGP(GPModel):
         self.num_evaluations = 0 # conter of number of evaluations
         # initial population using ramped half-and-half
         self.population = [[genome, 0.0] 
-                            for genome in self.init_ramped_half_half(self.hyperparameters.pop_size, 1, self.hyperparameters.max_depth, self.hyperparameters.max_size)]
+                            for genome in self.init_ramped_half_half(self.hyperparameters.pop_size, 1,
+                                                                     self.hyperparameters.max_depth,
+                                                                     self.hyperparameters.max_size)]
         self.evaluate() # evaluates the initial population
 
 
@@ -377,7 +385,7 @@ class TinyTGP(GPModel):
                 # evaluate the new population
                 best_fitness = self.evaluate()
                 # `report_generation` will handle the reporting of every generation according to the config     
-                self.report_generation(silent = self.config.silent_algorithm,
+                self.report_generation(silent_algorithm= self.config.silent_algorithm,
                                        generation=generation,
                                        best_fitness=best_fitness,
                                        report_interval=self.config.report_interval)
