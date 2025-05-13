@@ -38,16 +38,16 @@ class SMACInterface(HPOInterface):
             return gpmodel.best_individual.fitness
 
         # Obtain the hyperparameter (HP) space from the GP model
-        self.paramspace = gpmodel_.hyperparameters.space
+        paramspace = gpmodel_.hyperparameters.space
 
         # Use the HP space to init the configuration space (CS)
-        self.configspace = ConfigurationSpace(self.paramspace)
+        configspace = ConfigurationSpace(paramspace)
 
         # Scenario object specifying the optimization environment
-        self.scenario = Scenario(self.configspace, deterministic=True, n_trials=n_trials_)
+        scenario = Scenario(configspace, deterministic=True, n_trials=n_trials_)
 
         # Use SMAC to find the best configuration/hyperparameters
-        smac = HyperparameterOptimizationFacade(self.scenario, train)
+        smac = HyperparameterOptimizationFacade(scenario, train)
         incumbent = smac.optimize()
 
         inc_hp = copy.deepcopy(gpmodel_.hyperparameters)
