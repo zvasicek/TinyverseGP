@@ -65,7 +65,7 @@ class TinyTGP(GPModel):
         self.problem = problem_ # an instance to a problem. This allows us to handle different problems transparently
         self.hyperparameters = hyperparameters # hyperparameters
         self.config = config # overall configuration
-        self.best = None  # to keep the best program found so far
+        self.best_individual = None  # to keep the best program found so far
         self.num_evaluations = 0 # conter of number of evaluations
         # initial population using ramped half-and-half
         self.population = [TGPIndividual(genome, 0.0)
@@ -159,8 +159,8 @@ class TinyTGP(GPModel):
             if best is None or self.problem.is_better(fitness, best):
                 best = fitness
             # update the best solution of all time
-            if self.best is None or self.problem.is_better(fitness, self.best.fitness):
-                self.best = TGPIndividual(genome, fitness)
+            if self.best_individual is None or self.problem.is_better(fitness, self.best_individual.fitness):
+                self.best_individual = TGPIndividual(genome, fitness)
         return best
 
     def evaluate_individual(self, genome:list[int]) -> float:
@@ -171,8 +171,8 @@ class TinyTGP(GPModel):
         '''
         self.num_evaluations += 1  # update the evaluation counter
         f = self.problem.evaluate(genome, self) # evaluate the solution using the problem instance
-        if self.best is None or self.problem.is_better(f, self.best.fitness):
-            self.best = TGPIndividual(genome, f)
+        if self.best_individual is None or self.problem.is_better(f, self.best_individual.fitness):
+            self.best_individual = TGPIndividual(genome, f)
         return f
 
     def predict(self, genome: Node, observation: list) -> list:
@@ -208,7 +208,7 @@ class TinyTGP(GPModel):
         # replace the current population by perturbing the sampled parents     
         self.population = [self.perturb(*parent) for parent in parents]
         # keep the best solution in the population 
-        self.population.append(TGPIndividual(self.best.genome, self.best.fitness))
+        self.population.append(TGPIndividual(self.best_individual.genome, self.best_individual.fitness))
 
     def perturb(self, parent1: Node, parent2: Node) -> list:
         '''
@@ -411,4 +411,4 @@ class TinyTGP(GPModel):
                             minimalistic_output=self.config.minimalistic_output)
             if terminate:
                 break
-        return self.best.genome
+        return self.best_individual.genome

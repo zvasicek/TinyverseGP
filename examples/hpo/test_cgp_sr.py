@@ -8,7 +8,7 @@ from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
 from src.gp.functions import *
 from src.gp.loss import *
 from src.gp.tinyverse import Var, Const
-from src.hpo.hpo import Hpo, SMACInterface
+from src.hpo.hpo import SMACInterface
 
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
@@ -53,3 +53,8 @@ interface = SMACInterface()
 ## Perform HPO via SMAC
 opt_hyperparameters = interface.optimise(cgp,trials)
 print(opt_hyperparameters)
+
+config.silent_algorithm=False
+config.silent_evolver=False
+cgp = TinyCGP(problem, functions, terminals, config, opt_hyperparameters)
+cgp.evolve()

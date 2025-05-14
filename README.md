@@ -62,6 +62,8 @@ python3 -m examples.policy_learning.test_cgp_pl_ale
 python3 -m examples.policy_learning.test_tgp_pl
 python3 -m examples.program_synthesis.test_cgp_ps
 python3 -m examples.program_synthesis.test_tgp_ps
+python3 -m examples.hpo.test_cgp_sr
+python3 -m examples.hpo.test_tgp_sr
 ```
 
 or any other script in that folder.
