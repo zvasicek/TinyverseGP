@@ -40,7 +40,7 @@ config = GPConfig(
     max_time=60
 )
 
-hyperparameters = GPHyperparameters(
+hyperparameters = TGPHyperparameters(
     pop_size=100,
     max_size=25,
     max_depth=5,

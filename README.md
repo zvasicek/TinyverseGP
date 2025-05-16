@@ -1,3 +1,5 @@
+*Unstable testing branch used for the integration of hyperparameter optimisation (HPO) and automated machine learning (AutoML).*
+
 # TinyverseGP: Minimalistic implementations of different representations for Genetic Programming
 
 TinyverseGP is a collection of minimalistic implementations of different representations for Genetic Programming. The goal is to provide a simple and easy-to-understand codebase with the following goals in mind:
@@ -30,7 +32,7 @@ This repository is organized as follows:
 
 # Requirements and testing
 
-The current version supports Python3.9 and higher. To install the requirements it is suggest to run:
+The current version supports Python3.9 and Python3.10. To install the requirements it is suggest to run:
 
 
 ```bash
@@ -38,6 +40,15 @@ python3 -m venv env
 . env/bin/activate
 pip3 install -r requirements.txt
 ```
+
+If you have a different Python version, you can use [Pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) to switch between versions:
+
+```bash
+pyenv install 3.10
+pyenv sell 3.10
+```
+
+**NOTE:** we currently do not support Python versions higher than 3.10 due to an issue with one of the dependencies ([see here](https://github.com/automl/random_forest_run/issues/78))
 
 To run the examples, you can use one of the following command:
 
@@ -51,6 +62,8 @@ python3 -m examples.policy_learning.test_cgp_pl_ale
 python3 -m examples.policy_learning.test_tgp_pl
 python3 -m examples.program_synthesis.test_cgp_ps
 python3 -m examples.program_synthesis.test_tgp_ps
+python3 -m examples.hpo.test_cgp_sr
+python3 -m examples.hpo.test_tgp_sr
 ```
 
 or any other script in that folder.
@@ -116,3 +129,5 @@ This work is under GNU General Public License, Version 3.
 # Acknowledgements
 
 This work was supported by an Alexander von Humboldt Professorship in AI held by Holger Hoos, the Czech Science Foundation project 25-15490S and Conselho Nacional de Desenvolvimento Cientifico e Tecnologico (CNPq) grant 301596/2022-0.
+
+
