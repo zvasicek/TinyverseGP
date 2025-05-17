@@ -1,5 +1,3 @@
-*Unstable testing branch used for the integration of hyperparameter optimisation (HPO) and automated machine learning (AutoML).*
-
 # TinyverseGP: Minimalistic implementations of different representations for Genetic Programming
 
 TinyverseGP is a collection of minimalistic implementations of different representations for Genetic Programming. The goal is to provide a simple and easy-to-understand codebase with the following goals in mind:
