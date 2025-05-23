@@ -21,7 +21,7 @@ class Node:
         self.function = function
         self.children = children
 
-@dataclass
+@dataclass(kw_only=True)
 class TGPHyperparameters(GPHyperparameters):
     """
     Specialized hyperparameter configuration space for TGP.
@@ -68,11 +68,11 @@ class TinyTGP(GPModel):
         self.best_individual = None  # to keep the best program found so far
         self.num_evaluations = 0 # conter of number of evaluations
         # initial population using ramped half-and-half
-        self.population = [TGPIndividual(genome, 0.0)
+        self.population = [TGPIndividual(genome, None)
                             for genome in self.init_ramped_half_half(self.hyperparameters.pop_size, 1,
                                                                      self.hyperparameters.max_depth,
                                                                      self.hyperparameters.max_size)]
-        self.evaluate() # evaluates the initial population
+        self.best_individual = self.evaluate() # evaluates the initial population
 
 
     def tree_random_full(self, max_depth: int, size: int) -> Node:
@@ -143,26 +143,6 @@ class TinyTGP(GPModel):
                 grow = not grow
         return pop
 
-    def evaluate(self) -> float:
-        '''
-        Triggers the evaluation of the whole population.
-
-        :return: a `float` value of the best fitness
-        '''
-        best = None
-        # For each individual in the population 
-        for ix, individual in enumerate(self.population):
-            genome = individual.genome  # extract the genome
-            fitness = self.evaluate_individual(genome) # evaluate it
-            self.population[ix] = TGPIndividual(genome, fitness) # assign the fitness
-            # update the population best solution
-            if best is None or self.problem.is_better(fitness, best):
-                best = fitness
-            # update the best solution of all time
-            if self.best_individual is None or self.problem.is_better(fitness, self.best_individual.fitness):
-                self.best_individual = TGPIndividual(genome, fitness)
-        return best
-
     def evaluate_individual(self, genome:list[int]) -> float:
         '''
         Evaluate a single individual `genome`.
@@ -174,6 +154,22 @@ class TinyTGP(GPModel):
         if self.best_individual is None or self.problem.is_better(f, self.best_individual.fitness):
             self.best_individual = TGPIndividual(genome, f)
         return f
+
+    def eval_complexity(self, genome: list[Node]) -> int:
+        '''
+        Returns the complexity of the genome.
+
+        :return: an integer representing the number of nodes in the genome.
+        '''
+        return sum([node_size(g) for g in genome])
+
+    def is_valid(self, genome: list[Node]) -> bool:
+        '''
+        Check if the genome is valid. A genome is valid if it has the same number of outputs as the problem.
+
+        :return: a boolean indicating whether the genome is valid or not.
+        '''
+        return len(genome) == self.config.num_outputs
 
     def predict(self, genome: Node, observation: list) -> list:
         '''
@@ -362,7 +358,7 @@ class TinyTGP(GPModel):
         """
         Prints information about a single individual.
         """
-        print("Genome: " + ";".join(self.expression(individual[0])) + " : Fitness: " + str(individual[1]))
+        print("Genome: " + ";".join(self.expression(individual.genome)) + " : Fitness: " + str(individual.fitness))
 
     def evolve(self):
         """
@@ -383,7 +379,8 @@ class TinyTGP(GPModel):
                 # breed     
                 self.breed()
                 # evaluate the new population
-                best_fitness = self.evaluate()
+                best_gen = self.evaluate()
+                best_fitness = best_gen.fitness
                 # `report_generation` will handle the reporting of every generation according to the config     
                 self.report_generation(silent_algorithm= self.config.silent_algorithm,
                                        generation=generation,
