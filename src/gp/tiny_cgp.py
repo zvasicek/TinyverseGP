@@ -12,7 +12,7 @@ import random
 import time
 from dataclasses import dataclass
 from enum import Enum
-from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var
+from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var, GPIndividual, GPHyperparameters
 from src.gp.problem import Problem
 
 
@@ -29,6 +29,12 @@ class CGPHyperparameters(Hyperparameters):
     mutation_rate: float = None
     mutation_rate_genes: int = None
 
+    def __post_init__(self):
+        Hyperparameters.__post_init__(self)
+        self.space["mu"] = (1, 4)
+        self.space["lmbda"] = (1, 1024)
+        self.space["strict_selection"] = [True, False]
+        self.space["mutation_rate"] = (0.0, 1.0)
 
 @dataclass
 class CGPConfig(GPConfig):
@@ -48,7 +54,7 @@ class CGPConfig(GPConfig):
         self.num_genes = (self.genes_per_node * self.num_function_nodes) + self.num_outputs
 
 
-class CGPIndividual:
+class CGPIndividual(GPIndividual):
     """
     Class that is used to represent a CGP individual.
     Formally a GP individual can be represented as a tuple consisting of
@@ -58,10 +64,12 @@ class CGPIndividual:
     avoid unnecessary evaluation costs by re-evaluating and re-visiting nodes in the
     decoding routine.
     """
+    genome: list[int]
+    fitness: any
+    paths: list
 
-    def __init__(self, genome_: list[int], fitness_: float = None, paths_ = None):
-        self.genome = genome_
-        self.fitness = fitness_
+    def __init__(self, genome_: list[int], fitness_: any = None, paths_ = None):
+        GPIndividual.__init__(self,genome_, fitness_)
         self.paths = paths_
 
 
@@ -87,7 +95,8 @@ class TinyCGP(GPModel):
         CONSTANT = 1
 
     def __init__(self, problem_: Problem, functions_: list, terminals_: list,
-                 config_: CGPConfig, hyperparameters_: Hyperparameters):
+                 config_: CGPConfig, hyperparameters_: CGPHyperparameters):
+        super().__init__()
         self.num_evaluations = 0
         self.population = []
         self.functions = functions_
@@ -267,38 +276,6 @@ class TinyCGP(GPModel):
             return self.config.num_functions - 1
         else:
             return self.node_number(position) - 1
-
-    def fitness(self, individual: CGPIndividual) -> float:
-        """
-        Return the fitness value of an individual.
-        """
-        return individual.fitness
-
-    def evaluate(self) -> (CGPIndividual, bool):
-        """
-        Evaluates the population.
-
-        :returns: the best solution discovered in the population
-        """
-        best = None
-        for individual in self.population:
-            genome = individual.genome
-            if (individual.fitness is None):
-                individual.fitness = self.evaluate_individual(genome)
-            fitness = individual.fitness
-
-            if self.problem.is_ideal(fitness):
-                return individual, True
-
-            if best is None:
-                best = individual
-                best_fitness = fitness
-
-            if self.problem.is_better(fitness, best_fitness):
-                best = individual
-                best_fitness = fitness
-
-        return best, False
 
     def evaluate_individual(self, genome: list[int]) -> float:
         """
@@ -635,7 +612,7 @@ class TinyCGP(GPModel):
         for job in range(self.config.num_jobs):
             self.num_evaluations = 0
             # Evaluate the initial population
-            best_individual, _ = self.evaluate()
+            best_individual = self.evaluate()
             best_fitness = best_fitness_job = best_individual.fitness
             for generation in range(self.config.max_generations):
                 # Selection of a parent if necessary
@@ -647,8 +624,11 @@ class TinyCGP(GPModel):
                 self.breed(parent)
 
                 # Evaluation of the offspring
-                best_gen, is_ideal = self.evaluate()
+                best_gen = self.evaluate()
                 best_gen_fitness = best_gen.fitness
+
+                if self.problem.is_ideal(best_gen_fitness):
+                    break
 
                 if self.problem.is_better(best_gen_fitness, best_fitness):
                     best_individual = best_gen
@@ -657,13 +637,13 @@ class TinyCGP(GPModel):
                 if self.problem.is_better(best_gen_fitness, best_fitness_job):
                     best_fitness_job = best_gen_fitness
 
-                self.report_generation(silent=self.config.silent_algorithm,
+                self.report_generation(silent_algorithm=self.config.silent_algorithm,
                                        generation=generation,
                                        best_fitness=best_fitness,
                                        report_interval=self.config.report_interval)
 
-                if is_ideal:  # if the ideal solution is found, terminate
-                    break
+                #if is_ideal:  # if the ideal solution is found, terminate
+                #    break
 
                 if (generation & 15) == 0:  # check periodically if the time limit is reached
                     t1 = time.time()

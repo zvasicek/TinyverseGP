@@ -17,6 +17,8 @@ from src.gp.functions import *
 from src.gp.loss import *
 from src.gp.problem import BlackBox
 from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from src.hpo.hpo import SMACInterface
+
 
 config = GPConfig(
     num_jobs=1,
@@ -24,8 +26,8 @@ config = GPConfig(
     stopping_criteria=1e-6,
     minimizing_fitness=True,  # this should be used from the problem instance
     ideal_fitness=1e-6,  # this should be used from the problem instance
-    silent_algorithm=False,
-    silent_evolver=False,
+    silent_algorithm=True,
+    silent_evolver=True,
     minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
@@ -46,8 +48,17 @@ benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA1')
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
+trials = 25
 
 problem = BlackBox(data, actual, loss, 1e-6, True)
+cgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
+interface = SMACInterface()
 
-tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
-tgp.evolve()
+## Perform HPO via SMAC
+opt_hyperparameters = interface.optimise(cgp,trials)
+print(opt_hyperparameters)
+
+config.silent_algorithm=False
+config.silent_evolver=False
+cgp = TinyTGP(problem, functions, terminals, config, opt_hyperparameters)
+cgp.evolve()

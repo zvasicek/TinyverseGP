@@ -13,8 +13,8 @@ from src.gp.problem import ProgramSynthesis
 from src.benchmark.program_synthesis.ps_benchmark import PSBenchmark
 from src.benchmark.program_synthesis.leetcode.power_of_two import *
 from src.gp.functions import *
-from src.gp.tiny_tgp import TinyTGP
-from src.gp.tinyverse import Var, Const, GPHyperparameters
+from src.gp.tiny_tgp import TinyTGP, TGPHyperparameters
+from src.gp.tinyverse import Var, Const
 
 NUM_INPUTS = 1
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
@@ -34,7 +34,7 @@ config = GPConfig(
     max_time=60
 )
 
-hyperparameters = GPHyperparameters(
+hyperparameters = TGPHyperparameters(
     pop_size=100,
     max_size=25,
     max_depth=5,
