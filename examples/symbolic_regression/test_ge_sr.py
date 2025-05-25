@@ -38,7 +38,8 @@ hyperparameters = GEHyperparameters(
     codon_size=1000,
     cx_rate=0.9,
     mutation_rate=0.1,
-    tournament_size=2
+    tournament_size=2,
+    penalty_value=99999
 )
 
 loss = absolute_distance

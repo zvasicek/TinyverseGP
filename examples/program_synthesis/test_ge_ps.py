@@ -11,7 +11,6 @@ https://leetcode.com/problems/power-of-two/description/
 import warnings
 warnings.filterwarnings("ignore")
 
-from src.gp.tiny_cgp import *
 from src.gp.problem import ProgramSynthesis
 from src.benchmark.program_synthesis.ps_benchmark import PSBenchmark
 from src.benchmark.program_synthesis.leetcode.power_of_two import *
@@ -39,7 +38,8 @@ hyperparameters = GEHyperparameters(
     codon_size=1000,
     cx_rate=0.9,
     mutation_rate=0.1,
-    tournament_size=2
+    tournament_size=2,
+    penalty_value=0
 )
 
 generator = gen_power_of_two

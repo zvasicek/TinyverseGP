@@ -12,16 +12,23 @@ from src.gp.tinyverse import *
 
 
 @dataclass
-class GEHyperparameters(Hyperparameters):
+class GEHyperparameters(GPHyperparameters):
     """
     Specialized hyperparameter configuration space for GE.
     """
-    pop_size: int
     genome_length: int
     codon_size: int
-    cx_rate: float
-    mutation_rate: float
-    tournament_size: int
+    penalty_value: float
+
+    def __post_init__(self):
+        GPHyperparameters.__post_init__(self)
+
+class GEIndividual(GPIndividual):
+    genome: list[int]
+    fitness: any
+
+    def __init__(self, genome_: list[int], fitness_: any = None):
+        GPIndividual.__init__(self,genome_, fitness_)
 
 class TinyGE(GPModel):
     '''
@@ -40,11 +47,11 @@ class TinyGE(GPModel):
         self.problem = problem_ # an instance to a problem. This allows us to handle different problems transparently
         self.hyperparameters = hyperparameters # hyperparameters
         self.config = config # overall configuration
-        self.best = None  # to keep the best program found so far
+        self.best_individual = None  # to keep the best program found so far
         self.num_evaluations = 0 # counter of number of evaluations
 
         # initial population using uniform initialization
-        self.population = [[genome, 0.0] for genome in self.init_uniform(self.hyperparameters.pop_size, self.hyperparameters.genome_length, self.hyperparameters.codon_size)]        
+        self.population = [GEIndividual(genome, 0.0) for genome in self.init_uniform(self.hyperparameters.pop_size, self.hyperparameters.genome_length, self.hyperparameters.codon_size)]        
 
         self.evaluate() # evaluates the initial population
 
@@ -68,15 +75,15 @@ class TinyGE(GPModel):
         best = None
         # For each individual in the population 
         for ix, individual in enumerate(self.population):
-            genome = individual[0]  # extract the genome
+            genome = individual.genome   # extract the genome
             fitness = self.evaluate_individual(genome) # evaluate it
-            self.population[ix][1] = fitness # assign the fitness
+            self.population[ix] = GEIndividual(genome, fitness) # assign the fitness
             # update the population best solution
             if best is None or self.problem.is_better(fitness, best):
                 best = fitness
             # update the best solution of all time
-            if self.best is None or self.problem.is_better(fitness, self.best[1]):
-                self.best = [copy.copy(genome), fitness]
+            if self.best_individual is None or self.problem.is_better(fitness, self.best_individual.fitness):
+                self.best_individual = GEIndividual(genome, fitness)
         return best
 
     def evaluate_individual(self, genome:list[int]) -> float:
@@ -86,9 +93,14 @@ class TinyGE(GPModel):
         :return: a `float` representing the fitness of that individual.
         '''
         self.num_evaluations += 1  # update the evaluation counter
-        f = self.problem.evaluate(genome, self) # evaluate the solution using the problem instance
-        if self.best is None or self.problem.is_better(f, self.best[1]):
-            self.best = [copy.copy(genome), f]
+        f = None
+        tmp_expr = self.expression(genome)
+        if '<' in tmp_expr or '>' in tmp_expr:
+            f = self.hyperparameters.penalty_value 
+        else:
+            f = self.problem.evaluate(genome, self) # evaluate the solution using the problem instance
+        if self.best_individual is None or self.problem.is_better(f, self.best_individual.fitness):
+            self.best_individual = GEIndividual(genome, f)
         return f
 
     def predict(self, genome: list, observation: list) -> list:
@@ -101,11 +113,7 @@ class TinyGE(GPModel):
             local_vars = dict(zip(args, values))
             return [eval(expr, func_dict, local_vars)]
 
-        tmp_expr = self.expression(genome)
-        if '<' in tmp_expr or '>' in tmp_expr:
-            #return [float('nan')]                                                                # TODO: CHANGE THIS!!! / Penalty for invalid genome? --> problem.py line 109
-            return [999999999999999] 
-        
+        tmp_expr = self.expression(genome)    # TODO: expression already generated in evaluate_individual() -> prevent double execution
         return evaluate_expression(tmp_expr, self.functions, self.arguments, observation)
 
     def breed(self):
@@ -118,7 +126,7 @@ class TinyGE(GPModel):
         # replace the current population by perturbing the sampled parents     
         self.population = [self.perturb(*parent) for parent in parents]
         # keep the best solution in the population 
-        self.population.append([copy.copy(self.best[0]), self.best[1]])
+        self.population.append(GEIndividual(self.best_individual.genome, self.best_individual.fitness))
 
     def perturb(self, parent1: list, parent2: list) -> list:
         '''
@@ -130,7 +138,7 @@ class TinyGE(GPModel):
         genome = self.crossover(parent1, parent2) if random.random() <= self.hyperparameters.cx_rate else parent1
         # applies mutation with `self.hyperparameters.mutation_rate`
         genome = self.mutation(genome, 0, self.hyperparameters.codon_size, self.hyperparameters.mutation_rate)
-        return [genome, None] # returns the unevaluated offspring
+        return GEIndividual(genome, None) # returns the unevaluated offspring
 
     def selection(self) -> list:            
         '''
@@ -142,9 +150,9 @@ class TinyGE(GPModel):
         parents = [random.choice(self.population) for _ in range(self.hyperparameters.tournament_size)]
         # return the best of this sample whether it is a minimization or maximization problem     
         if self.problem.minimizing:
-            return min(parents, key=lambda ind: ind[1])[0]
+            return min(parents, key=lambda ind: ind.fitness).genome
         else:
-            return max(parents, key=lambda ind: ind[1])[0]
+            return max(parents, key=lambda ind: ind.fitness).genome
 
     def crossover(self, p1: list, p2: list) -> list:
         '''
@@ -233,7 +241,7 @@ class TinyGE(GPModel):
                 # evaluate the new population
                 best_fitness = self.evaluate()
                 # `report_generation` will handle the reporting of every generation according to the config     
-                self.report_generation(silent = self.config.silent_algorithm,
+                self.report_generation(silent_algorithm= self.config.silent_algorithm,
                                        generation=generation,
                                        best_fitness=best_fitness,
                                        report_interval=self.config.report_interval)
@@ -259,4 +267,4 @@ class TinyGE(GPModel):
                             minimalistic_output=self.config.minimalistic_output)
             if terminate:
                 break
-        return self.best[0]
+        return self.best_individual.genome
