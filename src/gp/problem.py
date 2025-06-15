@@ -9,7 +9,6 @@ Currently, the following problem types are provided:
 - ProgramSynthesis: Used for the provided coding problems
 
 """
-
 import gymnasium as gym
 import numpy as np
 from dataclasses import dataclass
