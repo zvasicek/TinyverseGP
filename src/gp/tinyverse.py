@@ -17,8 +17,9 @@ TinyverseGP: A modular cross-domain benchmark system for Genetic Programming.
 
 from abc import ABC
 from abc import abstractmethod
-from dataclasses import dataclass
-from typing import List, Any, Generic
+from dataclasses import dataclass, field
+from typing import List, Any, Generic, Callable, Dict
+import copy
 from src.gp.types import HPType
 import yaml
 
@@ -50,7 +51,7 @@ class Config(ABC):
     def dictionary(self) -> dict:
         return self.__dict__
 
-@dataclass
+@dataclass(kw_only=True)
 class GPConfig(Config):
     """
     Configuration class for GP models.
@@ -68,6 +69,7 @@ class GPConfig(Config):
     num_outputs: int
     report_interval: int
     max_time: int
+    constraints: Callable[[Any], float] = lambda x: 0.0
 
 @dataclass
 class Hyperparameter(ABC, Generic[HPType]):
@@ -76,11 +78,16 @@ class Hyperparameter(ABC, Generic[HPType]):
     upper: HPType
     type: HPType
 
-@dataclass
+@dataclass(kw_only=True)
 class Hyperparameters(ABC):
     """
     Base class for the GP hyperparamters.
     """
+    penalization_complexity_factor : float = 0.0
+    penalization_feasibility_factor : float = 0.0
+    penalization_validity_factor : float = 0.0
+    discard_invalid : bool = True
+    discard_infeasible : bool = False 
 
     def dictionary(self) -> dict:
         return self.__dict__
@@ -92,7 +99,7 @@ class Hyperparameters(ABC):
         with open("hp.yml", "w") as file:
             yaml.dump(self.space, file, default_flow_style=False)
 
-@dataclass
+@dataclass(kw_only=True)
 class GPHyperparameters(Hyperparameters):
     """
     Hyperparameters class for Genetic Programming models.
@@ -109,6 +116,11 @@ class GPHyperparameters(Hyperparameters):
         self.space["mutation_rate"] = (0.0, 1.0)
         self.space["cx_rate"] = (0.0, 1.0)
         self.space["tournament_size"] = (2, 9)
+        self.space["penalization_complexity_factor"] = (0.0, 1.0)
+        self.space["penalization_feasibility_factor"] = (0.0, 1.0)
+        self.space["penalization_validity_factor"] = (0.0, 1.0)
+        self.space["discard_invalid"] = (False, True)
+        self.space["discard_infeasible"] = (False, True)
 
 @dataclass
 class Function():
@@ -166,6 +178,7 @@ class GPModel(ABC):
     num_evaluation: float
     population: List[GPIndividual]
     hyperparameters: GPHyperparameters
+    config: GPConfig
 
     def __init__(self):
         self.best_individual = GPIndividual()
@@ -180,23 +193,67 @@ class GPModel(ABC):
         for individual in self.population:
             genome = individual.genome
             if individual.fitness is None:
-                individual.fitness = self.evaluate_individual(genome)
+                individual.fitness = self.penalize(self.evaluate_individual(genome), genome)
             fitness = individual.fitness
 
             if self.problem.is_ideal(fitness):
                 return individual
 
             if best is None:
-                best = individual
+                best = copy.copy(individual)
                 best_fitness = fitness
 
             if self.problem.is_better(fitness, best_fitness):
-                best = individual
+                best = copy.copy(individual)
                 best_fitness = fitness
-        self.best_individual = best
+        self.best_individual = copy.copy(best)
 
         return best
+
+    def penalize(self, fitness : float, genome:GPIndividual) -> float:
+        """
+        Penalizes the fitness of a genome.
+        This method is used to penalize genomes that are
+        invalid, do not satisfy the constraints of the problem, or are too complex.
+        """
+        valid = self.is_valid(genome)
+        if self.hyperparameters.discard_invalid and not valid:
+            if self.config.minimizing_fitness:
+                return float("inf")
+            else:
+                return float("-inf")
+        violations = self.config.constraints(genome)
+        if self.hyperparameters.discard_infeasible and violations > 0:
+            if self.config.minimizing_fitness:
+                return float("inf")
+            else:
+                return float("-inf")
+        complexity = self.eval_complexity(genome)
         
+        penalty = self.hyperparameters.penalization_complexity_factor * complexity + \
+                  self.hyperparameters.penalization_feasibility_factor * violations + \
+                  self.hyperparameters.penalization_validity_factor * (1.0 - valid)
+        
+        if self.config.minimizing_fitness:
+            fitness += penalty 
+        else:
+            fitness -= penalty
+        return fitness
+       
+    @abstractmethod
+    def is_valid(self, genome:GPIndividual) -> bool:
+        """
+        Checks if the genome is valid.
+        """
+        pass
+
+    @abstractmethod
+    def eval_complexity(self, genome:GPIndividual) -> float:
+        """
+        Evaluates the complexity of the genome.
+        """
+        pass
+
     @abstractmethod
     def evaluate_individual(self,genome:GPIndividual) -> float:
         """
@@ -212,6 +269,7 @@ class GPModel(ABC):
         """
         pass
 
+    @abstractmethod
     def selection(self) -> Any:
         """
         Implementation of the selection mechanism.
