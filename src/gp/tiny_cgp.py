@@ -16,7 +16,7 @@ from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var, GPIndividu
 from src.gp.problem import Problem
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CGPHyperparameters(Hyperparameters):
     """
     Specialized hyperparameter configuration space for CGP.
@@ -36,7 +36,7 @@ class CGPHyperparameters(Hyperparameters):
         self.space["strict_selection"] = [True, False]
         self.space["mutation_rate"] = (0.0, 1.0)
 
-@dataclass
+@dataclass(kw_only=True)
 class CGPConfig(GPConfig):
     """
     Specialized GP configuration that is needed to run CGP.
@@ -314,6 +314,22 @@ class TinyCGP(GPModel):
         if arity < len(args):
             args = args[:arity]
         return self.functions[function](*args)
+
+    def eval_complexity(self, genome: list[int]) -> float:
+        """
+        Returns the complexity of the genome based on the number of active nodes.
+
+        :param genome: Genome of an individual
+        :return: Complexity value
+        """
+        active_nodes = self.active_nodes(genome)
+        return len(active_nodes)
+
+    def is_valid(self, genome: list[int]) -> bool:
+        """
+
+        """
+        return True
 
     def predict(self, genome: list[int], observation: list) -> list:
         """
