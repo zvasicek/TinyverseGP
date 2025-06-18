@@ -20,7 +20,7 @@ import os
 import json
 from abc import ABC
 from abc import abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import List, Any, Generic
 from src.gp.types import HPType
 import yaml
@@ -62,8 +62,13 @@ class Config(ABC):
     Abstract class for configuration classes.
     """
 
-    def dictionary(self) -> dict:
+    def as_dict(self) -> dict:
         return self.__dict__
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        names = {field.name for field in fields(cls)}
+        return cls(**{k: v for k, v in d.items() if k in names})
 
 
 @dataclass
@@ -97,14 +102,17 @@ class Hyperparameter(ABC, Generic[HPType]):
     upper: HPType
     type: HPType
 
+
+@dataclass
+class HyperparameterSpace(ABC):
+    space: list[Hyperparameter]
+
+
 @dataclass
 class Hyperparameters(ABC):
     """
     Base class for the GP hyperparamters.
     """
-
-    def dictionary(self) -> dict:
-        return self.__dict__
 
     def __post_init__(self):
         self.space = dict()
@@ -112,6 +120,14 @@ class Hyperparameters(ABC):
     def to_yaml(self):
         with open("hp.yml", "w") as file:
             yaml.dump(self.space, file, default_flow_style=False)
+
+    def as_dict(self):
+        return self.__dict__
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        names = {field.name for field in fields(cls)}
+        return cls(**{k: v for k, v in d.items() if k in names})
 
 
 @dataclass
@@ -192,8 +208,8 @@ class GPState:
 class Checkpointer:
     """
     """
-    hyperparameters: dict
-    config: dict
+    hyperparameters: Hyperparameters
+    config: GPConfig
 
     def __init__(self, config_, hyperparameters_):
         self.config = config_
@@ -212,23 +228,25 @@ class Checkpointer:
 
         checkpoint = {"generation": state.generation,
                       "evaluations": state.evaluations,
-                      "config": self.config.__dict__,
-                      "hyperparameters": self.hyperparameters.__dict__,
+                      "config": self.config.as_dict(),
+                      "hyperparameters": self.hyperparameters.as_dict(),
                       "erc": state.erc,
                       "population": dump_population(state.population)}
 
-        outfile = os.open(file_path, flags=os.O_WRONLY|os.O_CREAT|os.O_TRUNC)
-        os.write(outfile,json.dumps(checkpoint).encode())
+        outfile = os.open(file_path, flags=os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        os.write(outfile, json.dumps(checkpoint).encode())
 
     def load(self, file):
         with open(file) as infile:
             checkpoint = json.load(infile)
+        if not self.config.silent_evolver:
+            print(f"Checkpoint {file} successfully loaded")
         return checkpoint
 
     def create_dir(self):
         dir_name = self.config.experiment_name if self.config.experiment_name is not None \
             else time.time()
-        path = self.config.checkpoint_dir + "/" + dir_name
+        path = os.path.join(self.config.checkpoint_dir, dir_name)
 
         if not os.path.exists(path):
             os.mkdir(path)
@@ -328,9 +346,6 @@ class GPModel(ABC):
                 best_gen = self.pipeline(problem)
                 best_gen_fitness = best_gen.fitness
 
-                if problem.is_ideal(best_gen_fitness):
-                    break
-
                 if problem.is_better(best_gen_fitness, best_fitness):
                     best_individual = best_gen
                     best_fitness = best_gen_fitness
@@ -339,9 +354,17 @@ class GPModel(ABC):
                     best_fitness_job = best_gen_fitness
 
                 self.report_generation(silent_algorithm=self.config.silent_algorithm,
-                                   generation=self.generation_number,
-                                   best_fitness=best_fitness,
-                                   report_interval=self.config.report_interval)
+                                       generation=self.generation_number,
+                                       best_fitness=best_fitness,
+                                       report_interval=self.config.report_interval)
+
+                if self.generation_number % self.config.checkpoint_interval == 0:
+                    self.checkpointer.write(self.state())
+
+                if problem.is_ideal(best_gen_fitness):
+                    if not self.config.silent_algorithm:
+                        print(f"Ideal fitness found in generation {self.generation_number}")
+                    break
 
                 if (self.generation_number & 15) == 0:  # check periodically if the time limit is reached
                     t1 = time.time()
@@ -349,18 +372,17 @@ class GPModel(ABC):
                     t0 = t1
                     elapsed += delta
                     if elapsed + delta >= self.config.max_time:
+                        if not self.config.silent_algorithm:
+                            print("Timelimit exceeded")
                         break
-
-                if self.generation_number % self.config.checkpoint_interval == 0:
-                    self.checkpointer.write(self.state())
 
                 self.generation_number += 1
 
             self.report_job(job=job,
-                num_evaluations=self.num_evaluations,
-                best_fitness=best_fitness_job,
-                silent_evolver=self.config.silent_evolver,
-                minimalistic_output=self.config.minimalistic_output)
+                            num_evaluations=self.num_evaluations,
+                            best_fitness=best_fitness_job,
+                            silent_evolver=self.config.silent_evolver,
+                            minimalistic_output=self.config.minimalistic_output)
 
             if terminate:
                 break
@@ -405,6 +427,8 @@ class GPModel(ABC):
             self.population[idx].deserialize_genome(ind[0])
             self.population[idx].fitness = ind[1]
 
+        if not self.config.silent_evolver:
+            print(f"Resuming from generation {self.generation_number}")
         self.evolve(problem)
 
     def report_job(self, job: int, num_evaluations: int, best_fitness: float,

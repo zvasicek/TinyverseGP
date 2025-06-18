@@ -34,7 +34,6 @@ class CGPHyperparameters(Hyperparameters):
         self.space["strict_selection"] = [True, False]
         self.space["mutation_rate"] = (0.0, 1.0)
 
-
 @dataclass
 class CGPConfig(GPConfig):
     """
