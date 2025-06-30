@@ -5,16 +5,18 @@ This file contains the SRBench class which is used to define the configuration o
 from src.gp.functions import ADD, SUB, MUL, DIV
 from src.gp.tinyverse import Const, Var, GPConfig, GPHyperparameters
 from src.gp.tiny_cgp import CGPConfig, CGPHyperparameters, TinyCGP
-from src.gp.tiny_tgp import TinyTGP
+from src.gp.tiny_tgp import TinyTGP, TGPHyperparameters
 from src.gp.loss import euclidean_distance
 from src.gp.problem import Problem, BlackBox
 
 import re 
+from sklearn.base import RegressorMixin
 import sympy as sp
+import numpy as np
 
 strfun = {'+': ADD, '-': SUB, '*': MUL, '/': DIV}
 
-class SRBench():
+class SRBench(RegressorMixin):
     def __init__(self, representation='TGP', max_generations=100, max_time=60, pop_size=100, functions=['+','-','*','/'], terminals=[1,2,0.5], mutation_rate=0.2, cx_rate=0.9, tournament_size=2):
         self.representation = representation
         self.loss = euclidean_distance
@@ -36,7 +38,7 @@ class SRBench():
                             report_interval=1000000,
                             max_time=max_time
                         )
-            self.hyperparameters = GPHyperparameters(
+            self.hyperparameters = TGPHyperparameters(
                                     pop_size=pop_size,
                                     max_size=50,
                                     max_depth=5,
@@ -88,15 +90,16 @@ class SRBench():
     def predict(self, X):
         if not self.fitted_:
             raise ValueError('Model not fitted')
-        return np.array([self.model.predict(self.program, x)[0] for x in X])
+        return np.array([self.model.predict(self.program.genome, x)[0] for x in X])
     def get_model(self, X=None):
         if not self.fitted_:
             raise ValueError('Model not fitted')
-        expr = self.model.expression(self.program)[0]
+        expr = self.model.expression(self.program.genome)[0]
         # replace all occurrences of 'Var(i)' in expr with xi
         if X is None:
-            expr = sp.sympify(re.sub(r'Var\((\d+)\)', r'x\1', expr), locals=self.locals)
+            expr = re.sub(r'Var\((\d+)\)', r'x\1', expr)
             expr = re.sub(r'Const\(([-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)\)', r"\1", expr)
+            expr = sp.sympify(expr, locals=self.locals)
         else:
             # replace all occurrences of 'Var(i)' in expr with the values in X[i]
             self.locals.update({x:sp.Symbol(x) for x in X})

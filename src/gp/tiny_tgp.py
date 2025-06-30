@@ -408,4 +408,4 @@ class TinyTGP(GPModel):
                             minimalistic_output=self.config.minimalistic_output)
             if terminate:
                 break
-        return self.best_individual.genome
+        return self.best_individual
