@@ -28,9 +28,14 @@ class TGPHyperparameters(GPHyperparameters):
     """
     max_size: int
     max_depth: int
+    erc: bool
 
     def __post_init__(self):
         GPHyperparameters.__post_init__(self)
+
+class TGPConfig(GPConfig):
+    def __post_init__(self):
+        GPConfig.__post_init__(self)
 
 class TGPIndividual(GPIndividual):
     genome: list[Node]
@@ -84,7 +89,10 @@ class TinyTGP(GPModel):
         # if we reached the maximum depth or there are only two or less nodes available
         # according to size, we sample a terminal node.
         if max_depth == 0 or size < 2:
-            return Node(random.choice(self.terminals), [])
+            if self.hyperparameters.erc and random.random() < 0.5:
+                return Node(Const(random.uniform(-100, 100)), [])
+            else:
+                return Node(random.choice(self.terminals), [])
         # otherwise we sample a non-terminal node and generate the children recursively,
         # reducing the depth by one and splitting the maximum size available by all children
         n = random.choice(self.functions)
@@ -99,10 +107,16 @@ class TinyTGP(GPModel):
         """
         # if we cannot add more non-terminals, sample a terminal
         if max_depth <= 1 or size < 2:
-            return Node(random.choice(self.terminals), [])
+            if self.hyperparameters.erc and random.random() < 0.5:
+                return Node(Const(random.uniform(-100, 100)), [])
+            else:
+                return Node(random.choice(self.terminals), [])
         # if we are already at the minimum depth, sample a terminal with 50% chance                 
         if min_depth <= 0 and random.random() < 0.5:
-            return Node(random.choice(self.terminals), [])
+            if self.hyperparameters.erc and random.random() < 0.5:
+                return Node(Const(random.uniform(-100, 100)), [])
+            else:
+                return Node(random.choice(self.terminals), [])
         else:
             # Let's sample a non-terminal and generate
             # n.arity children calling `tree_random_grow` recursively and adjusting the maximum depth and size.

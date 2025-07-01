@@ -348,8 +348,8 @@ class TinyCGP(GPModel):
         node_map = dict()
         prediction = []
 
-        if self.current_paths is None:
-            self.current_paths = self.decode_optimized(genome)
+        #if self.current_paths is None:
+        self.current_paths = self.decode_optimized(genome)
 
         for path in self.current_paths:
            cost = 0.0
