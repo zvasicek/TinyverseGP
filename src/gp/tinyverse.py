@@ -251,7 +251,7 @@ class Checkpointer:
         os.write(outfile, dill.dumps(checkpoint))
 
     def load(self, file):
-        with open(file) as infile:
+        with open(file, 'rb') as infile:
             checkpoint = dill.load(infile)
         if not self.config.silent_evolver:
             print(f"Checkpoint {file} successfully loaded")
@@ -477,7 +477,8 @@ class GPModel(ABC):
                        generation=self.generation_number,
                        evaluations=self.num_evaluations)
 
-    def resume(self, checkpoint, problem):
+    def resume(self, checkpoint_file, problem):
+        checkpoint = self.checkpointer.load(checkpoint_file)
         self.generation_number = checkpoint["generation"]
         self.num_evaluations = checkpoint["evaluations"]
         population = checkpoint["population"]

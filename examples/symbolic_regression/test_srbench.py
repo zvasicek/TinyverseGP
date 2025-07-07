@@ -94,14 +94,14 @@ for g in group_datasets:
         tgp = SRBench('TGP', tgp_config, tgp_hyperparams, functions=functions, terminals=terminals, scaling_=True)
         cgp = SRBench('CGP', cgp_config, cgp_hyperparams, functions=functions, terminals=terminals, scaling_=False)
 
-        cgp.fit(train_X, train_y)
+        cgp.fit(train_X, train_y) #, checkpoint="examples/checkpoint/srbench_cgp/checkpoint_gen_40.dill")
         print(cgp.get_model())
         print(f"cgp train score: {cgp.score(train_X, train_y)}")
         print(f"cgp test score: {cgp.score(test_X, test_y)}")
-        #tgp.fit(train_X, train_y)
-        #print(tgp.get_model())
-        #print(f"tgp train score: {tgp.score(train_X, train_y)}")
-        #print(f"tgp test score: {tgp.score(test_X, test_y)}")
+        tgp.fit(train_X, train_y)
+        print(tgp.get_model())
+        print(f"tgp train score: {tgp.score(train_X, train_y)}")
+        print(f"tgp test score: {tgp.score(test_X, test_y)}")
         print("="*50)
 
 

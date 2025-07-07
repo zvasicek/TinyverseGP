@@ -28,7 +28,7 @@ class SRBench(RegressorMixin):
         self.config = config
         self.hyperparameters = hyperparameters
 
-    def fit(self, X, y):
+    def fit(self, X, y, checkpoint=None):
         problem  = BlackBox(X, y, self.loss, 1e-16, True)
         self.terminals = [Var(i) for i in range(X.shape[1])] + self.terminals
         if self.representation == 'TGP':
@@ -37,6 +37,8 @@ class SRBench(RegressorMixin):
             self.model = TinyCGP(self.functions, self.terminals, self.config, self.hyperparameters)
         else:
             raise ValueError('Invalid representation type')
+        if checkpoint is not None:
+            self.model.resume(checkpoint, problem)
         self.program = self.model.evolve(problem)
         if self.representation == 'TGP' and self.scaling:
             yhat = np.array([self.model.predict(self.program.genome, x)[0] for x in X])
