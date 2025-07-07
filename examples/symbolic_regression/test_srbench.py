@@ -56,7 +56,11 @@ tgp_config = TGPConfig( num_jobs=1,
                         minimalistic_output=True,
                         num_outputs=1,
                         report_interval=1000000,
-                        max_time=MAXTIME
+                        max_time=MAXTIME,
+                        global_seed=42,
+                        checkpoint_interval=10,
+                        checkpoint_dir='examples/checkpoint',
+                        experiment_name='srbench_tgp'
                     )
 cgp_config = CGPConfig(
                         num_jobs=1,
@@ -72,10 +76,14 @@ cgp_config = CGPConfig(
                         num_inputs=1,
                         num_outputs=1,
                         num_function_nodes=30,
-                        report_interval=100000,
-                        max_time=MAXTIME
+                        report_interval=10,
+                        max_time=MAXTIME,
+                        global_seed=42,
+                        checkpoint_interval=10,
+                        checkpoint_dir='examples/checkpoint',
+                        experiment_name='srbench_cgp'
                     )
-cgp_config.init()
+#cgp_config.init()
 
 for g in group_datasets:
     for d in g:
@@ -86,14 +94,14 @@ for g in group_datasets:
         tgp = SRBench('TGP', tgp_config, tgp_hyperparams, functions=functions, terminals=terminals, scaling_=True)
         cgp = SRBench('CGP', cgp_config, cgp_hyperparams, functions=functions, terminals=terminals, scaling_=False)
 
-        tgp.fit(train_X, train_y)
-        print(tgp.get_model())
-        print(f"tgp train score: {tgp.score(train_X, train_y)}")
-        print(f"tgp test score: {tgp.score(test_X, test_y)}")
         cgp.fit(train_X, train_y)
         print(cgp.get_model())
         print(f"cgp train score: {cgp.score(train_X, train_y)}")
         print(f"cgp test score: {cgp.score(test_X, test_y)}")
+        #tgp.fit(train_X, train_y)
+        #print(tgp.get_model())
+        #print(f"tgp train score: {tgp.score(train_X, train_y)}")
+        #print(f"tgp test score: {tgp.score(test_X, test_y)}")
         print("="*50)
 
 

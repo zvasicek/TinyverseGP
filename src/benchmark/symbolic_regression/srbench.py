@@ -32,12 +32,12 @@ class SRBench(RegressorMixin):
         problem  = BlackBox(X, y, self.loss, 1e-16, True)
         self.terminals = [Var(i) for i in range(X.shape[1])] + self.terminals
         if self.representation == 'TGP':
-            self.model = TinyTGP(problem, self.functions, self.terminals, self.config, self.hyperparameters)
+            self.model = TinyTGP(self.functions, self.terminals, self.config, self.hyperparameters)
         elif self.representation == 'CGP':
-            self.model = TinyCGP(problem, self.functions, self.terminals, self.config, self.hyperparameters)
+            self.model = TinyCGP(self.functions, self.terminals, self.config, self.hyperparameters)
         else:
             raise ValueError('Invalid representation type')
-        self.program = self.model.evolve()
+        self.program = self.model.evolve(problem)
         if self.representation == 'TGP' and self.scaling:
             yhat = np.array([self.model.predict(self.program.genome, x)[0] for x in X])
             a, b = linear_scaling_coeff(yhat, y)

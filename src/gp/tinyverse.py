@@ -26,7 +26,7 @@ import copy
 
 from src.gp.types import HPType
 import yaml
-
+import dill
 
 class GPIndividual(ABC):
     genome: any
@@ -238,7 +238,7 @@ class Checkpointer:
                 l.append([ind.serialize_genome(), ind.fitness])
             return l
 
-        file_path = self.path + "/checkpoint_gen_" + str(state.generation) + ".json"
+        file_path = self.path + "/checkpoint_gen_" + str(state.generation) + ".dill"
 
         checkpoint = {"generation": state.generation,
                       "evaluations": state.evaluations,
@@ -248,11 +248,11 @@ class Checkpointer:
                       "population": dump_population(state.population)}
 
         outfile = os.open(file_path, flags=os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
-        os.write(outfile, json.dumps(checkpoint).encode())
+        os.write(outfile, dill.dumps(checkpoint))
 
     def load(self, file):
         with open(file) as infile:
-            checkpoint = json.load(infile)
+            checkpoint = dill.load(infile)
         if not self.config.silent_evolver:
             print(f"Checkpoint {file} successfully loaded")
         return checkpoint
@@ -314,7 +314,7 @@ class GPModel(ABC):
                 best = copy.copy(individual)
                 best_fitness = fitness
 
-            if self.problem.is_better(fitness, best_fitness):
+            if problem.is_better(fitness, best_fitness):
                 best = copy.copy(individual)
                 best_fitness = fitness
         self.best_individual = copy.copy(best)
@@ -416,7 +416,7 @@ class GPModel(ABC):
                                        best_fitness=best_fitness,
                                        report_interval=self.config.report_interval)
 
-                if self.generation_number % self.config.checkpoint_interval == 0:
+                if self.generation_number > 0 and self.generation_number % self.config.checkpoint_interval == 0:
                     self.checkpointer.write(self.state())
 
                 if problem.is_ideal(best_gen_fitness):
