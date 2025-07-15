@@ -32,8 +32,13 @@ wrapped_env = FlattenObservation(env)
 
 NUM_INPUTS = wrapped_env.observation_space.shape[0]
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
-terminals = ([Var(i) for i in range(NUM_INPUTS)]
-             + [Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)])
+terminals = [Var(i) for i in range(NUM_INPUTS)] + [
+    Const(1),
+    Const(2),
+    Const(sqrt(2)),
+    Const(pi),
+    Const(0.5),
+]
 
 config = GPConfig(
     num_jobs=1,
@@ -46,7 +51,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=4,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = TGPHyperparameters(
@@ -55,7 +60,7 @@ hyperparameters = TGPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2
+    tournament_size=2,
 )
 
 problem = PolicySearch(env=env, ideal_=300, minimizing_=False)

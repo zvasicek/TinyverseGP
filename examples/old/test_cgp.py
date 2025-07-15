@@ -32,7 +32,7 @@ config = CGPConfig(
     num_outputs=1,
     num_function_nodes=10,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = CGPHyperparameters(
@@ -41,7 +41,7 @@ hyperparameters = CGPHyperparameters(
     population_size=100,
     levels_back=10,
     mutation_rate=0.1,
-    strict_selection=True
+    strict_selection=True,
 )
 
 config.init()
@@ -49,7 +49,7 @@ random.seed(3)
 
 loss = euclidean_distance
 benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA1')
+data, actual = benchmark.generate("KOZA1")
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
 
@@ -64,8 +64,13 @@ input("Press Enter to begin...")
 env = gym.make("LunarLander-v3")
 wrapped_env = FlattenObservation(env)
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
-terminals = [Var(i) for i in range(wrapped_env.observation_space.shape[0])] + [Const(1), Const(2), Const(sqrt(2)),
-                                                                               Const(pi), Const(0.5)]
+terminals = [Var(i) for i in range(wrapped_env.observation_space.shape[0])] + [
+    Const(1),
+    Const(2),
+    Const(sqrt(2)),
+    Const(pi),
+    Const(0.5),
+]
 
 config = CGPConfig(
     num_jobs=1,
@@ -82,7 +87,7 @@ config = CGPConfig(
     num_outputs=4,
     num_function_nodes=10,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 config.init()
 
@@ -92,7 +97,7 @@ hyperparameters = CGPHyperparameters(
     population_size=10,
     levels_back=10,
     mutation_rate=0.1,
-    strict_selection=True
+    strict_selection=True,
 )
 
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)

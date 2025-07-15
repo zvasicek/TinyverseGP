@@ -14,6 +14,7 @@ TinyverseGP: A modular cross-domain benchmark system for Genetic Programming.
                     - Var:  Derived class for the representation of variable terminal symbols
                     - Const: Derived class for the representation of const terminal symbols
 """
+
 import random
 import time
 import os
@@ -24,9 +25,10 @@ from dataclasses import dataclass, field, fields
 from typing import List, Any, Generic, Callable, Dict
 import copy
 
-from src.gp.types import HPType
+from gp.types import HPType
 import yaml
 import dill
+
 
 class GPIndividual(ABC):
     genome: any
@@ -67,7 +69,6 @@ class Config(ABC):
     def as_dict(self) -> dict:
         return self.__dict__
 
-
     @classmethod
     def from_dict(cls, d: dict):
         names = {field.name for field in fields(cls)}
@@ -81,6 +82,7 @@ class GPConfig(Config):
     This class contains the common configuration parameters for GP models related to
     execution and output of a run.
     """
+
     global_seed: int
     num_jobs: int
     max_generations: int
@@ -97,6 +99,7 @@ class GPConfig(Config):
     checkpoint_interval: int
     checkpoint_dir: str
     experiment_name: str
+
 
 @dataclass
 class Hyperparameter(ABC, Generic[HPType]):
@@ -116,11 +119,12 @@ class Hyperparameters(ABC):
     """
     Base class for the GP hyperparamters.
     """
-    penalization_complexity_factor : float = 0.0
-    penalization_feasibility_factor : float = 0.0
-    penalization_validity_factor : float = 0.0
-    discard_invalid : bool = True
-    discard_infeasible : bool = False 
+
+    penalization_complexity_factor: float = 0.0
+    penalization_feasibility_factor: float = 0.0
+    penalization_validity_factor: float = 0.0
+    discard_invalid: bool = True
+    discard_infeasible: bool = False
 
     def __post_init__(self):
         self.space = dict()
@@ -128,7 +132,6 @@ class Hyperparameters(ABC):
     def to_yaml(self):
         with open("hp.yml", "w") as file:
             yaml.dump(self.space, file, default_flow_style=False)
-
 
     def as_dict(self):
         return self.__dict__
@@ -145,6 +148,7 @@ class GPHyperparameters(Hyperparameters):
     Hyperparameters class for Genetic Programming models.
     This class is responsible for storing the tunable hyperparameters of the GP model.
     """
+
     pop_size: int
     mutation_rate: float
     cx_rate: float
@@ -173,6 +177,7 @@ class Function:
     The method `custom` is meant to make the function compatible with sympy, if
     None is passed, it will use the defaults.
     """
+
     name: str
     arity: int
     function: callable
@@ -185,7 +190,7 @@ class Function:
         self.custom = custom_
 
     def __call__(self, *args) -> Any:
-        assert (len(args) == self.arity)
+        assert len(args) == self.arity
         return self.function(*args)
 
 
@@ -197,7 +202,7 @@ class Var(Function):
     def __init__(self, index: int = None, name_: str = None):
         self.const = False
         if name_ is None:
-            name_ = 'Var'
+            name_ = "Var"
         Function.__init__(self, 0, name_, lambda: index)
 
 
@@ -208,7 +213,7 @@ class Const(Function):
 
     def __init__(self, value):
         self.const = True
-        Function.__init__(self, 0, 'Const', lambda: value)
+        Function.__init__(self, 0, "Const", lambda: value)
 
 
 @dataclass
@@ -220,8 +225,8 @@ class GPState:
 
 
 class Checkpointer:
-    """
-    """
+    """ """
+
     hyperparameters: Hyperparameters
     config: GPConfig
 
@@ -240,26 +245,31 @@ class Checkpointer:
 
         file_path = self.path + "/checkpoint_gen_" + str(state.generation) + ".dill"
 
-        checkpoint = {"generation": state.generation,
-                      "evaluations": state.evaluations,
-                      "config": self.config.as_dict(),
-                      "hyperparameters": self.hyperparameters.as_dict(),
-                      "erc": state.erc,
-                      "population": dump_population(state.population)}
+        checkpoint = {
+            "generation": state.generation,
+            "evaluations": state.evaluations,
+            "config": self.config.as_dict(),
+            "hyperparameters": self.hyperparameters.as_dict(),
+            "erc": state.erc,
+            "population": dump_population(state.population),
+        }
 
         outfile = os.open(file_path, flags=os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         os.write(outfile, dill.dumps(checkpoint))
 
     def load(self, file):
-        with open(file, 'rb') as infile:
+        with open(file, "rb") as infile:
             checkpoint = dill.load(infile)
         if not self.config.silent_evolver:
             print(f"Checkpoint {file} successfully loaded")
         return checkpoint
 
     def create_dir(self):
-        dir_name = self.config.experiment_name if self.config.experiment_name is not None \
+        dir_name = (
+            self.config.experiment_name
+            if self.config.experiment_name is not None
             else time.time()
+        )
         path = os.path.join(self.config.checkpoint_dir, dir_name)
 
         if not os.path.exists(path):
@@ -274,6 +284,7 @@ class GPModel(ABC):
     It describes the minimum requirements for a GP model that is
     integrated in the framework.
     """
+
     best_individual: GPIndividual
     num_evaluations: int
     generation_number: int
@@ -304,7 +315,9 @@ class GPModel(ABC):
             self.num_evaluations += 1
             genome = individual.genome
             if individual.fitness is None:
-                individual.fitness = self.penalize(self.evaluate_individual(genome, problem), genome)
+                individual.fitness = self.penalize(
+                    self.evaluate_individual(genome, problem), genome
+                )
             fitness = individual.fitness
 
             if problem.is_ideal(fitness):
@@ -321,7 +334,7 @@ class GPModel(ABC):
 
         return best
 
-    def penalize(self, fitness : float, genome:GPIndividual) -> float:
+    def penalize(self, fitness: float, genome: GPIndividual) -> float:
         """
         Penalizes the fitness of a genome.
         This method is used to penalize genomes that are
@@ -340,26 +353,28 @@ class GPModel(ABC):
             else:
                 return float("-inf")
         complexity = self.eval_complexity(genome)
-        
-        penalty = self.hyperparameters.penalization_complexity_factor * complexity + \
-                  self.hyperparameters.penalization_feasibility_factor * violations + \
-                  self.hyperparameters.penalization_validity_factor * (1.0 - valid)
-        
+
+        penalty = (
+            self.hyperparameters.penalization_complexity_factor * complexity
+            + self.hyperparameters.penalization_feasibility_factor * violations
+            + self.hyperparameters.penalization_validity_factor * (1.0 - valid)
+        )
+
         if self.config.minimizing_fitness:
-            fitness += penalty 
+            fitness += penalty
         else:
             fitness -= penalty
         return fitness
-       
+
     @abstractmethod
-    def is_valid(self, genome:GPIndividual) -> bool:
+    def is_valid(self, genome: GPIndividual) -> bool:
         """
         Checks if the genome is valid.
         """
         pass
 
     @abstractmethod
-    def eval_complexity(self, genome:GPIndividual) -> float:
+    def eval_complexity(self, genome: GPIndividual) -> float:
         """
         Evaluates the complexity of the genome.
         """
@@ -411,20 +426,29 @@ class GPModel(ABC):
                 if problem.is_better(best_gen_fitness, best_fitness_job):
                     best_fitness_job = best_gen_fitness
 
-                self.report_generation(silent_algorithm=self.config.silent_algorithm,
-                                       generation=self.generation_number,
-                                       best_fitness=best_fitness,
-                                       report_interval=self.config.report_interval)
+                self.report_generation(
+                    silent_algorithm=self.config.silent_algorithm,
+                    generation=self.generation_number,
+                    best_fitness=best_fitness,
+                    report_interval=self.config.report_interval,
+                )
 
-                if self.generation_number > 0 and self.generation_number % self.config.checkpoint_interval == 0:
+                if (
+                    self.generation_number > 0
+                    and self.generation_number % self.config.checkpoint_interval == 0
+                ):
                     self.checkpointer.write(self.state())
 
                 if problem.is_ideal(best_gen_fitness):
                     if not self.config.silent_algorithm:
-                        print(f"Ideal fitness found in generation {self.generation_number}")
+                        print(
+                            f"Ideal fitness found in generation {self.generation_number}"
+                        )
                     break
 
-                if (self.generation_number & 15) == 0:  # check periodically if the time limit is reached
+                if (
+                    self.generation_number & 15
+                ) == 0:  # check periodically if the time limit is reached
                     t1 = time.time()
                     delta = t1 - t0
                     t0 = t1
@@ -436,11 +460,13 @@ class GPModel(ABC):
 
                 self.generation_number += 1
 
-            self.report_job(job=job,
-                            num_evaluations=self.num_evaluations,
-                            best_fitness=best_fitness_job,
-                            silent_evolver=self.config.silent_evolver,
-                            minimalistic_output=self.config.minimalistic_output)
+            self.report_job(
+                job=job,
+                num_evaluations=self.num_evaluations,
+                best_fitness=best_fitness_job,
+                silent_evolver=self.config.silent_evolver,
+                minimalistic_output=self.config.minimalistic_output,
+            )
 
             if terminate:
                 break
@@ -472,10 +498,12 @@ class GPModel(ABC):
         pass
 
     def state(self) -> GPState:
-        return GPState(erc=self.erc,
-                       population=self.population,
-                       generation=self.generation_number,
-                       evaluations=self.num_evaluations)
+        return GPState(
+            erc=self.erc,
+            population=self.population,
+            generation=self.generation_number,
+            evaluations=self.num_evaluations,
+        )
 
     def resume(self, checkpoint_file, problem):
         checkpoint = self.checkpointer.load(checkpoint_file)
@@ -491,8 +519,14 @@ class GPModel(ABC):
             print(f"Resuming from generation {self.generation_number}")
         self.evolve(problem)
 
-    def report_job(self, job: int, num_evaluations: int, best_fitness: float,
-                   silent_evolver: bool, minimalistic_output: bool):
+    def report_job(
+        self,
+        job: int,
+        num_evaluations: int,
+        best_fitness: float,
+        silent_evolver: bool,
+        minimalistic_output: bool,
+    ):
         """
         Report the status of a job after has been executed.
 
@@ -505,12 +539,24 @@ class GPModel(ABC):
         """
         if not silent_evolver:
             if not minimalistic_output:
-                print("Job #" + str(job) + " - Evaluations: " + str(num_evaluations) +
-                      " - Best Fitness: " + str(best_fitness))
+                print(
+                    "Job #"
+                    + str(job)
+                    + " - Evaluations: "
+                    + str(num_evaluations)
+                    + " - Best Fitness: "
+                    + str(best_fitness)
+                )
             else:
                 print(str(num_evaluations) + ";" + str(best_fitness))
 
-    def report_generation(self, silent_algorithm: bool, generation: int, best_fitness: float, report_interval: int):
+    def report_generation(
+        self,
+        silent_algorithm: bool,
+        generation: int,
+        best_fitness: float,
+        report_interval: int,
+    ):
         """
         Reports the status of a generation.
 
@@ -520,4 +566,9 @@ class GPModel(ABC):
         :param report_interval: Interval after which the generation status is reported
         """
         if not silent_algorithm and generation % report_interval == 0:
-            print("Generation #" + str(generation) + " - Best Fitness: " + str(best_fitness))
+            print(
+                "Generation #"
+                + str(generation)
+                + " - Best Fitness: "
+                + str(best_fitness)
+            )

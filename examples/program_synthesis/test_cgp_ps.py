@@ -34,7 +34,7 @@ config = CGPConfig(
     num_outputs=1,
     num_function_nodes=100,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 config.init()
 
@@ -44,7 +44,7 @@ hyperparameters = CGPHyperparameters(
     population_size=33,
     levels_back=len(terminals),
     mutation_rate=0.1,
-    strict_selection=True
+    strict_selection=True,
 )
 config.init()
 
@@ -52,7 +52,7 @@ generator = gen_power_of_two
 n = 10
 m = 100
 
-benchmark = PSBenchmark(generator, [n,m])
+benchmark = PSBenchmark(generator, [n, m])
 problem = ProgramSynthesis(benchmark.dataset)
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 cgp.evolve()

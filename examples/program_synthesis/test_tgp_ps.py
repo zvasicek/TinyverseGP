@@ -8,13 +8,13 @@ https://leetcode.com/problems/power-of-two/description/
 
 """
 
-from src.gp.tiny_cgp import *
-from src.gp.problem import ProgramSynthesis
-from src.benchmark.program_synthesis.ps_benchmark import PSBenchmark
-from src.benchmark.program_synthesis.leetcode.power_of_two import *
-from src.gp.functions import *
-from src.gp.tiny_tgp import TinyTGP, TGPHyperparameters
-from src.gp.tinyverse import Var, Const
+from gp.tiny_cgp import *
+from gp.problem import ProgramSynthesis
+from benchmark.program_synthesis.ps_benchmark import PSBenchmark
+from benchmark.program_synthesis.leetcode.power_of_two import *
+from gp.functions import *
+from gp.tiny_tgp import TinyTGP, TGPHyperparameters
+from gp.tinyverse import Var, Const
 
 NUM_INPUTS = 1
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
@@ -31,7 +31,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = TGPHyperparameters(
@@ -40,14 +40,14 @@ hyperparameters = TGPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2
+    tournament_size=2,
 )
 
 generator = gen_power_of_two
 n = 10
 m = 100
 
-benchmark = PSBenchmark(generator, [n,m])
+benchmark = PSBenchmark(generator, [n, m])
 problem = ProgramSynthesis(benchmark.dataset)
 tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
 tgp.evolve()

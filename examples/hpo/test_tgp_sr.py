@@ -12,12 +12,12 @@ no serious benchmark. It only serves as an example for SR as an application
 domain for TinyverseGP:
 """
 
-from src.gp.tiny_tgp import *
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.problem import BlackBox
-from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
-from src.hpo.hpo import SMACInterface
+from gp.tiny_tgp import *
+from gp.functions import *
+from gp.loss import *
+from gp.problem import BlackBox
+from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from hpo.hpo import SMACInterface
 
 
 config = GPConfig(
@@ -31,7 +31,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = TGPHyperparameters(
@@ -40,12 +40,12 @@ hyperparameters = TGPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2
+    tournament_size=2,
 )
 
 loss = absolute_distance
 benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA1')
+data, actual = benchmark.generate("KOZA1")
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
 trials = 25
@@ -55,10 +55,10 @@ cgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
 interface = SMACInterface()
 
 ## Perform HPO via SMAC
-opt_hyperparameters = interface.optimise(cgp,trials)
+opt_hyperparameters = interface.optimise(cgp, trials)
 print(opt_hyperparameters)
 
-config.silent_algorithm=False
-config.silent_evolver=False
+config.silent_algorithm = False
+config.silent_evolver = False
 cgp = TinyTGP(problem, functions, terminals, config, opt_hyperparameters)
 cgp.evolve()

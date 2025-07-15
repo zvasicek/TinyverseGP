@@ -1,3 +1,18 @@
+# This file is part of TinyverseGP.
+#
+# TinyverseGP is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# TinyverseGP is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with TinyverseGP.  If not, see <https://www.gnu.org/licenses/>.
+
 """
 TinyLGP: A minimalistic implementation of Linear Genetic Programming for
          TinyverseGP.
@@ -24,10 +39,10 @@ except ModuleNotFoundError:
     ic = lambda *args, **kwargs: None
 
 LGP_CONDITIONS = [
-    Function(2, 'Test_LT', operator.lt),
-    Function(2, 'Test_GT', operator.gt),
-    Function(2, 'Test_EQ', operator.eq),
-    Function(2, 'Test_NE', operator.ne),
+    Function(2, "Test_LT", operator.lt),
+    Function(2, "Test_GT", operator.gt),
+    Function(2, "Test_EQ", operator.eq),
+    Function(2, "Test_NE", operator.ne),
 ]
 
 
@@ -79,7 +94,7 @@ class LGPConfig(GPConfig):
         super().__init__(**kwargs, num_outputs=num_outputs)
 
 
-Instruction = namedtuple('Instruction', ['dest', 'operator', 'operands'])
+Instruction = namedtuple("Instruction", ["dest", "operator", "operands"])
 
 
 @dataclass
@@ -127,11 +142,13 @@ class TinyLGP(GPModel):
     def _create_constant(self):
         return random.random() * 2 - 1
 
-    def _create_random_genome(self, min_len=5, max_len=10, p_register=0.5) -> tuple[Instruction]:
+    def _create_random_genome(
+        self, min_len=5, max_len=10, p_register=0.5
+    ) -> tuple[Instruction]:
         genome = list()
-        possible_destinations = [f'R{n}' for n in range(self.config.num_registers)]
+        possible_destinations = [f"R{n}" for n in range(self.config.num_registers)]
         possible_operands = possible_destinations + [
-            f'I{n}' for n in range(len(self.problem.observations[0]))
+            f"I{n}" for n in range(len(self.problem.observations[0]))
         ]
         for i in range(random.randint(min_len, max_len)):
             if random.random() < 0.8:
@@ -160,12 +177,16 @@ class TinyLGP(GPModel):
 
         stopping_conditions = list()
         if self.config.max_generations is not None:
-            stopping_conditions.append(lambda: self.num_evaluations >= self.config.max_generations)
+            stopping_conditions.append(
+                lambda: self.num_evaluations >= self.config.max_generations
+            )
 
         while all(not f() for f in stopping_conditions):
             w1, l1 = self.tournament_selection()
             w2, l2 = self.tournament_selection()
-            offspring1, offspring2 = self.crossover(self.population[w1], self.population[w2])
+            offspring1, offspring2 = self.crossover(
+                self.population[w1], self.population[w2]
+            )
             if random.random() < 0.1:
                 self.mutate(offspring1)
                 self.mutate(offspring2)
@@ -188,7 +209,9 @@ class TinyLGP(GPModel):
     def mutate(self, individual: LGPIndividual) -> LGPIndividual:
         pos = random.randint(0, len(individual.genome) - 1)
         if random.random() < 0.5:
-            return LGPIndividual(individual.genome[:pos] + individual.genome[pos + 1 :], None)
+            return LGPIndividual(
+                individual.genome[:pos] + individual.genome[pos + 1 :], None
+            )
         else:
             instruction = self._create_random_genome(min_len=1, max_len=1)
             return LGPIndividual(
@@ -205,8 +228,8 @@ class TinyLGP(GPModel):
         return LGPIndividual(offspring1, None), LGPIndividual(offspring2, None)
 
     def predict(self, genome: Sequence[Instruction], observation: list):
-        registers = {f'R{n}': 0.0 for n in range(10)} | {
-            f'I{n}': v for n, v in enumerate(observation)
+        registers = {f"R{n}": 0.0 for n in range(10)} | {
+            f"I{n}": v for n, v in enumerate(observation)
         }
         skip_next = False
         for instruction in genome:
@@ -214,17 +237,20 @@ class TinyLGP(GPModel):
                 skip_next = False
             else:
                 value = instruction.operator(
-                    *[registers[r] if r in registers else r for r in instruction.operands]
+                    *[
+                        registers[r] if r in registers else r
+                        for r in instruction.operands
+                    ]
                 )
                 if instruction.dest is not None:
                     registers[instruction.dest] = value
                 elif not value:
                     skip_next = True
-        return [registers['R0']]
+        return [registers["R0"]]
 
     def expression(self, genome: Sequence[Instruction]) -> Any:
-        return '\n'.join(
-            f'''{i.dest} = {i.operator.name}({', '.join(str(_) for _ in i.operands)})'''
+        return "\n".join(
+            f"""{i.dest} = {i.operator.name}({', '.join(str(_) for _ in i.operands)})"""
             for i in genome
         )
 
@@ -247,13 +273,17 @@ class TinyLGP(GPModel):
         return self.population[0].fitness
 
     def _sort(self, individuals: list[LGPIndividual]):
-        individuals.sort(key=lambda i: i.fitness, reverse=not self.config.minimizing_fitness)
+        individuals.sort(
+            key=lambda i: i.fitness, reverse=not self.config.minimizing_fitness
+        )
 
     def tournament_selection(self) -> tuple[int, int]:
         """Return indexes of winner and loser"""
         for i, individual in enumerate(self.population):
             individual.idx = i
-        candidates = random.choices(self.population, k=self.hyperparameters.tournament_size)
+        candidates = random.choices(
+            self.population, k=self.hyperparameters.tournament_size
+        )
         self._sort(candidates)
         return candidates[0].idx, candidates[-1].idx
 
@@ -266,3 +296,37 @@ class TinyLGP(GPModel):
         """
         self.num_evaluations += 1
         return self.problem.evaluate(genome, self)
+
+    def eval_complexity(self, genome: list[int]) -> float:
+        """
+        Returns the complexity of the genome based on the number of active nodes.
+
+        :param genome: Genome of an individual
+        :return: Complexity value
+        """
+        return 42
+
+    def is_valid(self, genome: list[int]) -> bool:
+        """ """
+        return True
+
+    def pipeline(self, problem):
+        """
+        Pipeline that performs one generational step CGP in the common
+        1+lambda fashion.
+
+        :return: best solution found in the population
+        """
+        raise NotImplementedError
+
+    def selection(self) -> list:
+        """
+        Performs a 1 + lambda strategy with either
+        strict or non-strict selection. Non-strict selection
+        allows to explore the neutral neighbourhood of the
+        parent which has been found to be very effective for
+        the use of CGP:
+
+        :return: parent individual
+        """
+        raise NotImplementedError

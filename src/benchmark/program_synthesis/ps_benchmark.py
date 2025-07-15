@@ -10,6 +10,7 @@ class PSBenchmark(Benchmark):
     Represents a program synthesis benchmark that is
     represented with examples/counterexamples.
     """
+
     generator: callable
     examples: list
     args: list

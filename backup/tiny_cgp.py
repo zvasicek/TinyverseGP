@@ -1,5 +1,3 @@
-
-
 import math
 import random
 import copy
@@ -46,6 +44,7 @@ class CGPHyperparameters(Hyperparameters):
     mutation_rate: float
     strict_selection: bool
 
+
 @dataclass
 class CGPConfig(GPConfig):
     num_inputs: int
@@ -55,9 +54,11 @@ class CGPConfig(GPConfig):
     num_functions: int
     max_arity: int
 
+
 def check_config():
     if LEVELS_BACK > NUM_FUNCTION_NODES:
-        raise ValueError('LEVELS_BACK > NUM_FUNCTION_NODES')
+        raise ValueError("LEVELS_BACK > NUM_FUNCTION_NODES")
+
 
 class TinyCGP(GPModel):
 
@@ -70,9 +71,15 @@ class TinyCGP(GPModel):
         VARIABLE = 0
         CONSTANT = 1
 
-    def __init__(self, problem_: Problem, functions_: list, terminals_: list,
-                 config_: GPConfig, hyperparameters_: Hyperparameters):
-        #TinyGP.__init__(problem_, functions_, config_, hyperparameters_)
+    def __init__(
+        self,
+        problem_: Problem,
+        functions_: list,
+        terminals_: list,
+        config_: GPConfig,
+        hyperparameters_: Hyperparameters,
+    ):
+        # TinyGP.__init__(problem_, functions_, config_, hyperparameters_)
         self.population = []
         self.functions = functions_
         self.terminals = terminals_
@@ -109,7 +116,7 @@ class TinyCGP(GPModel):
 
     def init_gene(self, position: int) -> int:
         gene_type = self.phenotype(position)
-        levels_back =  self.hyperparameters.levels_back
+        levels_back = self.hyperparameters.levels_back
         if gene_type == self.GeneType.CONNECTION:
             node_num = self.node_number(position)
             if node_num <= levels_back:
@@ -119,14 +126,19 @@ class TinyCGP(GPModel):
         elif gene_type == self.GeneType.FUNCTION:
             return random.randint(0, self.config.num_functions - 1)
         else:
-            return random.randint(0, self.config.num_function_nodes + self.config.num_inputs - 1)
+            return random.randint(
+                0, self.config.num_function_nodes + self.config.num_inputs - 1
+            )
 
     def phenotype(self, position: int) -> GeneType:
         if position >= self.config.num_function_nodes * (self.config.max_arity + 1):
             return self.GeneType.OUTPUT
         else:
-            return self.GeneType.FUNCTION if position % (self.config.max_arity + 1) == 0 \
+            return (
+                self.GeneType.FUNCTION
+                if position % (self.config.max_arity + 1) == 0
                 else self.GeneType.CONNECTION
+            )
 
     def input_value(self, index: int) -> any:
         return self.inputs[index][0]
@@ -138,7 +150,9 @@ class TinyCGP(GPModel):
         return self.inputs[index][1]
 
     def node_number(self, position: int) -> int:
-        return math.floor(position / (self.config.max_arity + 1)) + self.config.num_inputs
+        return (
+            math.floor(position / (self.config.max_arity + 1)) + self.config.num_inputs
+        )
 
     def node_position(self, node_num: int) -> int:
         return (node_num - self.config.num_inputs) * (self.config.max_arity + 1)
@@ -156,8 +170,11 @@ class TinyCGP(GPModel):
 
     def outputs(self, genome: list[int]) -> list[int]:
         outputs = []
-        for output_pos in range(self.config.num_genes - 1,
-                                self.config.num_genes - self.config.num_outputs - 1, -1):
+        for output_pos in range(
+            self.config.num_genes - 1,
+            self.config.num_genes - self.config.num_outputs - 1,
+            -1,
+        ):
             output = genome[output_pos]
             outputs.append(output)
         return outputs
@@ -203,7 +220,9 @@ class TinyCGP(GPModel):
     def cost(self, predictions: list) -> float:
         cost = 0.0
         for index, _ in enumerate(predictions[0]):
-            cost += self.problem.evaluate([prediction[index] for prediction in predictions])
+            cost += self.problem.evaluate(
+                [prediction[index] for prediction in predictions]
+            )
         return cost
 
     def predict(self, genome: list[int], data_point: list, paths=None) -> list:
@@ -221,14 +240,18 @@ class TinyCGP(GPModel):
                         if self.terminals[node_num].const:
                             node_map[node_num] = self.terminals[node_num].call([])
                         else:
-                            node_map[node_num] = data_point[self.terminals[node_num].call([])]
+                            node_map[node_num] = data_point[
+                                self.terminals[node_num].call([])
+                            ]
                     else:
                         arguments = []
                         connections = self.node_connections(node_num, genome)
                         for count, connection in enumerate(connections):
                             argument = node_map[connection]
                             arguments.append(argument)
-                        node_map[node_num] = self.evaluate_node(node_num, genome, arguments)
+                        node_map[node_num] = self.evaluate_node(
+                            node_num, genome, arguments
+                        )
                 cost = node_map[node_num]
             prediction.append(cost)
         return prediction
@@ -236,16 +259,23 @@ class TinyCGP(GPModel):
     def active_nodes(self, genome: list[int]):
         nodes = dict()
 
-        for position in range(self.config.num_genes - 1,
-                              self.config.num_genesS - self.config.num_outputs - 1, -1):
+        for position in range(
+            self.config.num_genes - 1,
+            self.config.num_genesS - self.config.num_outputs - 1,
+            -1,
+        ):
             node_num = genome[position]
             if node_num >= self.config.num_inputs:
                 nodes[node_num] = True
 
-        for position in range(self.config.num_genes - self.config.num_outputs - 1, 0, -1):
+        for position in range(
+            self.config.num_genes - self.config.num_outputs - 1, 0, -1
+        ):
             node_num = self.node_number(position)
-            if (node_num in nodes.keys()
-                    and self.phenotype(position) == self.GeneType.CONNECTION):
+            if (
+                node_num in nodes.keys()
+                and self.phenotype(position) == self.GeneType.CONNECTION
+            ):
                 gene = genome[position]
                 if gene >= self.config.num_inputs:
                     nodes[gene] = True
@@ -254,15 +284,22 @@ class TinyCGP(GPModel):
     def decode(self, genome: list[int]):
         paths = []
         nodes = dict()
-        for output_pos in range(self.config.num_genes - 1,
-                                self.config.num_genes - self.config.num_outputs - 1, -1):
+        for output_pos in range(
+            self.config.num_genes - 1,
+            self.config.num_genes - self.config.num_outputs - 1,
+            -1,
+        ):
             nodes.clear()
             node_num = genome[output_pos]
             nodes[node_num] = True
 
-            for gene_pos in range(self.config.num_genes - self.config.num_outputs - 1, 0, -1):
-                if (self.node_number(gene_pos) in nodes.keys()
-                        and self.phenotype(gene_pos) == self.GeneType.CONNECTION):
+            for gene_pos in range(
+                self.config.num_genes - self.config.num_outputs - 1, 0, -1
+            ):
+                if (
+                    self.node_number(gene_pos) in nodes.keys()
+                    and self.phenotype(gene_pos) == self.GeneType.CONNECTION
+                ):
                     gene = genome[gene_pos]
                     nodes[gene] = True
             path = sorted(nodes.keys())
@@ -346,10 +383,16 @@ class TinyCGP(GPModel):
             for generation in range(self.config.max_generations):
                 self.breed()
                 best_fitness = self.evaluate()
-                print("Generation #" + str(generation) + " -> Best Fitness: " + str(best_fitness))
+                print(
+                    "Generation #"
+                    + str(generation)
+                    + " -> Best Fitness: "
+                    + str(best_fitness)
+                )
             print("Job #" + str(job) + " -> Best Fitness: " + str(best_fitness))
 
-'''
+
+"""
 random.seed(SEED)
 functions = [Add, Sub, Mul, Div]
 terminals = [Var(0), Const(1)]
@@ -369,4 +412,4 @@ hyperparameters = CGPHyperparameters(mu=MU, lmbda=LAMBDA,
                                      strict_selection=STRICT_SELECTION)
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 cgp.evolve()
-'''
+"""

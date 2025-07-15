@@ -11,13 +11,13 @@ The provided benchmarks are taken from the General Boolean Function Benchmark Su
 https://dl.acm.org/doi/10.1145/3594805.3607131
 """
 
-from src.benchmark.logic_synthesis.ls_benchmark import LSBenchmark
-from src.gp.tiny_ge import *
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.problem import BlackBox
+from benchmark.logic_synthesis.ls_benchmark import LSBenchmark
+from gp.tiny_ge import *
+from gp.functions import *
+from gp.loss import *
+from gp.problem import BlackBox
 
-benchmark = LSBenchmark('data/logic_synthesis/plu/add3.plu')
+benchmark = LSBenchmark("data/logic_synthesis/plu/add3.plu")
 benchmark.generate()
 truth_table = benchmark.get_truth_table()
 num_inputs = benchmark.benchmark.num_inputs
@@ -35,7 +35,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=num_outputs,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = GEHyperparameters(
@@ -45,7 +45,7 @@ hyperparameters = GEHyperparameters(
     cx_rate=0.9,
     mutation_rate=0.1,
     tournament_size=2,
-    penalty_value=99999
+    penalty_value=99999,
 )
 
 loss = hamming_distance_bitwise
@@ -54,13 +54,18 @@ actual = truth_table.outputs
 problem = BlackBox(data, actual, loss, 0, True)
 
 functions = [AND, OR, NAND, NOR, NOT]
-arguments = ['x']
+arguments = ["x"]
 grammar = {
-    '<expr>': [
-        'AND(<expr>, <expr>)', 'OR(<expr>, <expr>)', 'NAND(<expr>, <expr>)', 'NOR(<expr>, <expr>)', 'NOT(<expr>)',
-        '<d>', 'x'
+    "<expr>": [
+        "AND(<expr>, <expr>)",
+        "OR(<expr>, <expr>)",
+        "NAND(<expr>, <expr>)",
+        "NOR(<expr>, <expr>)",
+        "NOT(<expr>)",
+        "<d>",
+        "x",
     ],
-    '<d>': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+    "<d>": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
 }
 
 ge = TinyGE(problem, functions, grammar, arguments, config, hyperparameters)

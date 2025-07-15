@@ -17,7 +17,7 @@ from gp.functions import *
 from gp.loss import *
 from gp.problem import BlackBox
 
-benchmark = LSBenchmark('../../data/logic_synthesis/plu/add3.plu')
+benchmark = LSBenchmark("../../data/logic_synthesis/plu/add3.plu")
 benchmark.generate()
 truth_table = benchmark.get_truth_table()
 num_inputs = benchmark.benchmark.num_inputs
@@ -37,7 +37,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=num_outputs,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = TGPHyperparameters(
@@ -46,7 +46,7 @@ hyperparameters = TGPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2
+    tournament_size=2,
 )
 
 loss = hamming_distance_bitwise

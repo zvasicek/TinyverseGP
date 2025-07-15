@@ -13,12 +13,13 @@ from gymnasium.wrappers import FlattenObservation
 
 import statistics
 
+
 class GPAgent:
     """
     Agent class that is placed in reinforcement learning environments
     """
 
-    def __init__(self, env_: gym.Env, flatten_obs = True):
+    def __init__(self, env_: gym.Env, flatten_obs=True):
         """
         :param env_: Environment
         :param flatten_obs: Option to flatten the obversation
@@ -27,7 +28,7 @@ class GPAgent:
         if flatten_obs:
             self.wrapped_env = FlattenObservation(self.env)
 
-    def evaluate_policy(self, policy, model, num_episodes = 100, wait_key=False):
+    def evaluate_policy(self, policy, model, num_episodes=100, wait_key=False):
         """
         Evaluates a policy in an environment with the selected number of episodes.
 
@@ -71,4 +72,3 @@ class GPAgent:
         prediction = model.predict(policy, obs)
         maximum = max(prediction)
         return prediction.index(maximum)
-

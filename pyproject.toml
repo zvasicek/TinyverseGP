@@ -1,4 +1,4 @@
-# TinyverseGP
+# This file is part of TinyverseGP | https://github.com/GPBench/TinyverseGP
 # License: GPL-3.0-or-later
 
 [project]
@@ -29,6 +29,10 @@
         "opencv-python (>=4.11,<5.0.0.0)",
         "ale_py (>=0.10.1,<2)",
         "icecream (>=2.1.5,<3.0.0)",
+        "configspace (>=1.2.1,<2.0.0)",
+        "pyyaml (>=6.0.2,<7.0.0)",
+        "smac (>=2.3.1,<3.0.0)",
+        "dill (>=0.4.0,<0.5.0)",
     ]
 
 [tool.poetry]

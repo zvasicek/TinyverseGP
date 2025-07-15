@@ -2,10 +2,12 @@
 Provides various commonly used loss functions used as distance metrics
 to calculate the fitness on candidate programs.
 """
+
 import math
 import numpy as np
 
 # Loss functions commonly used to evaluate symbolic regression models
+
 
 def absolute_error(x, y):
     return np.abs(np.subtract(x, y))
@@ -14,13 +16,15 @@ def absolute_error(x, y):
 def mean_squared_error(x, y):
     return np.square(np.subtract(x, y)).mean()
 
+
 def root_mean_squared_error(x, y):
     return math.sqrt(mean_squared_error(x, y))
+
 
 def linear_scaling_mse(x, y):
     if isinstance(x, list):
         x = np.array(x)
-    if np.any(np.isnan(x)) or np.any(np.isinf(x)) or np.all(x==x[0]):
+    if np.any(np.isnan(x)) or np.any(np.isinf(x)) or np.all(x == x[0]):
         return np.mean((y - np.mean(y)) ** 2)
     q = np.hstack((np.reshape(x, (-1, 1)), np.ones((len(x), 1))))
     try:
@@ -31,10 +35,11 @@ def linear_scaling_mse(x, y):
         pass
     return np.mean((y - np.mean(y)) ** 2)
 
+
 def linear_scaling_coeff(x, y):
     if isinstance(x, list):
         x = np.array(x)
-    if np.any(np.isnan(x)) or np.any(np.isinf(x)) or np.all(x==x[0]):
+    if np.any(np.isnan(x)) or np.any(np.isinf(x)) or np.all(x == x[0]):
         return 0, np.mean(y)
     q = np.hstack((np.reshape(x, (-1, 1)), np.ones((len(x), 1))))
     try:
@@ -44,6 +49,7 @@ def linear_scaling_coeff(x, y):
     except:
         pass
     return 0, np.mean(y)
+
 
 def euclidean_distance(x: list, y: list) -> float:
     """
@@ -79,6 +85,7 @@ def absolute_distance(x: list, y: list) -> float:
 
 # Hamming distance is commonly used for logic synthesis
 
+
 def hamming_distance(x: list, y: list) -> int:
     """
     Calculate the Hamming distance between two vectors.
@@ -94,6 +101,7 @@ def hamming_distance(x: list, y: list) -> int:
         if xi != yi:
             dist += 1
     return dist
+
 
 def hamming_distance_bitwise(x: list, y: list, bin_length: int = 32) -> int:
     """
@@ -115,4 +123,3 @@ def hamming_distance_bitwise(x: list, y: list, bin_length: int = 32) -> int:
             dist += cmp & 1
             cmp = cmp >> 1
     return dist
-

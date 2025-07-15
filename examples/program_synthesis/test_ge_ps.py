@@ -9,13 +9,14 @@ https://leetcode.com/problems/power-of-two/description/
 """
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
-from src.gp.problem import ProgramSynthesis
-from src.benchmark.program_synthesis.ps_benchmark import PSBenchmark
-from src.benchmark.program_synthesis.leetcode.power_of_two import *
-from src.gp.functions import *
-from src.gp.tiny_ge import *
+from gp.problem import ProgramSynthesis
+from benchmark.program_synthesis.ps_benchmark import PSBenchmark
+from benchmark.program_synthesis.leetcode.power_of_two import *
+from gp.functions import *
+from gp.tiny_ge import *
 
 
 config = GPConfig(
@@ -29,7 +30,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = GEHyperparameters(
@@ -39,26 +40,37 @@ hyperparameters = GEHyperparameters(
     cx_rate=0.9,
     mutation_rate=0.1,
     tournament_size=2,
-    penalty_value=0
+    penalty_value=0,
 )
 
 generator = gen_power_of_two
 n = 10
 m = 100
 
-benchmark = PSBenchmark(generator, [n,m])
+benchmark = PSBenchmark(generator, [n, m])
 problem = ProgramSynthesis(benchmark.dataset)
 
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
-arguments = ['x']
+arguments = ["x"]
 grammar = {
-    '<expr>': [
-        'ADD(<expr>, <expr>)', 'SUB(<expr>, <expr>)', 'MUL(<expr>, <expr>)', 'DIV(<expr>, <expr>)',
-        'AND(<expr>, <expr>)', 'OR(<expr>, <expr>)', 'NAND(<expr>, <expr>)', 'NOR(<expr>, <expr>)', 
-        'NOT(<expr>)', 'IF(<expr>, <expr>, <expr>)', 'LT(<expr>, <expr>)', 'GT(<expr>, <expr>)',
-        '<d>', '<d>.<d><d>', 'x'
+    "<expr>": [
+        "ADD(<expr>, <expr>)",
+        "SUB(<expr>, <expr>)",
+        "MUL(<expr>, <expr>)",
+        "DIV(<expr>, <expr>)",
+        "AND(<expr>, <expr>)",
+        "OR(<expr>, <expr>)",
+        "NAND(<expr>, <expr>)",
+        "NOR(<expr>, <expr>)",
+        "NOT(<expr>)",
+        "IF(<expr>, <expr>, <expr>)",
+        "LT(<expr>, <expr>)",
+        "GT(<expr>, <expr>)",
+        "<d>",
+        "<d>.<d><d>",
+        "x",
     ],
-    '<d>': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+    "<d>": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
 }
 
 ge = TinyGE(problem, functions, grammar, arguments, config, hyperparameters)

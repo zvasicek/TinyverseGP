@@ -12,11 +12,11 @@ no serious benchmark. It only serves as an example for SR as an application
 domain for TinyverseGP:
 """
 
-from src.gp.tiny_ge import *
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.problem import BlackBox
-from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from gp.tiny_ge import *
+from gp.functions import *
+from gp.loss import *
+from gp.problem import BlackBox
+from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
 
 config = GPConfig(
     num_jobs=1,
@@ -29,7 +29,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = GEHyperparameters(
@@ -39,24 +39,29 @@ hyperparameters = GEHyperparameters(
     cx_rate=0.9,
     mutation_rate=0.1,
     tournament_size=2,
-    penalty_value=99999
+    penalty_value=99999,
 )
 
 loss = absolute_distance
 benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA1')
+data, actual = benchmark.generate("KOZA1")
 functions = [ADD, SUB, MUL, DIV]
-arguments = ['x']
+arguments = ["x"]
 # grammar = {
-#     '<expr>': ['<expr> + <expr>', '<expr> - <expr>', '<expr> * <expr>', '(<expr>)', '<d>', '<d>.<d><d>', 'x'],    # Also possible 
+#     '<expr>': ['<expr> + <expr>', '<expr> - <expr>', '<expr> * <expr>', '(<expr>)', '<d>', '<d>.<d><d>', 'x'],    # Also possible
 #     '<d>': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 # }
 grammar = {
-    '<expr>': [
-        'ADD(<expr>, <expr>)', 'SUB(<expr>, <expr>)', 'MUL(<expr>, <expr>)', 'DIV(<expr>, <expr>)', 
-        '<d>', '<d>.<d><d>', 'x'
+    "<expr>": [
+        "ADD(<expr>, <expr>)",
+        "SUB(<expr>, <expr>)",
+        "MUL(<expr>, <expr>)",
+        "DIV(<expr>, <expr>)",
+        "<d>",
+        "<d>.<d><d>",
+        "x",
     ],
-    '<d>': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+    "<d>": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
 }
 
 problem = BlackBox(data, actual, loss, 1e-6, True)

@@ -16,12 +16,14 @@ from ale_py import ALEInterface
 
 from gp.tinyverse import Var
 
+
 @dataclass
 class ALEArgs:
     """
     Arguments for the preprocessing of
     Gymnasium Arcade Learning Environment (A.L.E).
     """
+
     noop_max: int
     frame_skip: int
     screen_size: int
@@ -30,6 +32,7 @@ class ALEArgs:
     scale_obs: int
     frame_stack: int
 
+
 class PLBenchmark(Benchmark):
     """
     Class for representing policy learning benchmarks as provided
@@ -37,13 +40,14 @@ class PLBenchmark(Benchmark):
     The ALE environments are ony supported with RGB or grayscale observation space.
     """
 
-    def __init__(self, env_: gym.Env, ale_=False, ale_args: ALEArgs = None, flatten_obs_ = True):
+    def __init__(
+        self, env_: gym.Env, ale_=False, ale_args: ALEArgs = None, flatten_obs_=True
+    ):
         self.env = env_
         self.wrapped_env = env_
         self.ale = ale_
         self.flatten_obs = flatten_obs_
         self.generate(args=ale_args)
-
 
     def generate(self, args: any):
         """
@@ -58,13 +62,15 @@ class PLBenchmark(Benchmark):
         """
         if self.ale:
             if args is not None:
-                self.wrapped_env = gym.wrappers.AtariPreprocessing(self.env,
-                                                                   noop_max=args.noop_max,
-                                                                   frame_skip=args.frame_skip,
-                                                                   screen_size=args.screen_size,
-                                                                   grayscale_obs=args.grayscale_obs,
-                                                                   terminal_on_life_loss=args.terminal_on_life_loss,
-                                                                   scale_obs=args.scale_obs)
+                self.wrapped_env = gym.wrappers.AtariPreprocessing(
+                    self.env,
+                    noop_max=args.noop_max,
+                    frame_skip=args.frame_skip,
+                    screen_size=args.screen_size,
+                    grayscale_obs=args.grayscale_obs,
+                    terminal_on_life_loss=args.terminal_on_life_loss,
+                    scale_obs=args.scale_obs,
+                )
             else:
                 self.wrapped_env = gym.wrappers.AtariPreprocessing(self.env)
         else:
@@ -76,14 +82,13 @@ class PLBenchmark(Benchmark):
         if self.flatten_obs:
             self.wrapped_env = FlattenObservation(self.wrapped_env)
 
-
     def len_observation_space(self):
         """
         Returns the size of the observation space. The size of an ALE environment
         is of course squared since the input is a frame.
         """
         n = self.wrapped_env.observation_space.shape[0]
-        return n if not self.ale else n ** 2
+        return n if not self.ale else n**2
 
     def len_action_space(self):
         """
@@ -96,4 +101,4 @@ class PLBenchmark(Benchmark):
         Generates and returns the terminals to be used by
         the GP model.
         """
-        return [Var(i, 'Inp' + str(i)) for i in range(self.len_observation_space())]
+        return [Var(i, "Inp" + str(i)) for i in range(self.len_observation_space())]

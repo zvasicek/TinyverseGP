@@ -14,6 +14,7 @@ Action space: Discrete(6)
 
 Observation space: Box(0, 255, (210, 160, 3), uint8)
 """
+
 from benchmark.policy_search.pl_benchmark import PLBenchmark, ALEArgs
 from gp.tiny_cgp import *
 import gymnasium as gym
@@ -25,16 +26,18 @@ import numpy
 if numpy.version.version[0] == "2":
     warnings.warn("Using NumPy version >=2 can lead to overflow.")
 
-ale_args = ALEArgs(noop_max=30,
-                   frame_skip=4,
-                   screen_size=32,
-                   grayscale_obs=True,
-                   terminal_on_life_loss=True,
-                   scale_obs=False,
-                   frame_stack=4)
+ale_args = ALEArgs(
+    noop_max=30,
+    frame_skip=4,
+    screen_size=32,
+    grayscale_obs=True,
+    terminal_on_life_loss=True,
+    scale_obs=False,
+    frame_stack=4,
+)
 
 env = gym.make("ALE/Pong-v5", frameskip=1, difficulty=0)
-benchmark = PLBenchmark(env, ale_=True, ale_args=ale_args, flatten_obs_= False)
+benchmark = PLBenchmark(env, ale_=True, ale_args=ale_args, flatten_obs_=False)
 wrapped_env = benchmark.wrapped_env
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, LT, GT, EQ, MIN, MAX, IF]
 terminals = benchmark.gen_terminals()
@@ -56,7 +59,7 @@ config = CGPConfig(
     num_outputs=num_outputs,
     num_function_nodes=100,
     report_interval=1,
-    max_time=99999
+    max_time=99999,
 )
 config.init()
 
@@ -66,7 +69,7 @@ hyperparameters = CGPHyperparameters(
     population_size=2,
     levels_back=100,
     mutation_rate=0.05,
-    strict_selection=True
+    strict_selection=True,
 )
 
 problem = PolicySearch(env=wrapped_env, ideal_=100, minimizing_=False)

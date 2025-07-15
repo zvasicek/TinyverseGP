@@ -47,15 +47,19 @@ def main():
         max_time=60,
         num_inputs=1,
         num_registers=4,
+        global_seed=13,
+        checkpoint_interval=100,
+        checkpoint_dir="checkpoints",
+        experiment_name="my_experiment",
     )
 
     loss = absolute_distance
-    data, actual = SRBenchmark().generate('KOZA3')
+    data, actual = SRBenchmark().generate("KOZA3")
     problem = BlackBox(data, actual, loss, 1e-6, True)
 
     lgp = TinyLGP(problem, functions, config, hyperparameters)
     lgp.evolve()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
