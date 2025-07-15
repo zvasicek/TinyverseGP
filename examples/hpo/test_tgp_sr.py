@@ -12,20 +12,13 @@ no serious benchmark. It only serves as an example for SR as an application
 domain for TinyverseGP:
 """
 
-from gp.tiny_tgp import *
-from gp.functions import *
-from gp.loss import *
-from gp.problem import BlackBox
-from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from src.gp.tiny_tgp import *
+from src.gp.functions import *
+from src.gp.loss import *
+from src.gp.problem import BlackBox
+from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from src.hpo.hpo import SMACInterface
 
-def number_divs(individual):
-    """Count the number of divisions in an individual."""
-    return len([count_divs(node) for node in individual])
-def count_divs(node):
-    """Count the number of divisions in an individual."""
-    if node.function == DIV:
-        return 1 + sum(count_divs(child) for child in node.children)
-    return sum(count_divs(child) for child in node.children)
 
 config = GPConfig(
     num_jobs=1,
@@ -33,13 +26,12 @@ config = GPConfig(
     stopping_criteria=1e-6,
     minimizing_fitness=True,  # this should be used from the problem instance
     ideal_fitness=1e-6,  # this should be used from the problem instance
-    silent_algorithm=False,
-    silent_evolver=False,
-    minimalistic_output=False,
+    silent_algorithm=True,
+    silent_evolver=True,
+    minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
-    max_time=60,
-    constraints = lambda x: max(0, number_divs(x) - 1),
+    max_time=60
 )
 
 hyperparameters = TGPHyperparameters(
@@ -48,8 +40,7 @@ hyperparameters = TGPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2,
-    penalization_complexity_factor=0.1,
+    tournament_size=2
 )
 
 loss = absolute_distance
@@ -57,9 +48,17 @@ benchmark = SRBenchmark()
 data, actual = benchmark.generate('KOZA1')
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
+trials = 25
 
 problem = BlackBox(data, actual, loss, 1e-6, True)
+cgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
+interface = SMACInterface()
 
-tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
-best = tgp.evolve()
-tgp.print_individual(tgp.best_individual)
+## Perform HPO via SMAC
+opt_hyperparameters = interface.optimise(cgp,trials)
+print(opt_hyperparameters)
+
+config.silent_algorithm=False
+config.silent_evolver=False
+cgp = TinyTGP(problem, functions, terminals, config, opt_hyperparameters)
+cgp.evolve()

@@ -5,6 +5,7 @@ that are commonly used to curate the GP function set.
 
 from gp.tinyverse import Function
 import operator
+import numpy as np
 
 def f2b(input: float):
     """
@@ -24,11 +25,27 @@ def pdiv(x, y):
     """
     return x / y if y > 0 else 1.0
 
+def square(x):
+    return x*x
+def cube(x):
+    return x*x*x
+def plog(x):
+    if x == 0.0:
+        return 0.0
+    return np.log(np.abs(x))
+def psqrt(x):
+    return np.sqrt(np.abs(x))
+
 # Arithmetic Functions
-ADD = Function(2, 'Add', operator.add)
-SUB = Function(2, 'Sub', operator.sub, lambda x, y: x-y)
-MUL = Function(2, 'Mul', operator.mul)
-DIV = Function(2, 'Div', pdiv, lambda x, y: x/y)
+ADD  = Function(2, 'Add', operator.add)
+SUB  = Function(2, 'Sub', operator.sub, lambda x, y: x-y)
+MUL  = Function(2, 'Mul', operator.mul)
+DIV  = Function(2, 'Div', pdiv, lambda x, y: x/y)
+EXP  = Function(1, 'EXP', np.exp)
+LOG  = Function(1, 'LOG', plog)
+SQRT = Function(1, 'SQRT', psqrt)
+SQR  = Function(1, 'SQR', square)
+CUBE = Function(1, 'CUBE', cube)
 
 # Logical Functions
 AND = Function(2, 'AND', lambda x,y : int(x) & int(y))

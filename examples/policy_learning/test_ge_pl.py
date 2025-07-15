@@ -1,8 +1,6 @@
 """
-Example module to test TGP with policy search problems.
+Example module to test GE with policy search problems.
 Evolves a policy for the Gymnasium Lunar Lander environment.
-
-TGP is used with multiple trees.
 
 https://gymnasium.farama.org/environments/box2d/lunar_lander/
 
@@ -18,9 +16,9 @@ Observation space: Box([ -2.5 -2.5 -10. -10. -6.2831855 -10. -0. -0. ],
 from math import sqrt, pi
 from gymnasium.wrappers import FlattenObservation
 
-from gp.tiny_tgp import *
-from gp.functions import *
-from gp.problem import PolicySearch
+from src.gp.tiny_ge import *
+from src.gp.functions import *
+from src.gp.problem import PolicySearch
 import warnings
 import numpy
 
@@ -28,12 +26,6 @@ if numpy.version.version[0] == "2":
     warnings.warn("Using NumPy version >=2 can lead to overflow.")
 
 env = gym.make("LunarLander-v3")
-wrapped_env = FlattenObservation(env)
-
-NUM_INPUTS = wrapped_env.observation_space.shape[0]
-functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
-terminals = ([Var(i) for i in range(NUM_INPUTS)]
-             + [Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)])
 
 config = GPConfig(
     num_jobs=1,
@@ -49,19 +41,33 @@ config = GPConfig(
     max_time=60
 )
 
-hyperparameters = TGPHyperparameters(
-    pop_size=10,
-    max_size=25,
-    max_depth=5,
+hyperparameters = GEHyperparameters(
+    pop_size=100,
+    genome_length=40,
+    codon_size=1000,
     cx_rate=0.9,
-    mutation_rate=0.3,
-    tournament_size=2
+    mutation_rate=0.1,
+    tournament_size=2,
+    penalty_value=-99999
 )
 
 problem = PolicySearch(env=env, ideal_=300, minimizing_=False)
-tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
-policy = tgp.evolve()
+
+functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
+arguments = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']  # Inputs for the functions
+grammar = {
+    '<expr>': [
+        'ADD(<expr>, <expr>)', 'SUB(<expr>, <expr>)', 'MUL(<expr>, <expr>)', 'DIV(<expr>, <expr>)',
+        'AND(<expr>, <expr>)', 'OR(<expr>, <expr>)', 'NAND(<expr>, <expr>)', 'NOR(<expr>, <expr>)', 
+        'NOT(<expr>)', 'IF(<expr>, <expr>, <expr>)', 'LT(<expr>, <expr>)', 'GT(<expr>, <expr>)',
+        '<d>', '<d>.<d><d>', '1.414', '3.141', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'
+    ],
+    '<d>': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+}
+
+ge = TinyGE(problem, functions, grammar, arguments, config, hyperparameters)
+policy = ge.evolve()
 
 env = gym.make("LunarLander-v3", render_mode="human")
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
-problem.evaluate(policy, tgp, num_episodes=1, wait_key=True)
+problem.evaluate(policy, ge, num_episodes=1, wait_key=True)

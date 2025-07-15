@@ -14,9 +14,36 @@ def absolute_error(x, y):
 def mean_squared_error(x, y):
     return np.square(np.subtract(x, y)).mean()
 
-
 def root_mean_squared_error(x, y):
     return math.sqrt(mean_squared_error(x, y))
+
+def linear_scaling_mse(x, y):
+    if isinstance(x, list):
+        x = np.array(x)
+    if np.any(np.isnan(x)) or np.any(np.isinf(x)) or np.all(x==x[0]):
+        return np.mean((y - np.mean(y)) ** 2)
+    q = np.hstack((np.reshape(x, (-1, 1)), np.ones((len(x), 1))))
+    try:
+        (a, b), mse, _, _ = np.linalg.lstsq(q, y, rcond=None)
+        if mse.size > 0:
+            return mse[0] / len(y)
+    except:
+        pass
+    return np.mean((y - np.mean(y)) ** 2)
+
+def linear_scaling_coeff(x, y):
+    if isinstance(x, list):
+        x = np.array(x)
+    if np.any(np.isnan(x)) or np.any(np.isinf(x)) or np.all(x==x[0]):
+        return 0, np.mean(y)
+    q = np.hstack((np.reshape(x, (-1, 1)), np.ones((len(x), 1))))
+    try:
+        (a, b), mse, _, _ = np.linalg.lstsq(q, y, rcond=None)
+        if mse.size > 0:
+            return a, b
+    except:
+        pass
+    return 0, np.mean(y)
 
 def euclidean_distance(x: list, y: list) -> float:
     """

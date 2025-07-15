@@ -9,13 +9,13 @@ Currently, the following problem types are provided:
 - ProgramSynthesis: Used for the provided coding problems
 
 """
-
 import gymnasium as gym
 import numpy as np
 from dataclasses import dataclass
 from abc import ABC
-from benchmark.policy_search.policy_evaluation import GPAgent
-from .tinyverse import GPModel
+from src.benchmark.policy_search.policy_evaluation import GPAgent
+from src.gp.tinyverse import GPModel
+import numbers
 
 class Problem(ABC):
     """
@@ -74,7 +74,7 @@ class BlackBox(Problem):
         self.loss = loss_
         self.ideal = ideal_
         self.minimizing = minimizing_
-        self.unidim = True if isinstance(self.actual[0], float) or isinstance(self.actual[0], int)  else False
+        self.unidim = True if isinstance(self.actual[0], numbers.Number) else False
 
     def evaluate(self, genome, model:GPModel) -> float:
         """

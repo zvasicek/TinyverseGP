@@ -10,13 +10,11 @@ TinyCGP: A minimalistic implementation of Cartesian Genetic Programming for
 import math
 import random
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var
-from gp.problem import Problem
+from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var, GPIndividual, GPHyperparameters
 
-
-@dataclass
+@dataclass(kw_only=True)
 class CGPHyperparameters(Hyperparameters):
     """
     Specialized hyperparameter configuration space for CGP.
@@ -29,8 +27,14 @@ class CGPHyperparameters(Hyperparameters):
     mutation_rate: float = None
     mutation_rate_genes: int = None
 
+    def __post_init__(self):
+        Hyperparameters.__post_init__(self)
+        self.space["mu"] = (1, 4)
+        self.space["lmbda"] = (1, 1024)
+        self.space["strict_selection"] = [True, False]
+        self.space["mutation_rate"] = (0.0, 1.0)
 
-@dataclass
+@dataclass(kw_only=True)
 class CGPConfig(GPConfig):
     """
     Specialized GP configuration that is needed to run CGP.
@@ -43,12 +47,12 @@ class CGPConfig(GPConfig):
     max_time: int
     report_every_improvement: bool = False
 
-    def init(self):
+    def __post_init__(self):
         self.genes_per_node = self.max_arity + 1
         self.num_genes = (self.genes_per_node * self.num_function_nodes) + self.num_outputs
 
 
-class CGPIndividual:
+class CGPIndividual(GPIndividual):
     """
     Class that is used to represent a CGP individual.
     Formally a GP individual can be represented as a tuple consisting of
@@ -58,11 +62,22 @@ class CGPIndividual:
     avoid unnecessary evaluation costs by re-evaluating and re-visiting nodes in the
     decoding routine.
     """
+    genome: list[int]
+    fitness: any
+    paths: list
 
-    def __init__(self, genome_: list[int], fitness_: float = None, paths_ = None):
-        self.genome = genome_
-        self.fitness = fitness_
+    def __init__(self, genome_: list[int], fitness_: any = None, paths_=None):
+        GPIndividual.__init__(self, genome_, fitness_)
         self.paths = paths_
+
+    def __str__(self):
+        return str(self.genome) + ";" + str(self.fitness)
+
+    def serialize_genome(self):
+        return self.genome
+
+    def deserialize_genome(self, genome_):
+        self.genome = genome_
 
 
 class TinyCGP(GPModel):
@@ -86,16 +101,14 @@ class TinyCGP(GPModel):
         VARIABLE = 0
         CONSTANT = 1
 
-    def __init__(self, problem_: Problem, functions_: list, terminals_: list,
-                 config_: CGPConfig, hyperparameters_: Hyperparameters):
+    def __init__(self,functions_: list, terminals_: list,
+                 config_: CGPConfig, hyperparameters_: CGPHyperparameters):
+        super().__init__(config_, hyperparameters_)
         self.num_evaluations = 0
         self.population = []
         self.functions = functions_
         self.function2arity = [f.arity for f in functions_]
         self.terminals = terminals_
-        self.problem = problem_
-        self.config = config_
-        self.hyperparameters = hyperparameters_
         self.inputs = dict()
         self.current_paths = None
         self.init_inputs(terminals_)
@@ -268,39 +281,7 @@ class TinyCGP(GPModel):
         else:
             return self.node_number(position) - 1
 
-    def fitness(self, individual: CGPIndividual) -> float:
-        """
-        Return the fitness value of an individual.
-        """
-        return individual.fitness
-
-    def evaluate(self) -> (CGPIndividual, bool):
-        """
-        Evaluates the population.
-
-        :returns: the best solution discovered in the population
-        """
-        best = None
-        for individual in self.population:
-            genome = individual.genome
-            if (individual.fitness is None):
-                individual.fitness = self.evaluate_individual(genome)
-            fitness = individual.fitness
-
-            if self.problem.is_ideal(fitness):
-                return individual, True
-
-            if best is None:
-                best = individual
-                best_fitness = fitness
-
-            if self.problem.is_better(fitness, best_fitness):
-                best = individual
-                best_fitness = fitness
-
-        return best, False
-
-    def evaluate_individual(self, genome: list[int]) -> float:
+    def evaluate_individual(self, genome: list[int], problem) -> float:
         """
         Evaluates an individual against the problem.
 
@@ -309,7 +290,7 @@ class TinyCGP(GPModel):
         """
         self.num_evaluations += 1
         self.current_paths = None
-        return self.problem.evaluate(genome, self)
+        return problem.evaluate(genome, self)
 
     def evaluate_observation(self, genome: list[int], observation):
         """
@@ -338,6 +319,22 @@ class TinyCGP(GPModel):
             args = args[:arity]
         return self.functions[function](*args)
 
+    def eval_complexity(self, genome: list[int]) -> float:
+        """
+        Returns the complexity of the genome based on the number of active nodes.
+
+        :param genome: Genome of an individual
+        :return: Complexity value
+        """
+        active_nodes = self.active_nodes(genome)
+        return len(active_nodes)
+
+    def is_valid(self, genome: list[int]) -> bool:
+        """
+
+        """
+        return True
+
     def predict(self, genome: list[int], observation: list) -> list:
         """
         Makes prediction based on a given observation and the paths
@@ -355,27 +352,27 @@ class TinyCGP(GPModel):
         node_map = dict()
         prediction = []
 
-        if self.current_paths is None:
-            self.current_paths = self.decode_optimized(genome)
+        #if self.current_paths is None:
+        self.current_paths = self.decode_optimized(genome)
 
         for path in self.current_paths:
-           cost = 0.0
-           for node_num in path:
-               if node_num not in node_map.keys():
-                   if node_num < self.config.num_inputs:
-                       if self.terminals[node_num].const:
-                           node_map[node_num] = self.terminals[node_num]()
-                       else:
-                           node_map[node_num] = observation[self.terminals[node_num]()]
-                   else:
-                       node_pos = self.node_position(node_num)
-                       function = genome[node_pos]
-                       connections = [gene for gene in genome[node_pos + 1:node_pos
-                                                                             + self.function2arity[function] + 1]]
-                       args = [node_map[connection] for connection in connections]
-                       node_map[node_num] = self.functions[function](*args)
-               cost = node_map[node_num]
-           prediction.append(cost)
+            cost = 0.0
+            for node_num in path:
+                if node_num not in node_map.keys():
+                    if node_num < self.config.num_inputs:
+                        if self.terminals[node_num].const:
+                            node_map[node_num] = self.terminals[node_num]()
+                        else:
+                            node_map[node_num] = observation[self.terminals[node_num]()]
+                    else:
+                        node_pos = self.node_position(node_num)
+                        function = genome[node_pos]
+                        connections = [gene for gene in genome[node_pos + 1:node_pos
+                                                                            + self.function2arity[function] + 1]]
+                        args = [node_map[connection] for connection in connections]
+                        node_map[node_num] = self.functions[function](*args)
+                cost = node_map[node_num]
+            prediction.append(cost)
         return prediction
 
     def predict_iter(self, genome: list[int], observation: list) -> list:
@@ -617,75 +614,29 @@ class TinyCGP(GPModel):
 
         return expressions
 
-    def evolve(self):
+    def pipeline(self, problem):
         """
-        Main evolution loop that runs CGP in the common
-        1+lambda fashion. The method can report the current state generation or/and
-        job-wise. The best solution of the job is returned after all jobs have been
-        completed.
+        Pipeline that performs one generational step CGP in the common
+        1+lambda fashion.
 
-        :return: best solution found after all jobs have been performed
+        :return: best solution found in the population
         """
-        best_individual = None
-        t0 = time.time()
-        elapsed = 0
-        terminate = False
-        silent = self.config.silent_algorithm
-        rc = self.config.report_every_improvement
-        for job in range(self.config.num_jobs):
-            self.num_evaluations = 0
-            # Evaluate the initial population
-            best_individual, _ = self.evaluate()
-            best_fitness = best_fitness_job = best_individual.fitness
-            for generation in range(self.config.max_generations):
-                # Selection of a parent if necessary
-                parent = best_individual
-                if not self.hyperparameters.strict_selection:
-                    parent = self.selection()
 
-                # Population breeding
-                self.breed(parent)
+        parent = self.best_individual
 
-                # Evaluation of the offspring
-                best_gen, is_ideal = self.evaluate()
-                best_gen_fitness = best_gen.fitness
+        if not self.hyperparameters.strict_selection:
+            parent = self.selection()
 
-                if self.problem.is_better(best_gen_fitness, best_fitness):
-                    best_individual = best_gen
-                    best_fitness = best_gen_fitness
+        # Population breeding
+        self.breed(parent)
 
-                if self.problem.is_better(best_gen_fitness, best_fitness_job):
-                    best_fitness_job = best_gen_fitness
+        # Evaluation of the offspring
+        return self.evaluate(problem)
 
-                self.report_generation(silent=self.config.silent_algorithm,
-                                       generation=generation,
-                                       best_fitness=best_fitness,
-                                       report_interval=self.config.report_interval)
+def print_population(self):
+    for individual in self.population:
+        self.print_individual(individual)
 
-                if is_ideal:  # if the ideal solution is found, terminate
-                    break
 
-                if (generation & 15) == 0:  # check periodically if the time limit is reached
-                    t1 = time.time()
-                    delta = t1 - t0
-                    t0 = t1
-                    elapsed += delta
-                    if elapsed + delta >= self.config.max_time:
-                        terminate = True
-                        break
-
-            self.report_job(job=job,
-                            num_evaluations=self.num_evaluations,
-                            best_fitness=best_fitness_job,
-                            silent_evolver=self.config.silent_evolver,
-                            minimalistic_output=self.config.minimalistic_output)
-            if terminate:
-                break
-        return best_individual
-
-    def print_population(self):
-        for individual in self.population:
-            self.print_individual(individual)
-
-    def print_individual(self, individual):
-        print(f'Genome: {individual.genome} Fitness: {individual.fitness}')
+def print_individual(self, individual):
+    print(f'Genome: {individual.genome} Fitness: {individual.fitness}')
