@@ -12,8 +12,8 @@ import random
 import time
 from dataclasses import dataclass
 from enum import Enum
-from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var
-from src.gp.problem import Problem
+from gp.tinyverse import GPModel, Hyperparameters, GPConfig, Var
+from gp.problem import Problem
 
 
 @dataclass

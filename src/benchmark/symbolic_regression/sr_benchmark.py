@@ -3,7 +3,7 @@ Benchmark representation module for symbolic regression.
 """
 
 import random
-from src.benchmark.benchmark import Benchmark
+from benchmark.benchmark import Benchmark
 
 class SRBenchmark(Benchmark):
     """

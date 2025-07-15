@@ -7,7 +7,7 @@ https://cavalab.org/srbench/
 https://github.com/cavalab/srbench/tree/master
 """
 
-from src.benchmark.symbolic_regression.srbench import SRBench
+from benchmark.symbolic_regression.srbench import SRBench
 import numpy as np
 
 X = np.random.uniform(-10, 10, (100, 2))

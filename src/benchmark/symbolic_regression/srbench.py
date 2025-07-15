@@ -2,12 +2,12 @@
 This file contains the SRBench class which is used to define the configuration of the symbolic regression benchmarking problem.
 """
 
-from src.gp.functions import ADD, SUB, MUL, DIV
-from src.gp.tinyverse import Const, Var, GPConfig, GPHyperparameters
-from src.gp.tiny_cgp import CGPConfig, CGPHyperparameters, TinyCGP
-from src.gp.tiny_tgp import TinyTGP
-from src.gp.loss import euclidean_distance
-from src.gp.problem import Problem, BlackBox
+from gp.functions import ADD, SUB, MUL, DIV
+from gp.tinyverse import Const, Var, GPConfig, GPHyperparameters
+from gp.tiny_cgp import CGPConfig, CGPHyperparameters, TinyCGP
+from gp.tiny_tgp import TinyTGP
+from gp.loss import euclidean_distance
+from gp.problem import Problem, BlackBox
 
 import re 
 import sympy as sp

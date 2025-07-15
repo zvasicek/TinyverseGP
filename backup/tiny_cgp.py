@@ -7,11 +7,11 @@ import copy
 from dataclasses import dataclass
 from enum import Enum
 
-from src.gp.tinyverse import GPModel
-from src.gp.functions import *
-from src.gp.problem import *
-from src.gp.tinyverse import *
-from src.benchmark.benchmark import *
+from gp.tinyverse import GPModel
+from gp.functions import *
+from gp.problem import *
+from gp.tinyverse import *
+from benchmark.benchmark import *
 
 MU = 1
 LAMBDA = 1

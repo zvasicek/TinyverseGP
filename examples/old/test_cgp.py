@@ -2,14 +2,14 @@
 Example module to test CGP with symbolic regression and policy search problems.
 """
 
-from src.gp.tiny_cgp import *
+from gp.tiny_cgp import *
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
-from src.gp.problem import Problem, BlackBox, PolicySearch
-from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.tinyverse import Var, Const
+from gp.problem import Problem, BlackBox, PolicySearch
+from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from gp.functions import *
+from gp.loss import *
+from gp.tinyverse import Var, Const
 from math import sqrt, pi
 
 print("Koza1 SR Benchmark")
