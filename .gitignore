@@ -1,3 +1,5 @@
 env/
 *.pyc
 smac3_output/
+wd/
+checkpoints/
