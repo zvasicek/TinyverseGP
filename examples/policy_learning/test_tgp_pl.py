@@ -46,7 +46,11 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=4,
     report_interval=1,
-    max_time=60
+    max_time=60,
+    global_seed=42,
+    checkpoint_interval=100,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='pl_tgp'
 )
 
 hyperparameters = TGPHyperparameters(
@@ -55,13 +59,14 @@ hyperparameters = TGPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2
+    tournament_size=2,
+    erc=False
 )
 
 problem = PolicySearch(env=env, ideal_=300, minimizing_=False)
-tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
-policy = tgp.evolve()
+tgp = TinyTGP(functions, terminals, config, hyperparameters)
+policy = tgp.evolve(problem)
 
 env = gym.make("LunarLander-v3", render_mode="human")
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
-problem.evaluate(policy, tgp, num_episodes=1, wait_key=True)
+problem.evaluate(policy.genome, tgp, num_episodes=1, wait_key=True)

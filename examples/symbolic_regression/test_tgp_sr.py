@@ -40,6 +40,10 @@ config = GPConfig(
     report_interval=1,
     max_time=60,
     constraints = lambda x: max(0, number_divs(x) - 1),
+    global_seed=42,
+    checkpoint_interval=10,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='sr_cgp'
 )
 
 hyperparameters = TGPHyperparameters(
@@ -50,6 +54,7 @@ hyperparameters = TGPHyperparameters(
     mutation_rate=0.3,
     tournament_size=2,
     penalization_complexity_factor=0.1,
+    erc=False
 )
 
 loss = absolute_distance
@@ -60,6 +65,6 @@ terminals = [Var(0), Const(1)]
 
 problem = BlackBox(data, actual, loss, 1e-6, True)
 
-tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
-best = tgp.evolve()
+tgp = TinyTGP(functions, terminals, config, hyperparameters)
+best = tgp.evolve(problem)
 tgp.print_individual(tgp.best_individual)

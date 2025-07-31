@@ -38,7 +38,11 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=4,
     report_interval=1,
-    max_time=60
+    max_time=60,
+    global_seed=42,
+    checkpoint_interval=10,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='pl_cgp'
 )
 
 hyperparameters = GEHyperparameters(
@@ -65,9 +69,9 @@ grammar = {
     '<d>': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 }
 
-ge = TinyGE(problem, functions, grammar, arguments, config, hyperparameters)
-policy = ge.evolve()
+ge = TinyGE(functions, grammar, arguments, config, hyperparameters)
+policy = ge.evolve(problem)
 
 env = gym.make("LunarLander-v3", render_mode="human")
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
-problem.evaluate(policy, ge, num_episodes=1, wait_key=True)
+problem.evaluate(policy.genome, ge, num_episodes=1, wait_key=True)
