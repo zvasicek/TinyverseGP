@@ -42,7 +42,7 @@ config = GPConfig(
     global_seed=42,
     checkpoint_interval=10,
     checkpoint_dir='examples/checkpoint',
-    experiment_name='pl_cgp'
+    experiment_name='pl_ge'
 )
 
 hyperparameters = GEHyperparameters(

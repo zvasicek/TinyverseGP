@@ -307,9 +307,6 @@ class GPModel(ABC):
                 individual.fitness = self.penalize(self.evaluate_individual(genome, problem), genome)
             fitness = individual.fitness
 
-            if problem.is_ideal(fitness):
-                return individual
-
             if best is None:
                 best = copy.copy(individual)
                 best_fitness = fitness
