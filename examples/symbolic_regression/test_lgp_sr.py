@@ -33,20 +33,23 @@ def main():
 
     hyperparameters = LGPHyperparameters(
         mu=1000,
+        probability_mutation=0.3,
+        branch_probability=0.0,
+        p_register = 1,
+        max_len = 30
     )
     config = LGPConfig(
         num_jobs=1,
-        max_generations=1_000_000 + hyperparameters.mu,
+        max_generations=50_000 - hyperparameters.mu,
         stopping_criteria=1e-6,
         minimizing_fitness=True,
         ideal_fitness=1e-6,
         silent_algorithm=False,
         silent_evolver=False,
         minimalistic_output=True,
-        report_interval=1,
-        max_time=60,
-        num_inputs=1,
-        num_registers=4,
+        report_interval=1000,
+        max_time=500,
+        num_registers=5,
         global_seed=13,
         checkpoint_interval=100,
         checkpoint_dir="checkpoints",
@@ -57,8 +60,8 @@ def main():
     data, actual = SRBenchmark().generate("KOZA3")
     problem = BlackBox(data, actual, loss, 1e-6, True)
 
-    lgp = TinyLGP(problem, functions, config, hyperparameters)
-    lgp.evolve()
+    lgp = TinyLGP(functions, terminals, config, hyperparameters)
+    lgp.evolve(problem)
 
 
 if __name__ == "__main__":
