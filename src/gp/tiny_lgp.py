@@ -12,6 +12,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with TinyverseGP.  If not, see <https://www.gnu.org/licenses/>.
+#
+# Algorithm based on the paper: https://link.springer.com/book/10.1007/978-0-387-31030-5
 
 """
 TinyLGP: A minimalistic implementation of Linear Genetic Programming for
@@ -46,7 +48,7 @@ LGP_CONDITIONS = [
 ]
 
 
-@dataclass
+@dataclass(kw_only=True)
 class LGPHyperparameters(Hyperparameters):
     """
     Specialized hyperparameter configuration space for LGP.
@@ -54,18 +56,27 @@ class LGPHyperparameters(Hyperparameters):
 
     mu: int
     tournament_size: int
+    min_len : int 
+    max_len : int 
+    p_register : float 
+    probability_mutation : float
     # levels_back: int
     # strict_selection: bool
     # mutation_rate: float = None
     # mutation_rate_genes: int = None
 
-    def __init__(self, *, mu=10, tournament_size=2, **kwargs):
+    def __init__(self, *, mu=10, tournament_size=2, min_len = 5, max_len = 10, p_register = 0.5, probability_mutation = 0.1, **kwargs):
         self.mu = mu
         self.tournament_size = tournament_size
+        self.min_len = min_len 
+        self.max_len = max_len 
+        self.p_register = p_register
         super().__init__(**kwargs)
+    def __post_init__(self):
+        LGPHyperparameters.__post_init__(self)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class LGPConfig(GPConfig):
     """
     Specialized GP configuration that is needed to run LGP.
@@ -92,6 +103,8 @@ class LGPConfig(GPConfig):
         self.num_registers = num_registers
         self.report_every_improvement = report_every_improvement
         super().__init__(**kwargs, num_outputs=num_outputs)
+    def __post_init__(self):
+        LGPConfig.__post_init__(self)
 
 
 Instruction = namedtuple("Instruction", ["dest", "operator", "operands"])
@@ -113,6 +126,11 @@ class LGPIndividual:
     def __repr__(self):
         return str(self)
 
+    def serialize_genome(self):
+        return self.genome 
+    def deserialize_genome(self, genome_):
+        self.genome = genome_
+
 
 class TinyLGP(GPModel):
     """
@@ -128,29 +146,31 @@ class TinyLGP(GPModel):
 
     def __init__(
         self,
-        problem,
         functions: Sequence[Function],
         config: LGPConfig,
         hyperparameters: LGPHyperparameters,
     ):
+        super().__init__(config, hyperparameters)
         self.num_evaluations = 0
         self.problem = problem
         self.functions = tuple(functions)
         self.config = config
         self.hyperparameters = hyperparameters
+        self.best_individual = None 
+        self.num_evaluations = 0
+
+        self.population = [LGPIndividual(self._create_random_genome(), None) for _ in range(self.hyperparameters.mu)]
 
     def _create_constant(self):
         return random.random() * 2 - 1
 
-    def _create_random_genome(
-        self, min_len=5, max_len=10, p_register=0.5
-    ) -> tuple[Instruction]:
+    def _create_random_genome(self) -> tuple[Instruction]:
         genome = list()
         possible_destinations = [f"R{n}" for n in range(self.config.num_registers)]
         possible_operands = possible_destinations + [
             f"I{n}" for n in range(len(self.problem.observations[0]))
         ]
-        for i in range(random.randint(min_len, max_len)):
+        for i in range(random.randint(self.hyperparameters.min_len, self.hyperparameters.max_len)):
             if random.random() < 0.8:
                 dest = random.choice(possible_destinations)
                 operator = random.choice(self.functions)
@@ -160,7 +180,7 @@ class TinyLGP(GPModel):
             operands = [
                 (
                     random.choice(possible_operands)
-                    if random.random() < p_register
+                    if random.random() < self.hyperparameters.p_register
                     else self._create_constant()
                 )
                 for _ in range(operator.arity)
@@ -168,6 +188,36 @@ class TinyLGP(GPModel):
             genome.append(Instruction(dest, operator, operands))
         return genome
 
+    def breed(self, problem):
+        w1, l1 = self.tournament_selection()
+        w2, l2 = self.tournament_selection()
+        offspring1, offspring2 = self.crossover(
+            self.population[w1], self.population[w2]
+        )
+        if random.random() < self.hyperparameters.probability_mutation:
+            self.mutate(offspring1)
+            self.mutate(offspring2)
+
+        offspring1.fitness = self.penalize(self.evaluate_individual(offspring1.genome, problem))
+        offspring2.fitness = self.penalize(self.evaluate_individual(offspring2.genome, problem))
+        # SURVIVAL
+        tmp = [offspring1, self.population[l1]]
+        self._sort(tmp)
+        self.population[l1] = tmp[0]
+        tmp = [offspring2, self.population[l2]]
+        self._sort(tmp)
+        self.population[l2] = tmp[0]
+
+        self._sort(self.population)
+        best = copy.copy(self.population[0])
+        best_fitness = best.fitness
+
+        self.best_individual = copy.copy(best)
+
+        return self.population[0]
+
+
+    '''
     def evolve(self) -> Any:
         self.population = [
             LGPIndividual(self._create_random_genome(), None)
@@ -182,29 +232,8 @@ class TinyLGP(GPModel):
             )
 
         while all(not f() for f in stopping_conditions):
-            w1, l1 = self.tournament_selection()
-            w2, l2 = self.tournament_selection()
-            offspring1, offspring2 = self.crossover(
-                self.population[w1], self.population[w2]
-            )
-            if random.random() < 0.1:
-                self.mutate(offspring1)
-                self.mutate(offspring2)
-
-            offspring1.fitness = self.evaluate_individual(offspring1.genome)
-            offspring2.fitness = self.evaluate_individual(offspring2.genome)
-            # SURVIVAL
-            tmp = [offspring1, self.population[l1]]
-            self._sort(tmp)
-            self.population[l1] = tmp[0]
-            tmp = [offspring2, self.population[l2]]
-            self._sort(tmp)
-            self.population[l2] = tmp[0]
-
-            self._sort(self.population)
-            if self.population[0].fitness != best:
-                best = self.population[0].fitness
-                ic(self.num_evaluations, self.population[0])
+            self.breed()
+    '''
 
     def mutate(self, individual: LGPIndividual) -> LGPIndividual:
         pos = random.randint(0, len(individual.genome) - 1)
@@ -228,7 +257,7 @@ class TinyLGP(GPModel):
         return LGPIndividual(offspring1, None), LGPIndividual(offspring2, None)
 
     def predict(self, genome: Sequence[Instruction], observation: list):
-        registers = {f"R{n}": 0.0 for n in range(10)} | {
+        registers = {f"R{n}": 0.0 for n in range(self.config.num_registers)} | {
             f"I{n}": v for n, v in enumerate(observation)
         }
         skip_next = False
@@ -246,7 +275,7 @@ class TinyLGP(GPModel):
                     registers[instruction.dest] = value
                 elif not value:
                     skip_next = True
-        return [registers["R0"]]
+        return [registers[f"R{i}"] for i in self.config.num_outputs]
 
     def expression(self, genome: Sequence[Instruction]) -> Any:
         return "\n".join(
@@ -287,7 +316,7 @@ class TinyLGP(GPModel):
         self._sort(candidates)
         return candidates[0].idx, candidates[-1].idx
 
-    def evaluate_individual(self, genome: Sequence[Instruction]) -> float:
+    def evaluate_individual(self, genome: Sequence[Instruction], problem) -> float:
         """
         Evaluates an individual against the problem.
 
@@ -295,6 +324,13 @@ class TinyLGP(GPModel):
         :return: fitness of the individual
         """
         self.num_evaluations += 1
+        f = problem.evaluate(
+            genome, self
+        )  # evaluate the solution using the problem instance
+        if self.best_individual is None or problem.is_better(
+            f, self.best_individual.fitness
+        ):
+            self.best_individual = TGPIndividual(genome, f)
         return self.problem.evaluate(genome, self)
 
     def eval_complexity(self, genome: list[int]) -> float:
@@ -304,7 +340,10 @@ class TinyLGP(GPModel):
         :param genome: Genome of an individual
         :return: Complexity value
         """
-        return 42
+        nodes = 0 
+        for instruction in genome:
+            nodes+ = len(instruction.operands) + 1
+        return nodes
 
     def is_valid(self, genome: list[int]) -> bool:
         """ """
@@ -317,7 +356,7 @@ class TinyLGP(GPModel):
 
         :return: best solution found in the population
         """
-        raise NotImplementedError
+        return self.breed(problem)
 
     def selection(self) -> list:
         """
