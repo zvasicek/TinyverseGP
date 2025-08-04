@@ -18,9 +18,9 @@ Observation space: Box([ -2.5 -2.5 -10. -10. -6.2831855 -10. -0. -0. ],
 from math import sqrt, pi
 from gymnasium.wrappers import FlattenObservation
 
-from src.gp.tiny_tgp import *
-from src.gp.functions import *
-from src.gp.problem import PolicySearch
+from gp.tiny_tgp import *
+from gp.functions import *
+from gp.problem import PolicySearch
 import warnings
 import numpy
 
@@ -32,8 +32,13 @@ wrapped_env = FlattenObservation(env)
 
 NUM_INPUTS = wrapped_env.observation_space.shape[0]
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
-terminals = ([Var(i) for i in range(NUM_INPUTS)]
-             + [Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)])
+terminals = [Var(i) for i in range(NUM_INPUTS)] + [
+    Const(1),
+    Const(2),
+    Const(sqrt(2)),
+    Const(pi),
+    Const(0.5),
+]
 
 config = GPConfig(
     num_jobs=1,

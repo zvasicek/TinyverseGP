@@ -11,12 +11,12 @@ The provided benchmarks are taken from the General Boolean Function Benchmark Su
 https://dl.acm.org/doi/10.1145/3594805.3607131
 """
 
-from src.benchmark.logic_synthesis.ls_benchmark import LSBenchmark
-from src.gp.tiny_cgp import *
-from src.gp.problem import BlackBox
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.tinyverse import Var
+from benchmark.logic_synthesis.ls_benchmark import LSBenchmark
+from gp.tiny_cgp import *
+from gp.problem import BlackBox
+from gp.functions import *
+from gp.loss import *
+from gp.tinyverse import Var
 
 benchmark = LSBenchmark('data/logic_synthesis/plu/add3.plu')
 benchmark.generate()
@@ -55,7 +55,7 @@ hyperparameters = CGPHyperparameters(
     population_size=2,
     levels_back=100,
     mutation_rate=0.05,
-    strict_selection=False
+    strict_selection=False,
 )
 
 data = truth_table.inputs

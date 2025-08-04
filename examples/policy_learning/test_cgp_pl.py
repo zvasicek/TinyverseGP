@@ -13,12 +13,12 @@ Observation space: Box([ -2.5 -2.5 -10. -10. -6.2831855 -10. -0. -0. ],
                        [ 2.5 2.5 10. 10. 6.2831855 10. 1. 1. ], (8,), float32)
 """
 
-from src.gp.tiny_cgp import *
+from gp.tiny_cgp import *
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
-from src.gp.problem import PolicySearch
-from src.gp.functions import *
-from src.gp.tinyverse import Var, Const
+from gp.problem import PolicySearch
+from gp.functions import *
+from gp.tinyverse import Var, Const
 from math import sqrt, pi
 import warnings
 import numpy
@@ -29,8 +29,13 @@ if numpy.version.version[0] == "2":
 env = gym.make("LunarLander-v3")
 wrapped_env = FlattenObservation(env)
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
-terminals = ([Var(i) for i in range(wrapped_env.observation_space.shape[0])]
-             + [Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)])
+terminals = [Var(i) for i in range(wrapped_env.observation_space.shape[0])] + [
+    Const(1),
+    Const(2),
+    Const(sqrt(2)),
+    Const(pi),
+    Const(0.5),
+]
 
 config = CGPConfig(
     num_jobs=1,
@@ -60,7 +65,7 @@ hyperparameters = CGPHyperparameters(
     population_size=33,
     levels_back=10,
     mutation_rate=0.05,
-    strict_selection=True
+    strict_selection=True,
 )
 
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)

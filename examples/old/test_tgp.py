@@ -6,11 +6,11 @@ from math import sqrt, pi
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
 
-from src.gp.tiny_tgp import *
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.problem import Problem, BlackBox, PolicySearch
-from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from gp.tiny_tgp import *
+from gp.functions import *
+from gp.loss import *
+from gp.problem import Problem, BlackBox, PolicySearch
+from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
 
 print("Koza1 SR Benchmark")
 input("Press Enter to begin...")
@@ -26,7 +26,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=1,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = GPHyperparameters(
@@ -35,16 +35,19 @@ hyperparameters = GPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2
+    tournament_size=2,
 )
 
 # random.seed(42)
 
 loss = euclidean_distance
 benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA1')
+data, actual = benchmark.generate("KOZA1")
 functions = [ADD, SUB, MUL, DIV]
-terminals = [Var(0), Const(1)]  # , Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)]
+terminals = [
+    Var(0),
+    Const(1),
+]  # , Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)]
 
 problem = BlackBox(data, actual, loss, 1e-6, True)
 
@@ -59,7 +62,13 @@ wrapped_env = FlattenObservation(env)
 
 NUM_INPUTS = wrapped_env.observation_space.shape[0]
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
-terminals = [Var(i) for i in range(NUM_INPUTS)] + [Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5)]
+terminals = [Var(i) for i in range(NUM_INPUTS)] + [
+    Const(1),
+    Const(2),
+    Const(sqrt(2)),
+    Const(pi),
+    Const(0.5),
+]
 
 config = GPConfig(
     num_jobs=1,
@@ -72,7 +81,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=4,
     report_interval=1,
-    max_time=60
+    max_time=60,
 )
 
 hyperparameters = GPHyperparameters(
@@ -81,7 +90,7 @@ hyperparameters = GPHyperparameters(
     max_depth=5,
     cx_rate=0.9,
     mutation_rate=0.3,
-    tournament_size=2
+    tournament_size=2,
 )
 
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)

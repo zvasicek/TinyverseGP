@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.gp.tinyverse import GPModel, GPHyperparameters
+from gp.tinyverse import GPModel, GPHyperparameters
 from ConfigSpace import Configuration, ConfigurationSpace
 from smac import HyperparameterOptimizationFacade, Scenario
 import copy

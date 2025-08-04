@@ -12,20 +12,24 @@ no serious benchmark. It only serves as an example for SR as an application
 domain for TinyverseGP:
 """
 
-from src.gp.tiny_tgp import *
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.problem import BlackBox
-from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from gp.tiny_tgp import *
+from gp.functions import *
+from gp.loss import *
+from gp.problem import BlackBox
+from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+
 
 def number_divs(individual):
     """Count the number of divisions in an individual."""
     return len([count_divs(node) for node in individual])
+
+
 def count_divs(node):
     """Count the number of divisions in an individual."""
     if node.function == DIV:
         return 1 + sum(count_divs(child) for child in node.children)
     return sum(count_divs(child) for child in node.children)
+
 
 config = GPConfig(
     num_jobs=1,
@@ -59,7 +63,7 @@ hyperparameters = TGPHyperparameters(
 
 loss = absolute_distance
 benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA1')
+data, actual = benchmark.generate("KOZA1")
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
 

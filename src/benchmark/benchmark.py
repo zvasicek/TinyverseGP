@@ -2,6 +2,7 @@ from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 
+
 @dataclass
 class Benchmark(ABC):
     """

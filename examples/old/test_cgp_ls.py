@@ -3,36 +3,37 @@
 Example module to test CGP with logic synthesis problems.
 """
 
-from src.gp.tiny_cgp import *
-from src.gp.problem import Problem, BlackBox, PolicySearch
-from src.gp.tinyverse import Var, Const
+from gp.tiny_cgp import *
+from gp.problem import Problem, BlackBox, PolicySearch
+from gp.tinyverse import Var, Const
 import requests
 
 # from dd.cudd import BDD
 # import dd.cudd
 from dd.autoref import BDD, Function
 
-Function.__xor__ = lambda self, other: self._apply('xor', other)
+Function.__xor__ = lambda self, other: self._apply("xor", other)
 
-from src.benchmark.logic_synthesis.blif_parser.blif import BlifFile
-from src.gp.tinyverse import Function
+from benchmark.logic_synthesis.blif_parser.blif import BlifFile
+from gp.tinyverse import Function
 
-AND = Function(2, 'AND', lambda x, y: x & y)
-OR = Function(2, 'OR', lambda x, y: x | y)
-NOT = Function(1, 'NOT', lambda x: ~x)
-NAND = Function(2, 'NAND', lambda x, y: ~(x & y))
-NOR = Function(2, 'NOR', lambda x, y: ~(x | y))
-XOR = Function(2, 'XOR', lambda x, y: x ^ y)
-XNOR = Function(2, 'XNOR', lambda x, y: ~(x ^ y))
-ID = Function(1, 'ID', lambda x: x)
+AND = Function(2, "AND", lambda x, y: x & y)
+OR = Function(2, "OR", lambda x, y: x | y)
+NOT = Function(1, "NOT", lambda x: ~x)
+NAND = Function(2, "NAND", lambda x, y: ~(x & y))
+NOR = Function(2, "NOR", lambda x, y: ~(x | y))
+XOR = Function(2, "XOR", lambda x, y: x ^ y)
+XNOR = Function(2, "XNOR", lambda x, y: ~(x ^ y))
+ID = Function(1, "ID", lambda x: x)
 
 
 @dataclass
 class LS(Problem):
-    '''
+    """
     A black-box LS problem where the fitness is calculated by a loss function
     of a set of examples of input and output.
-    '''
+    """
+
     observations: list
     actual: list
 
@@ -59,7 +60,7 @@ class LS(Problem):
             self.bdd_vars.append(v)
 
         for g in b.eachGate():
-            print(g, g.name, g.ina, g.inb, g.arity(), known_gates[g.fun], end=' ')
+            print(g, g.name, g.ina, g.inb, g.arity(), known_gates[g.fun], end=" ")
 
             ina = g2v[g.ina] if g.ina else None
             inb = g2v[g.inb] if g.inb else None
@@ -67,30 +68,30 @@ class LS(Problem):
             # print(ina, inb)
 
             match known_gates[g.fun]:
-                case 'AND2':
+                case "AND2":
                     o = ina & inb
-                case 'OR2':
+                case "OR2":
                     o = ina | inb
-                case 'XOR2':
+                case "XOR2":
                     o = ina ^ inb
                     # o = self.bdd.apply('xor', ina, inb)
-                case 'NAND2':
+                case "NAND2":
                     o = ~(ina & inb)
-                case 'NOR2':
+                case "NOR2":
                     o = ~(ina | inb)
-                case 'XNOR2':
+                case "XNOR2":
                     o = ~(ina ^ inb)
                     # o = ~self.bdd.apply('xor', ina, inb)
-                case 'INVA':
+                case "INVA":
                     o = ~ina
-                case 'IDA':
+                case "IDA":
                     o = ina
             g2v[g.name] = o
             print(o)
 
         self.reference = []
         for o in b.eachOutput():
-            print('output', o, g2v[o])
+            print("output", o, g2v[o])
             self.reference.append(g2v[o])
 
         # sys.exit(0)
@@ -112,19 +113,18 @@ class LS(Problem):
 
         hd = 0
         for i in range(self.num_outputs):
-            odiff = self.bdd.apply('xor', prediction[i], self.reference[i])
+            odiff = self.bdd.apply("xor", prediction[i], self.reference[i])
             # odiff = prediction[i] ^ self.ref_vars[i]
             hd += odiff.count()
             # print('i', i, odiff, hd)
         return hd
 
     def is_better(self, fitness1: float, fitness2: float) -> bool:
-        '''
+        """
         Check if the first fitness is better than the second.
         It takes into consideration whether the problem is minimizing or maximizing.
-        '''
-        return fitness1 <= fitness2 if self.minimizing \
-            else fitness1 >= fitness2
+        """
+        return fitness1 <= fitness2 if self.minimizing else fitness1 >= fitness2
 
 
 functions = [NOT, ID, AND, OR, XOR, NAND, NOR, XNOR]
@@ -154,8 +154,11 @@ parity5 = """.model parity_5.blif
 problem = LS(parity5)  # 'parity_5.blif')
 
 # uncomment to evolve 3-bit adder
-problem = LS(requests.get(
-    'https://raw.githubusercontent.com/boolean-function-benchmarks/benchmarks/refs/heads/main/benchmarks/blif/add3.blif').text)
+problem = LS(
+    requests.get(
+        "https://raw.githubusercontent.com/boolean-function-benchmarks/benchmarks/refs/heads/main/benchmarks/blif/add3.blif"
+    ).text
+)
 
 config = CGPConfig(
     num_jobs=1,
@@ -173,7 +176,7 @@ config = CGPConfig(
     num_function_nodes=30,
     report_interval=5000,
     report_every_improvement=True,
-    max_time=60000
+    max_time=60000,
 )
 
 hyperparameters = CGPHyperparameters(
@@ -183,7 +186,7 @@ hyperparameters = CGPHyperparameters(
     levels_back=20,
     # mutation_rate=0.1,
     mutation_rate_genes=5,
-    strict_selection=True
+    strict_selection=True,
 )
 
 config.init()
@@ -201,8 +204,8 @@ data = None
 cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
 best = cgp.evolve()
 
-print('best', best.genome, best.fitness)
+print("best", best.genome, best.fitness)
 
 print(cgp.evaluate_individual(best.genome))
 
-print('decode', cgp.expression(best.genome))
+print("decode", cgp.expression(best.genome))

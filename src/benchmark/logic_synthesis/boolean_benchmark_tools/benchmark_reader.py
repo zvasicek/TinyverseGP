@@ -13,12 +13,14 @@ from os import path
 from dataclasses import dataclass
 import array
 
+
 @dataclass
 class TruthTable:
     """
     Class for representing a compressed or uncompressed truth table.
     Input and outputs are stores row-wise in two-dimensional vectors.
     """
+
     inputs: list
     outputs: list
     input_names: list
@@ -45,10 +47,12 @@ class TruthTable:
         self.input_names.clear()
         self.output_names.clear()
 
+
 class Benchmark:
     """
     Class for representing a logic synthesis benchmark.
     """
+
     def __init__(self):
         self.table = TruthTable()
 
@@ -86,8 +90,9 @@ class Benchmark:
         :param input_row: Vector containing a row of inputs
         :return: None
         """
-        assert input_row is not None and len(input_row) > 0, "Input row vector is" \
-                                                             "None or empty!"
+        assert input_row is not None and len(input_row) > 0, (
+            "Input row vector is" "None or empty!"
+        )
         self.table.inputs.append(input_row)
 
     def append_outputs(self, output_row: list) -> None:
@@ -99,8 +104,9 @@ class Benchmark:
         :param output_row: Vector containing a row of outputs
         :return: None
         """
-        assert output_row is not None and len(output_row) > 0, "Output row vector is " \
-                                                               "None or emtpy!"
+        assert output_row is not None and len(output_row) > 0, (
+            "Output row vector is " "None or emtpy!"
+        )
         self.table.outputs.append(output_row)
 
     def get_inputs_at(self, index: int) -> list:
@@ -141,7 +147,7 @@ class Benchmark:
         for name in self.table.output_names:
             print(name + " ", end="")
 
-        print('')
+        print("")
 
     def print_header(self) -> None:
         if len(self.model_name) > 0:
@@ -174,16 +180,17 @@ class Benchmark:
             # Print the inputs that are stored in the current
             # input row vector
             for input_row in self.table.inputs[i]:
-                print(input_row + ' ', end='')
+                print(input_row + " ", end="")
 
             # Separate inputs and outs with whitespace
             print("   ", end="")
 
             # Print the outputs of the current row then
             for output_row in self.table.outputs[i]:
-                print(output_row + ' ', end='')
+                print(output_row + " ", end="")
 
-            print('')
+            print("")
+
 
 class BenchmarkReader:
     """
@@ -229,7 +236,7 @@ class BenchmarkReader:
         filename, extension = path.splitext(file_path)
 
         # Validate the extension by checking if it's a PLU file
-        if not extension.lower() in ['.plu', '.tt']:
+        if not extension.lower() in [".plu", ".tt"]:
             raise Exception("File type is not valid for benchmark reader!")
 
     def file_format(self, file_path: str) -> int:
@@ -244,9 +251,9 @@ class BenchmarkReader:
         filename, extension = path.splitext(file_path)
 
         # Check whether the extension is plu or pla
-        if extension.lower() == '.plu':
+        if extension.lower() == ".plu":
             return self.PLU
-        elif extension.lower() == '.tt':
+        elif extension.lower() == ".tt":
             return self.TT
         else:
             # Raise Exception is the file is not a PLU or PLA file
@@ -254,9 +261,11 @@ class BenchmarkReader:
 
     def open_file(self, file_path: str) -> None:
         self.validate_file_path(file_path)
-        self.file = open(file_path, 'r')
+        self.file = open(file_path, "r")
 
-    def close_file(self, ) -> None:
+    def close_file(
+        self,
+    ) -> None:
         self.file.close()
 
     def read_keyword(self, keyword: str) -> str:
@@ -369,7 +378,7 @@ class BenchmarkReader:
 
         # Read in the input/output data until the end of the
         # table data is reached
-        while '.end' not in line:
+        while ".end" not in line:
             # Just perform the default split the current line by whitespace
             line_split = line.split()
 
@@ -439,7 +448,7 @@ class BenchmarkReader:
         # Read in the input/output data until the end of the
         # table data is reached
         line = self.file.readline()
-        while '.e' not in line:
+        while ".e" not in line:
 
             # Just perform the default split the current line by whitespace
             line_values = line.split()

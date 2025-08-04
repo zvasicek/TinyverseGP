@@ -12,12 +12,12 @@ no serious benchmark. It only serves as an example for SR as an application
 domain for TinyverseGP:
 """
 
-from src.gp.tiny_tgp import *
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.problem import BlackBox
-from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
-from src.hpo.hpo import SMACInterface
+from gp.tiny_tgp import *
+from gp.functions import *
+from gp.loss import *
+from gp.problem import BlackBox
+from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from hpo.hpo import SMACInterface
 
 
 config = GPConfig(
@@ -50,7 +50,7 @@ hyperparameters = TGPHyperparameters(
 
 loss = absolute_distance
 benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA1')
+data, actual = benchmark.generate("KOZA1")
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
 trials = 25

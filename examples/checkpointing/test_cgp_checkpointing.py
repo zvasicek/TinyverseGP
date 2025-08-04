@@ -1,9 +1,9 @@
-from src.gp.tiny_cgp import *
-from src.gp.problem import BlackBox
-from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.tinyverse import Var, Const, Checkpointer, Hyperparameters
+from gp.tiny_cgp import *
+from gp.problem import BlackBox
+from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from gp.functions import *
+from gp.loss import *
+from gp.tinyverse import Var, Const, Checkpointer, Hyperparameters
 
 functions = [ADD, SUB, MUL, DIV]
 terminals = [Var(0), Const(1)]
@@ -27,7 +27,7 @@ config = CGPConfig(
     max_time=60,
     checkpoint_interval=100,
     checkpoint_dir="checkpoints",
-    experiment_name="my_experiment"
+    experiment_name="my_experiment",
 )
 
 hyperparameters = CGPHyperparameters(
@@ -36,12 +36,12 @@ hyperparameters = CGPHyperparameters(
     population_size=33,
     levels_back=len(terminals),
     mutation_rate=0.1,
-    strict_selection=True
+    strict_selection=True,
 )
 
 loss = absolute_distance
 benchmark = SRBenchmark()
-data, actual = benchmark.generate('KOZA3')
+data, actual = benchmark.generate("KOZA3")
 
 problem = BlackBox(data, actual, loss, config.ideal_fitness, config.minimizing_fitness)
 

@@ -11,11 +11,11 @@ The provided benchmarks are taken from the General Boolean Function Benchmark Su
 https://dl.acm.org/doi/10.1145/3594805.3607131
 """
 
-from src.benchmark.logic_synthesis.ls_benchmark import LSBenchmark
-from src.gp.tiny_tgp import *
-from src.gp.functions import *
-from src.gp.loss import *
-from src.gp.problem import BlackBox
+from benchmark.logic_synthesis.ls_benchmark import LSBenchmark
+from gp.tiny_tgp import *
+from gp.functions import *
+from gp.loss import *
+from gp.problem import BlackBox
 
 benchmark = LSBenchmark('data/logic_synthesis/plu/add3.plu')
 benchmark.generate()
