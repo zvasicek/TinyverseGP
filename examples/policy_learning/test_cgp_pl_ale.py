@@ -60,8 +60,11 @@ config = CGPConfig(
     num_function_nodes=100,
     report_interval=1,
     max_time=99999,
+    global_seed=42,
+    checkpoint_interval=10,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='pl_cgp'
 )
-config.init()
 
 hyperparameters = CGPHyperparameters(
     mu=1,
@@ -73,11 +76,11 @@ hyperparameters = CGPHyperparameters(
 )
 
 problem = PolicySearch(env=wrapped_env, ideal_=100, minimizing_=False)
-cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
-policy = cgp.evolve()
+cgp = TinyCGP(functions, terminals, config, hyperparameters)
+policy = cgp.evolve(problem)
 env.close()
 
 env = gym.make("ALE/Pong-v5", render_mode="human")
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
-problem.evaluate(policy, cgp, num_episodes=1, wait_key=True)
+problem.evaluate(policy.genome, cgp, num_episodes=1, wait_key=True)
 env.close()

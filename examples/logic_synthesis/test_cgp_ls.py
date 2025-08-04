@@ -18,7 +18,7 @@ from gp.functions import *
 from gp.loss import *
 from gp.tinyverse import Var
 
-benchmark = LSBenchmark("../../data/logic_synthesis/plu/add3.plu")
+benchmark = LSBenchmark('data/logic_synthesis/plu/add3.plu')
 benchmark.generate()
 truth_table = benchmark.get_truth_table()
 num_inputs = benchmark.benchmark.num_inputs
@@ -43,6 +43,10 @@ config = CGPConfig(
     num_function_nodes=10,
     report_interval=1,
     max_time=60,
+    global_seed=42,
+    checkpoint_interval=10,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='logic_cgp'
 )
 
 hyperparameters = CGPHyperparameters(
@@ -53,12 +57,11 @@ hyperparameters = CGPHyperparameters(
     mutation_rate=0.05,
     strict_selection=False,
 )
-config.init()
 
 data = truth_table.inputs
 actual = truth_table.outputs
 loss = hamming_distance_bitwise
 problem = BlackBox(data, actual, loss, 0, True)
 
-cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
-cgp.evolve()
+cgp = TinyCGP(functions, terminals, config, hyperparameters)
+cgp.evolve(problem)

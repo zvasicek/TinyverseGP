@@ -30,6 +30,10 @@ config = GPConfig(
     num_outputs=1,
     report_interval=1,
     max_time=60,
+    global_seed=42,
+    checkpoint_interval=10,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='sr_ge'
 )
 
 hyperparameters = GEHyperparameters(
@@ -66,6 +70,6 @@ grammar = {
 
 problem = BlackBox(data, actual, loss, 1e-6, True)
 
-ge = TinyGE(problem, functions, grammar, arguments, config, hyperparameters)
+ge = TinyGE(functions, grammar, arguments, config, hyperparameters)
 
-ge.evolve()
+ge.evolve(problem)

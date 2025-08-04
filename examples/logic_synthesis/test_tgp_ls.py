@@ -17,14 +17,14 @@ from gp.functions import *
 from gp.loss import *
 from gp.problem import BlackBox
 
-benchmark = LSBenchmark("../../data/logic_synthesis/plu/add3.plu")
+benchmark = LSBenchmark('data/logic_synthesis/plu/add3.plu')
 benchmark.generate()
 truth_table = benchmark.get_truth_table()
 num_inputs = benchmark.benchmark.num_inputs
 num_outputs = benchmark.benchmark.num_outputs
 
-functions = [AND, OR, NAND, NOR, NOT]
-terminals = [Var(0)]
+functions = [AND, OR, NAND, NOR]
+terminals = [Var(i) for i in range(num_inputs)]
 
 config = GPConfig(
     num_jobs=1,
@@ -38,6 +38,10 @@ config = GPConfig(
     num_outputs=num_outputs,
     report_interval=1,
     max_time=60,
+    global_seed=42,
+    checkpoint_interval=10,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='logic_tgp'
 )
 
 hyperparameters = TGPHyperparameters(
@@ -47,6 +51,7 @@ hyperparameters = TGPHyperparameters(
     cx_rate=0.9,
     mutation_rate=0.3,
     tournament_size=2,
+    erc=False
 )
 
 loss = hamming_distance_bitwise
@@ -54,5 +59,5 @@ data = truth_table.inputs
 actual = truth_table.outputs
 problem = BlackBox(data, actual, loss, 0, True)
 
-tgp = TinyTGP(problem, functions, terminals, config, hyperparameters)
-tgp.evolve()
+tgp = TinyTGP(functions, terminals, config, hyperparameters)
+tgp.evolve(problem)

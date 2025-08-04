@@ -204,3 +204,7 @@ __marimo__/
 
 # MacOS
 .DS_Store
+*.pyc
+smac3_output/
+wd/
+checkpoints/

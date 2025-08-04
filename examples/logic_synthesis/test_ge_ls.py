@@ -36,6 +36,10 @@ config = GPConfig(
     num_outputs=num_outputs,
     report_interval=1,
     max_time=60,
+    global_seed=42,
+    checkpoint_interval=10,
+    checkpoint_dir='examples/checkpoint',
+    experiment_name='logic_ge'
 )
 
 hyperparameters = GEHyperparameters(
@@ -68,5 +72,6 @@ grammar = {
     "<d>": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
 }
 
-ge = TinyGE(problem, functions, grammar, arguments, config, hyperparameters)
-ge.evolve()
+
+ge = TinyGE(functions, grammar, arguments, config, hyperparameters)
+ge.evolve(problem)
