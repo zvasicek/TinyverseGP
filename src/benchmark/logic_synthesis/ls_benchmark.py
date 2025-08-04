@@ -2,8 +2,8 @@
 Benchmark representation module for logic synthesis.
 """
 
-from benchmark.benchmark import Benchmark
-import benchmark.logic_synthesis.boolean_benchmark_tools.benchmark_reader as BenchmarkReader
+from src.benchmark.benchmark import Benchmark
+import src.benchmark.logic_synthesis.boolean_benchmark_tools.benchmark_reader as BenchmarkReader
 
 
 class LSBenchmark(Benchmark):

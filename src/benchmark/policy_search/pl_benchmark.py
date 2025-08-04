@@ -10,11 +10,11 @@ from dataclasses import dataclass
 
 import gymnasium as gym
 
-from benchmark.benchmark import Benchmark
+from src.benchmark.benchmark import Benchmark
 from gymnasium.wrappers import FlattenObservation
 from ale_py import ALEInterface
 
-from gp.tinyverse import Var
+from src.gp.tinyverse import Var
 
 
 @dataclass

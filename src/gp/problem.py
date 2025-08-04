@@ -14,8 +14,8 @@ import gymnasium as gym
 import numpy as np
 from dataclasses import dataclass
 from abc import ABC
-from benchmark.policy_search.policy_evaluation import GPAgent
-from gp.tinyverse import GPModel
+from src.benchmark.policy_search.policy_evaluation import GPAgent
+from src.gp.tinyverse import GPModel
 import numbers
 
 

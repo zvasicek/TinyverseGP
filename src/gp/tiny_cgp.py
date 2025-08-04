@@ -12,7 +12,7 @@ import random
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from gp.tinyverse import (
+from src.gp.tinyverse import (
     GPModel,
     Hyperparameters,
     GPConfig,

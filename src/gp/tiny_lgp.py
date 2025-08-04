@@ -32,8 +32,8 @@ import time
 import operator
 from dataclasses import dataclass
 from collections import namedtuple
-from gp.functions import Function
-from gp.tinyverse import GPModel, Hyperparameters, GPConfig
+from src.gp.functions import Function
+from src.gp.tinyverse import GPModel, Hyperparameters, GPConfig
 
 try:
     from icecream import ic

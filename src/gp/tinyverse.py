@@ -25,7 +25,7 @@ from dataclasses import dataclass, field, fields
 from typing import List, Any, Generic, Callable, Dict
 import copy
 
-from gp.types import HPType
+from src.gp.types import HPType
 import yaml
 import dill
 

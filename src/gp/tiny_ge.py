@@ -7,8 +7,8 @@ import random
 import copy
 import time
 import re
-from gp.problem import *
-from gp.tinyverse import *
+from src.gp.problem import *
+from src.gp.tinyverse import *
 
 
 @dataclass

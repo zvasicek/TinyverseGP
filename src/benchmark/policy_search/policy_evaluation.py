@@ -7,8 +7,8 @@ Benchmark representation module for policy search.
 
 import gymnasium as gym
 
-from benchmark.benchmark import Benchmark
-from gp.tinyverse import GPModel
+from src.benchmark.benchmark import Benchmark
+from src.gp.tinyverse import GPModel
 from gymnasium.wrappers import FlattenObservation
 
 import statistics
