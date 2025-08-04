@@ -15,11 +15,11 @@ Action space: Discrete(6)
 Observation space: Box(0, 255, (210, 160, 3), uint8)
 """
 
-from benchmark.policy_search.pl_benchmark import PLBenchmark, ALEArgs
-from gp.tiny_cgp import *
+from src.benchmark.policy_search.pl_benchmark import PLBenchmark, ALEArgs
+from src.gp.tiny_cgp import *
 import gymnasium as gym
-from gp.problem import PolicySearch
-from gp.functions import *
+from src.gp.problem import PolicySearch
+from src.gp.functions import *
 import warnings
 import numpy
 

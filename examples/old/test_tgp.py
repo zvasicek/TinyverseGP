@@ -6,11 +6,11 @@ from math import sqrt, pi
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
 
-from gp.tiny_tgp import *
-from gp.functions import *
-from gp.loss import *
-from gp.problem import Problem, BlackBox, PolicySearch
-from benchmark.symbolic_regression.sr_benchmark import SRBenchmark
+from src.gp.tiny_tgp import *
+from src.gp.functions import *
+from src.gp.loss import *
+from src.gp.problem import Problem, BlackBox, PolicySearch
+from src.benchmark.symbolic_regression.sr_benchmark import SRBenchmark
 
 print("Koza1 SR Benchmark")
 input("Press Enter to begin...")

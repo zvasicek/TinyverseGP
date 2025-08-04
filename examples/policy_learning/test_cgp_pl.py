@@ -13,12 +13,12 @@ Observation space: Box([ -2.5 -2.5 -10. -10. -6.2831855 -10. -0. -0. ],
                        [ 2.5 2.5 10. 10. 6.2831855 10. 1. 1. ], (8,), float32)
 """
 
-from gp.tiny_cgp import *
+from src.gp.tiny_cgp import *
 import gymnasium as gym
 from gymnasium.wrappers import FlattenObservation
-from gp.problem import PolicySearch
-from gp.functions import *
-from gp.tinyverse import Var, Const
+from src.gp.problem import PolicySearch
+from src.gp.functions import *
+from src.gp.tinyverse import Var, Const
 from math import sqrt, pi
 import warnings
 import numpy

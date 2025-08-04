@@ -12,11 +12,11 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from gp.problem import ProgramSynthesis
-from benchmark.program_synthesis.ps_benchmark import PSBenchmark
-from benchmark.program_synthesis.leetcode.power_of_two import *
-from gp.functions import *
-from gp.tiny_ge import *
+from src.gp.problem import ProgramSynthesis
+from src.benchmark.program_synthesis.ps_benchmark import PSBenchmark
+from src.benchmark.program_synthesis.leetcode.power_of_two import *
+from src.gp.functions import *
+from src.gp.tiny_ge import *
 
 
 config = GPConfig(

@@ -3,9 +3,9 @@
 Example module to test CGP with logic synthesis problems.
 """
 
-from gp.tiny_cgp import *
-from gp.problem import Problem, BlackBox, PolicySearch
-from gp.tinyverse import Var, Const
+from src.gp.tiny_cgp import *
+from src.gp.problem import Problem, BlackBox, PolicySearch
+from src.gp.tinyverse import Var, Const
 import requests
 
 # from dd.cudd import BDD
@@ -14,8 +14,8 @@ from dd.autoref import BDD, Function
 
 Function.__xor__ = lambda self, other: self._apply("xor", other)
 
-from benchmark.logic_synthesis.blif_parser.blif import BlifFile
-from gp.tinyverse import Function
+from src.benchmark.logic_synthesis.blif_parser.blif import BlifFile
+from src.gp.tinyverse import Function
 
 AND = Function(2, "AND", lambda x, y: x & y)
 OR = Function(2, "OR", lambda x, y: x | y)

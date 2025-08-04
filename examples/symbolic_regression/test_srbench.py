@@ -7,13 +7,13 @@ https://cavalab.org/srbench/
 https://github.com/cavalab/srbench/tree/master
 """
 
-from benchmark.symbolic_regression.srbench import SRBench
+from src.benchmark.symbolic_regression.srbench import SRBench
 import numpy as np
 from pmlb import fetch_data
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
-from gp.tiny_cgp import CGPConfig, CGPHyperparameters
-from gp.tiny_tgp import TGPHyperparameters, TGPConfig
+from src.gp.tiny_cgp import CGPConfig, CGPHyperparameters
+from src.gp.tiny_tgp import TGPHyperparameters, TGPConfig
 
 MAXTIME = 3600  # 1 hour
 MAXGEN = 100
