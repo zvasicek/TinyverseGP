@@ -13,6 +13,7 @@ import gymnasium as gym
 from src.benchmark.benchmark import Benchmark
 from gymnasium.wrappers import FlattenObservation
 from ale_py import ALEInterface
+from functools import reduce
 
 from src.gp.tinyverse import Var
 
@@ -84,11 +85,9 @@ class PLBenchmark(Benchmark):
 
     def len_observation_space(self):
         """
-        Returns the size of the observation space. The size of an ALE environment
-        is of course squared since the input is a frame.
+        Returns the size of the observation space.
         """
-        n = self.wrapped_env.observation_space.shape[0]
-        return n if not self.ale else n**2
+        return reduce(lambda x, y: x * y, self.wrapped_env.observation_space.shape)
 
     def len_action_space(self):
         """
