@@ -1,6 +1,10 @@
 import random
 import re
 import textwrap
+import traceback
+import contextlib
+import os
+import time
 from .llm import LLMInterface
 from langchain_huggingface import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, logging
@@ -8,7 +12,8 @@ from dataclasses import dataclass
 from types import FunctionType
 from typing import Callable
 from src.gp.problem import *
-
+from openai import OpenAI
+from multiprocessing import Process, Queue
 
 logging.set_verbosity_error()  
 
@@ -20,6 +25,19 @@ class LLMHyperparameters():
     input_length: int
     train_dataset_limit: int
     error_penalty: float
+    openai_api_key: str    # Optional, if not provided, the defined local model will be used
+    timeout: int 
+    max_time: int
+    max_iterations: int
+    minimizing_fitness: bool
+
+def evaluate_worker(queue, problem, func, context):    # To prevent potential endless loops
+    try:
+        with open(os.devnull, 'w') as devnull, contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
+            result = problem.evaluate(func, context)
+        queue.put(result)
+    except Exception as e:
+        queue.put(None)
 
 class TinyLLM(LLMInterface):
 
@@ -28,17 +46,26 @@ class TinyLLM(LLMInterface):
         self.hyperparameters = hyperparameters_
         self.prompt = prompt_ 
         self.generated_function = None
+        self.best_fitness = None
+        self.best_str_code = None
+        self.best_callable_code = None
+        self.tokenizer_store = None
+        self.model_store = None
 
     def evaluate(self) -> float:
-        try:
-            f = self.problem.evaluate(self.generated_function, self)
-            return f
-        except Exception as e:
-            # print(f"Error during evaluation: {e}")
-            return self.hyperparameters.error_penalty
+        queue = Queue()
+        p = Process(target=evaluate_worker, args=(queue, self.problem, self.generated_function, self))
+        p.start()
+        p.join(timeout=self.hyperparameters.timeout)
 
-    # TODO: Suppress prints from the generated code
-    # TODO: Add a timeout for the execution of the generated code
+        if p.is_alive():
+            p.terminate()
+            p.join()
+            return self.hyperparameters.error_penalty
+        else:
+            result = queue.get()
+            return result if result is not None else self.hyperparameters.error_penalty
+
     def predict(self, model:Callable, observation: list) -> list:
         inputs = observation[:self.hyperparameters.input_length]
         return [model(*inputs)]
@@ -94,9 +121,15 @@ class TinyLLM(LLMInterface):
             # print(f"Error extracting result: {e}")
             return None, None
 
-    def invoke_llm(self, prompt: str) -> str:
-        tokenizer = AutoTokenizer.from_pretrained(self.hyperparameters.model_id)
-        model = AutoModelForCausalLM.from_pretrained(self.hyperparameters.model_id).to("cuda") #.to("cpu")
+    def invoke_lokal_llm(self, prompt: str) -> str:
+        if self.tokenizer_store is not None and self.model_store is not None:
+            tokenizer = self.tokenizer_store
+            model = self.model_store
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(self.hyperparameters.model_id)
+            model = AutoModelForCausalLM.from_pretrained(self.hyperparameters.model_id).to("cuda") #.to("cpu")
+            self.tokenizer_store = tokenizer
+            self.model_store = model
 
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token = tokenizer.eos_token
@@ -114,16 +147,43 @@ class TinyLLM(LLMInterface):
 
         return llm.invoke(prompt)
 
+    def invoke_openai_llm(self, prompt: str) -> str:
+        client = OpenAI(api_key=self.hyperparameters.openai_api_key)
+
+        response = client.chat.completions.create(
+            model=self.hyperparameters.model_id,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.hyperparameters.temperature
+        )
+        return response.choices[0].message.content
+
     def generate(self) -> tuple:
         prompt = self.build_prompt()
-        response = self.invoke_llm(prompt)
-        #print(response)
 
-        str_code, callable_code = self.extract_result(response)
-        self.generated_function = callable_code
+        t0 = time.time()
+        elapsed = 0
+        for _ in range(self.hyperparameters.max_iterations):
+            if self.hyperparameters.openai_api_key.strip() not in [None, '']:
+                response = self.invoke_openai_llm(prompt)
+            else:
+                response = self.invoke_lokal_llm(prompt)
 
-        fitness = self.evaluate()
+            str_code, callable_code = self.extract_result(response)
+            self.generated_function = callable_code
 
-        print(f">>> Fitness: {fitness}")
+            fitness = self.evaluate()
+            if self.best_fitness is None or (self.hyperparameters.minimizing_fitness and fitness < self.best_fitness) or (not self.hyperparameters.minimizing_fitness and fitness > self.best_fitness):
+                self.best_fitness = fitness
+                self.best_str_code = str_code
+                self.best_callable_code = callable_code
 
-        return str_code, callable_code
+            print(f">>> Fitness: {self.best_fitness}")
+
+            t1 = time.time()
+            delta = t1-t0
+            t0 = t1
+            elapsed += delta
+            if elapsed + delta >= self.hyperparameters.max_time:
+                break
+
+        return self.best_str_code, self.best_callable_code
