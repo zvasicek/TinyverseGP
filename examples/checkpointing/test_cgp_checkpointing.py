@@ -11,7 +11,7 @@ terminals = [Var(0), Const(1)]
 config = CGPConfig(
     global_seed=13,
     num_jobs=1,
-    max_generations=1000,
+    max_generations=200,
     stopping_criteria=1e-6,
     minimizing_fitness=True,
     ideal_fitness=1e-6,
@@ -25,6 +25,7 @@ config = CGPConfig(
     num_function_nodes=10,
     report_interval=100,
     max_time=60,
+    checkpointing = True,
     checkpoint_interval=100,
     checkpoint_dir="checkpoints",
     experiment_name="my_experiment",
@@ -49,7 +50,8 @@ cgp = TinyCGP(functions, terminals, config, hyperparameters)
 cgp.evolve(problem)
 
 cp = Checkpointer(config, hyperparameters)
-checkpoint = cp.load("checkpoints/my_experiment/checkpoint_gen_500.json")
+checkpoint_file = "checkpoints/my_experiment/checkpoint_gen_100.dill"
+checkpoint = cp.load("checkpoints/my_experiment/checkpoint_gen_100.dill")
 
 hyperparameters = CGPHyperparameters.from_dict(checkpoint["hyperparameters"])
 config = CGPConfig.from_dict(checkpoint["config"])
