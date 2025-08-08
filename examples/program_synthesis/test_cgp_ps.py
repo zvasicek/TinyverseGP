@@ -32,21 +32,23 @@ config = CGPConfig(
     max_arity=3,
     num_inputs=NUM_INPUTS,
     num_outputs=1,
-    num_function_nodes=100,
+    global_seed=42,
     report_interval=1,
     max_time=60,
+    checkpoint_interval=10,
+    checkpoint_dir='checkpoint',
+    experiment_name='ps_cgp'
 )
-config.init()
 
 hyperparameters = CGPHyperparameters(
     mu=1,
     lmbda=32,
     population_size=33,
+    num_function_nodes=100,
     levels_back=len(terminals),
     mutation_rate=0.1,
     strict_selection=True,
 )
-config.init()
 
 generator = gen_power_of_two
 n = 10
@@ -54,5 +56,5 @@ m = 100
 
 benchmark = PSBenchmark(generator, [n, m])
 problem = ProgramSynthesis(benchmark.dataset)
-cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
-cgp.evolve()
+cgp = TinyCGP(functions, terminals, config, hyperparameters)
+cgp.evolve(problem)

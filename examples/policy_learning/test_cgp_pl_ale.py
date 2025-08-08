@@ -57,13 +57,12 @@ config = CGPConfig(
     max_arity=3,
     num_inputs=num_inputs,
     num_outputs=num_outputs,
-    num_function_nodes=100,
     report_interval=1,
     max_time=99999,
     global_seed=42,
     checkpoint_interval=10,
-    checkpoint_dir='examples/checkpoint',
-    experiment_name='pl_cgp'
+    checkpoint_dir='checkpoint',
+    experiment_name='pl_cgp_ale'
 )
 
 hyperparameters = CGPHyperparameters(
@@ -71,6 +70,7 @@ hyperparameters = CGPHyperparameters(
     lmbda=1,
     population_size=2,
     levels_back=100,
+    num_function_nodes=100,
     mutation_rate=0.05,
     strict_selection=True,
 )

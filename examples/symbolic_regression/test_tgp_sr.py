@@ -47,8 +47,8 @@ config = GPConfig(
     constraints = lambda x: max(0, number_divs(x) - 1),
     global_seed=42,
     checkpoint_interval=10,
-    checkpoint_dir='examples/checkpoint',
-    experiment_name='sr_cgp'
+    checkpoint_dir='checkpoint',
+    experiment_name='sr_tgp'
 )
 
 hyperparameters = TGPHyperparameters(

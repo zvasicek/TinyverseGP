@@ -30,6 +30,7 @@ class CGPHyperparameters(Hyperparameters):
 
     mu: int
     lmbda: int
+    num_function_nodes: int
     population_size: int
     levels_back: int
     strict_selection: bool
@@ -40,9 +41,9 @@ class CGPHyperparameters(Hyperparameters):
         Hyperparameters.__post_init__(self)
         self.space["mu"] = (1, 4)
         self.space["lmbda"] = (1, 1024)
+        self.space["num_function_nodes"] = (1, 10000)
         self.space["strict_selection"] = [True, False]
         self.space["mutation_rate"] = (0.0, 1.0)
-
 
 @dataclass(kw_only=True)
 class CGPConfig(GPConfig):
@@ -52,7 +53,6 @@ class CGPConfig(GPConfig):
 
     num_inputs: int
     num_outputs: int
-    num_function_nodes: int
     num_functions: int
     max_arity: int
     max_time: int
@@ -60,10 +60,6 @@ class CGPConfig(GPConfig):
 
     def __post_init__(self):
         self.genes_per_node = self.max_arity + 1
-        self.num_genes = (
-            self.genes_per_node * self.num_function_nodes
-        ) + self.num_outputs
-
 
 class CGPIndividual(GPIndividual):
     """
@@ -125,6 +121,11 @@ class TinyCGP(GPModel):
         hyperparameters_: CGPHyperparameters,
     ):
         super().__init__(config_, hyperparameters_)
+
+        self.config.num_genes = (
+            self.config.genes_per_node * self.hyperparameters.num_function_nodes
+        ) + self.config.num_outputs
+
         self.num_evaluations = 0
         self.population = []
         self.functions = functions_
@@ -195,7 +196,7 @@ class TinyCGP(GPModel):
             return random.randint(0, self.config.num_functions - 1)
         else:
             rand = random.randint(
-                0, self.config.num_inputs + self.config.num_function_nodes - 1
+                0, self.config.num_inputs + self.hyperparametersx.num_function_nodes - 1
             )
             return rand
 
@@ -206,7 +207,7 @@ class TinyCGP(GPModel):
         :param position: gene position in the genome
         :return: gene type
         """
-        if position >= self.config.num_function_nodes * (self.config.max_arity + 1):
+        if position >= self.hyperparameters.num_function_nodes * (self.config.max_arity + 1):
             return self.GeneType.OUTPUT
         else:
             return (

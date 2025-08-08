@@ -50,19 +50,19 @@ config = CGPConfig(
     max_arity=3,
     num_inputs=wrapped_env.observation_space.shape[0],
     num_outputs=4,
-    num_function_nodes=50,
     report_interval=1,
     max_time=60,
     global_seed=42,
     checkpoint_interval=10,
-    checkpoint_dir='examples/checkpoint',
-    experiment_name='pl_ge'
+    checkpoint_dir='checkpoint',
+    experiment_name='pl_cgp'
 )
 
 hyperparameters = CGPHyperparameters(
     mu=1,
     lmbda=32,
     population_size=33,
+    num_function_nodes=50,
     levels_back=10,
     mutation_rate=0.05,
     strict_selection=True,
