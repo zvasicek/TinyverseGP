@@ -30,6 +30,7 @@ class LLMHyperparameters():
     max_time: int
     max_iterations: int
     minimizing_fitness: bool
+    useGPU : bool
 
 def evaluate_worker(queue, problem, func, context):    # To prevent potential endless loops
     try:
@@ -127,7 +128,10 @@ class TinyLLM(LLMInterface):
             model = self.model_store
         else:
             tokenizer = AutoTokenizer.from_pretrained(self.hyperparameters.model_id)
-            model = AutoModelForCausalLM.from_pretrained(self.hyperparameters.model_id).to("cuda") #.to("cpu")
+            if self.hyperparameters.useGPU:
+                model = AutoModelForCausalLM.from_pretrained(self.hyperparameters.model_id).to("cuda")
+            else:
+                model = AutoModelForCausalLM.from_pretrained(self.hyperparameters.model_id).to("cpu")
             self.tokenizer_store = tokenizer
             self.model_store = model
 

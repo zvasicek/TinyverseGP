@@ -196,7 +196,7 @@ class TinyCGP(GPModel):
             return random.randint(0, self.config.num_functions - 1)
         else:
             rand = random.randint(
-                0, self.config.num_inputs + self.hyperparametersx.num_function_nodes - 1
+                0, self.config.num_inputs + self.hyperparameters.num_function_nodes - 1
             )
             return rand
 

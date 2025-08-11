@@ -15,7 +15,8 @@ hyperparameters = LLMHyperparameters(
     openai_api_key = "",    # Optional, if not provided, the defined local model will be used
     timeout = 25,
     max_time = 180,
-    max_iterations = 15
+    max_iterations = 15,
+    useGPU = False
 )
 
 generator = gen_power_of_two
@@ -28,4 +29,4 @@ problem = ProgramSynthesis(benchmark.dataset)
 prompt = "Write a Python function named \"calculate\" that takes a single input x and returns 1 if x is a power of 2, and 0 otherwise. Ensure the output is formatted as Python code."
 
 tinyllm = TinyLLM(problem, hyperparameters)    # Prompt is optional, if not provided, it will be built from the dataset
-tinyllm.generate()
+print(tinyllm.generate()[0])
