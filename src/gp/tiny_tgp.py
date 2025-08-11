@@ -120,7 +120,7 @@ class TinyTGP(GPModel):
         # reducing the depth by one and splitting the maximum size available by all children
         n = random.choice(self.functions)
         children = [
-            self.tree_random_full(max_depth - 1, size // n.arity - 1)
+            self.tree_random_full(max_depth - 1, (size - 1) // n.arity)
             for _ in range(n.arity)
         ]
         return Node(n, children)
@@ -147,10 +147,9 @@ class TinyTGP(GPModel):
             # Let's sample a non-terminal and generate
             # n.arity children calling `tree_random_grow` recursively and adjusting the maximum depth and size.
             n = random.choice(self.functions)
-            size = size - n.arity
             children = []
-            for _ in range(n.arity):
-                child = self.tree_random_grow(min_depth - 1, max_depth - 1, size)
+            for i in range(n.arity):
+                child = self.tree_random_grow(min_depth - 1, max_depth - 1, size - n.arity + 1 + i)
                 size -= node_size(child)
                 children.append(child)
         return Node(n, children)
