@@ -64,12 +64,14 @@ class LGPHyperparameters(Hyperparameters):
     p_register : float 
     probability_mutation : float
     branch_probability : float
+    erc : bool
+    default_value : float
     # levels_back: int
     # strict_selection: bool
     # mutation_rate: float = None
     # mutation_rate_genes: int = None
 
-    def __init__(self, *, mu=10, tournament_size=2, min_len = 5, max_len = 10, p_register = 0.5, probability_mutation = 0.1, branch_probability = 0.0, **kwargs):
+    def __init__(self, *, mu=10, tournament_size=2, min_len = 5, max_len = 10, p_register = 0.5, probability_mutation = 0.1, branch_probability = 0.0, erc=False, default_value=0.0, **kwargs):
         self.mu = mu
         self.tournament_size = tournament_size
         self.min_len = min_len 
@@ -77,6 +79,8 @@ class LGPHyperparameters(Hyperparameters):
         self.p_register = p_register
         self.probability_mutation = probability_mutation
         self.branch_probability = branch_probability
+        self.erc = erc
+        self.default_value = default_value
         super().__init__(**kwargs)
     def __post_init__(self):
         Hyperparameters.__post_init__(self)
@@ -168,27 +172,31 @@ class TinyLGP(GPModel):
     def _create_constant(self):
         return random.random() * 2 - 1
 
-    def _create_random_genome(self, min_len=2, max_len=4) -> tuple[Instruction]:
+    def _create_random_genome(self, min_len=1, max_len=4) -> tuple[Instruction]:
         genome = list()
-        possible_destinations = [f"R{n}" for n in range(self.config.num_registers)]
-        possible_operands = possible_destinations + [
-            f"I{n}" for n in range(len(self.terminals))
-        ]
+        read_write = [f"R{n}" for n in range(self.config.num_registers)]
+        read_only = [f"I{n}" for n in range(len(self.terminals))]
+        possible_operands = read_write + read_only
+
         for i in range(random.randint(min_len, max_len)):
             if random.random() < self.hyperparameters.branch_probability:
                 dest = None
                 operator = random.choice(LGP_CONDITIONS)
             else:
-                dest = random.choice(possible_destinations)
+                dest = random.choice(read_write)
                 operator = random.choice(self.functions)
-            operands = [
-                (
-                    random.choice(possible_operands)
-                    if random.random() <= self.hyperparameters.p_register
-                    else self._create_constant()
-                )
-                for _ in range(operator.arity)
-            ]
+
+            operands = []
+            can_add_read = operator.arity > 1
+            for _ in range(operator.arity):
+                if can_add_read and random.random() <= self.hyperparameters.p_register:
+                    operands.append(random.choice(read_write))
+                else:
+                    if self.hyperparameters.erc and random.random() < 0.5:
+                        operands.append(self._create_constant())
+                    else:
+                        operands.append(random.choice(read_only))
+                    can_add_read = False
             genome.append(Instruction(dest, operator, operands))
         return genome
 
@@ -222,49 +230,73 @@ class TinyLGP(GPModel):
 
         return self.population[0]
 
-
-    '''
-    def evolve(self) -> Any:
-        self.population = [
-            LGPIndividual(self._create_random_genome(), None)
-            for i in range(self.hyperparameters.mu)
-        ]
-        best = self.evaluate()
-
-        stopping_conditions = list()
-        if self.config.max_generations is not None:
-            stopping_conditions.append(
-                lambda: self.num_evaluations >= self.config.max_generations
-            )
-
-        while all(not f() for f in stopping_conditions):
-            self.breed()
-    '''
-
     def mutate(self, individual: LGPIndividual) -> LGPIndividual:
         pos = random.randint(0, len(individual.genome) - 1)
-        if random.random() < 0.5: # cut off
+        # 1: cut instruction, 2: insert, 3: change destiny, 4: change operator, 5: change operand
+        muts = [1,2,3,4,5] if len(individual.genome) > 1 else [2,3,4,5]
+        p = random.choice(muts)
+        read_write = [f"R{n}" for n in range(self.config.num_registers)]
+        read_only = [f"I{n}" for n in range(len(self.terminals))]
+        if p==1: # cut off
             return LGPIndividual(
                 individual.genome[:pos] + individual.genome[pos + 1 :], None
             )
-        else: # insert new
+        elif p==2: # insert new
             instruction = self._create_random_genome(min_len=1, max_len=1)
             return LGPIndividual(
                 individual.genome[:pos] + instruction + individual.genome[pos:], None
+            )
+        elif p==3:
+            dest, operator, operands = individual.genome[pos]
+            individual.genome[pos] = Instruction(random.choice(read_write), operator, operands)
+            return LGPIndividual(
+                individual.genome, None
+            )
+        elif p==4:
+            dest, operator, operands = individual.genome[pos]
+            arity = operator.arity
+            operator = random.choice([f for f in self.functions if f.arity == arity])
+            individual.genome[pos] = Instruction(dest, operator, operands)
+            return LGPIndividual(
+                individual.genome, None
+            )
+        elif p==5:
+            op = random.randint(0, len(individual.genome[pos].operands)-1)
+            operand = individual.genome[pos].operands[op]
+            dest, operator, operands = individual.genome[pos]
+            if isinstance(operand, str):
+                if operand[0] == "I":
+                    operands[op] = random.choice(read_only + read_write)
+                else:
+                    operands[op] = random.choice(read_write)
+            else:
+                operands[op] = self._create_constant()
+            individual.genome[pos] = Instruction(dest, operator, operands)
+            return LGPIndividual(
+                individual.genome, None
             )
 
     def crossover(
         self, individual1: LGPIndividual, individual2: LGPIndividual
     ) -> tuple[LGPIndividual, LGPIndividual]:
-        cut1 = random.randint(0, len(individual1.genome) - 1)
-        cut2 = random.randint(0, len(individual2.genome) - 1)
-        offspring1 = copy.copy(individual1.genome[:cut1]) + copy.copy(individual2.genome[cut2:])
-        offspring2 = copy.copy(individual2.genome[:cut2]) + copy.copy(individual1.genome[cut1:])
+        cut1_1 = random.randint(0, max(0, len(individual1.genome) - 2))
+        cut1_2 = random.randint(cut1_1, max(0, len(individual1.genome) - 1))
+        cut2_1 = random.randint(0, max(0, len(individual2.genome) - 2))
+        cut2_2 = random.randint(cut2_1, max(0, len(individual2.genome) - 1))
+        n1 = cut1_2 - cut1_1 + 1
+        n2 = cut2_2 - cut2_1 + 1
+        offspring1 = copy.copy(individual1.genome[:cut1_1]) + copy.copy(individual2.genome[cut2_1:n2]) + copy.copy(individual1.genome[cut1_2:])
+        offspring2 = copy.copy(individual2.genome[:cut2_1]) + copy.copy(individual1.genome[cut1_1:n1]) + copy.copy(individual2.genome[cut2_2:])
+
+        if len(offspring1) == 0:
+            offspring1 = copy.copy(individual1.genome)
+        if len(offspring2) == 0:
+            offspring2 = copy.copy(individual2.genome)
         return LGPIndividual(offspring1, None), LGPIndividual(offspring2, None)
 
     def predict(self, genome: Sequence[Instruction], observation: list):
         registerVars = { f"I{n}" : v.function() if v.const else observation[v.function()] for n, v in enumerate(self.terminals) }
-        registers = {f"R{n}": 0.0 for n in range(self.config.num_registers)} | registerVars
+        registers = {f"R{n}": self.hyperparameters.default_value for n in range(self.config.num_registers)} | registerVars
         skip_next = False
         for instruction in genome:
             if skip_next:

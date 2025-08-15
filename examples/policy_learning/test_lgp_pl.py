@@ -44,8 +44,10 @@ hyperparameters = LGPHyperparameters(
         mu=30,
         probability_mutation=0.3,
         branch_probability=0.0,
-        p_register=1.0,
-        max_len = 30
+        p_register=0.5,
+        max_len = 30,
+        erc = False,
+        default_value = 0.0
     )
 config = LGPConfig(
         num_jobs=1,

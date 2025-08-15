@@ -29,14 +29,16 @@ ARITHMETIC_FUNCTIONS = [ADD, SUB, MUL, DIV]
 
 def main():
     functions = ARITHMETIC_FUNCTIONS
-    terminals = [Var(0), Const(1)]
+    terminals = [Var(0), Const(1), Const(2), Const(4), Const(6)]
 
     hyperparameters = LGPHyperparameters(
         mu=1000,
         probability_mutation=0.3,
         branch_probability=0.0,
-        p_register = 1,
-        max_len = 30
+        p_register = 0.5,
+        max_len = 30,
+        erc = False,
+        default_value = 0.0
     )
     config = LGPConfig(
         num_jobs=1,
