@@ -17,10 +17,14 @@ This repository is organized as follows:
 - `src/gp`: contains the core implementation of the different representations.
   - `tiny_tgp.py`: implementation of Tree-based Genetic Programming (TGP).
   - `tiny_cgp.py`: implementation of Cartesian Genetic Programming (CGP).
+  - `tiny_lgp.py`: implementation of Linear Genetic Programming (LGP).
+  - `tiny_ge.py`: implementation of Grammatical Evolution (GE).
   - `tineverse.py`: the abstract classes for GP, Config, Hyperparameters, and Function set.
   - `functions.py`: the standard set of functions currently supported.
   - `problem.py`: the abstract class for the problem to be solved. It includes the example based problem (black-box), policy search, and program synthesis.
   - `loss.py`: currently supported loss functions.
+- `src/llm`: contains the interfaces for the use of LLM's
+- `src/hpo`: contains the interfaces for the use hyperparameter optimisation tools 
 - `src/benchmark`: contains the benchmark problems and datasets.
   - `symbolic_regression/sr_benchmark.py`: sample symbolic regression benchmark problems.
   - `symbolic_regression/srbench.py`:  interface to the SRBench benchmark suite.
