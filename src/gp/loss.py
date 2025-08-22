@@ -10,8 +10,10 @@ import numpy as np
 
 
 def absolute_error(x, y):
-    return np.abs(np.subtract(x, y))
+    return np.abs(np.subtract(x, y)).sum()
 
+def mean_absolute_error(x, y):
+    return np.abs(np.subtract(x, y)).mean()
 
 def mean_squared_error(x, y):
     return np.square(np.subtract(x, y)).mean()

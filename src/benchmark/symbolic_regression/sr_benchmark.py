@@ -44,11 +44,13 @@ class SRBenchmark(Benchmark):
         """
         match benchmark:
             case "KOZA1":
-                return self.dataset_uniform(-1, 1, 20, 1, benchmark)
+                return self.dataset_uniform(-10, 10, 20, 1, benchmark)
             case "KOZA2":
-                return self.dataset_uniform(-1, 1, 20, 1, benchmark)
+                return self.dataset_uniform(-10, 10, 20, 1, benchmark)
             case "KOZA3":
-                return self.dataset_uniform(-1, 1, 20, 1, benchmark)
+                return self.dataset_uniform(-10, 10, 20, 1, benchmark)
+            case "DEBUG":
+                return self.dataset_uniform(-4, 4, 100, 1, benchmark)
 
     def objective(self, benchmark: str, args: list) -> float:
         """
@@ -66,3 +68,5 @@ class SRBenchmark(Benchmark):
                 return pow(args[0], 5) - 2 * pow(args[0], 3) + args[0]
             case "KOZA3":
                 return pow(args[0], 6) - 2 * pow(args[0], 4) + pow(args[0], 2)
+            case "DEBUG":
+                return pow(args[0], 3) - pow(args[0], 2) + pow(args[0], 4)

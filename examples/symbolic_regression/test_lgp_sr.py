@@ -29,41 +29,49 @@ ARITHMETIC_FUNCTIONS = [ADD, SUB, MUL, DIV]
 
 def main():
     functions = ARITHMETIC_FUNCTIONS
-    terminals = [Var(0), Const(1), Const(2), Const(4), Const(6)]
+    terminals = [Var(0)]*4 + [Const(x) for x in range(1,7)]
 
     hyperparameters = LGPHyperparameters(
-        mu=1000,
-        probability_mutation=0.3,
+        mu=2000,
+        macro_variation_rate=0.75,
+        micro_variation_rate=0.25,
+        insertion_rate=0.5,
+        max_segment=15,
+        reproduction_rate=0.5,
         branch_probability=0.0,
         p_register = 0.5,
-        max_len = 30,
+        max_len = 200,
+        initial_max_len = 35,
         erc = False,
-        default_value = 0.0
+        default_value = 0.0,
+        protection = 1e10,
+        penalization_validity_factor=0.0
     )
     config = LGPConfig(
         num_jobs=1,
-        max_generations=50_000 - hyperparameters.mu,
+        max_generations=500_000 - hyperparameters.mu,
         stopping_criteria=1e-6,
         minimizing_fitness=True,
         ideal_fitness=1e-6,
         silent_algorithm=False,
         silent_evolver=False,
         minimalistic_output=True,
-        report_interval=1000,
+        report_interval=100000000000,
         max_time=500,
-        num_registers=5,
-        global_seed=13,
-        checkpoint_interval=100,
+        num_registers=8,
+        global_seed=None,
+        checkpoint_interval=1000000000000,
         checkpoint_dir="checkpoints",
         experiment_name="my_experiment",
     )
 
-    loss = absolute_distance
+    loss = mean_squared_error
     data, actual = SRBenchmark().generate("KOZA3")
     problem = BlackBox(data, actual, loss, 1e-6, True)
 
     lgp = TinyLGP(functions, terminals, config, hyperparameters)
     lgp.evolve(problem)
+    #print(lgp.expression(lgp.best_individual.genome))
 
 
 if __name__ == "__main__":

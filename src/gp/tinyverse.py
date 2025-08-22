@@ -301,8 +301,8 @@ class GPModel(ABC):
         self.checkpointer = Checkpointer(self.config, self.hyperparameters)
         self.generation_number = 0
         self.num_evaluations = 0
-        if self.config.global_seed is not None:
-            random.seed(self.config.global_seed)
+        #if self.config.global_seed is not None:
+        random.seed(self.config.global_seed)
 
     def evaluate(self, problem) -> GPIndividual:
         """
@@ -327,6 +327,7 @@ class GPModel(ABC):
             if problem.is_better(fitness, best_fitness):
                 best = copy.copy(individual)
                 best_fitness = fitness
+
         self.best_individual = copy.copy(best)
 
         return best

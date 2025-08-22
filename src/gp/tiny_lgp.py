@@ -61,26 +61,38 @@ class LGPHyperparameters(Hyperparameters):
     tournament_size: int
     min_len : int 
     max_len : int 
+    initial_max_len : int
     p_register : float 
-    probability_mutation : float
+    macro_variation_rate : float
+    micro_variation_rate : float
+    insertion_rate : float
+    max_segment : int
+    reproduction_rate : float
     branch_probability : float
     erc : bool
     default_value : float
+    protection : float
     # levels_back: int
     # strict_selection: bool
     # mutation_rate: float = None
     # mutation_rate_genes: int = None
 
-    def __init__(self, *, mu=10, tournament_size=2, min_len = 5, max_len = 10, p_register = 0.5, probability_mutation = 0.1, branch_probability = 0.0, erc=False, default_value=0.0, **kwargs):
+    def __init__(self, *, mu=10, tournament_size=2, min_len = 5, max_len = 10, initial_max_len = 10, p_register = 0.5, macro_variation_rate = 1, micro_variation_rate = 0.25, insertion_rate = 0.5, max_segment = 4, reproduction_rate = 1, branch_probability = 0.0, erc=False, default_value=0.0, protection=1e10, **kwargs):
         self.mu = mu
         self.tournament_size = tournament_size
         self.min_len = min_len 
         self.max_len = max_len 
+        self.initial_max_len = initial_max_len
         self.p_register = p_register
-        self.probability_mutation = probability_mutation
+        self.macro_variation_rate = macro_variation_rate
+        self.micro_variation_rate = micro_variation_rate
+        self.insertion_rate = insertion_rate
+        self.max_segment = max_segment
+        self.reproduction_rate = reproduction_rate
         self.branch_probability = branch_probability
         self.erc = erc
         self.default_value = default_value
+        self.protection = protection
         super().__init__(**kwargs)
     def __post_init__(self):
         Hyperparameters.__post_init__(self)
@@ -167,7 +179,7 @@ class TinyLGP(GPModel):
         self.best_individual = None 
         self.num_evaluations = 0
 
-        self.population = [LGPIndividual(self._create_random_genome(self.hyperparameters.min_len, self.hyperparameters.max_len), None) for _ in range(self.hyperparameters.mu)]
+        self.population = [LGPIndividual(self._create_random_genome(self.hyperparameters.min_len, self.hyperparameters.initial_max_len), None) for _ in range(self.hyperparameters.mu)]
 
     def _create_constant(self):
         return random.random() * 2 - 1
@@ -189,7 +201,7 @@ class TinyLGP(GPModel):
             operands = []
             can_add_read = operator.arity > 1
             for _ in range(operator.arity):
-                if can_add_read and random.random() <= self.hyperparameters.p_register:
+                if not can_add_read or random.random() <= self.hyperparameters.p_register:
                     operands.append(random.choice(read_write))
                 else:
                     if self.hyperparameters.erc and random.random() < 0.5:
@@ -203,11 +215,15 @@ class TinyLGP(GPModel):
     def breed(self, problem):
         w1, l1 = self.tournament_selection(problem.minimizing)
         w2, l2 = self.tournament_selection(problem.minimizing)
-        offspring1, offspring2 = self.crossover(
+        offspring1 = self.crossover(
             self.population[w1], self.population[w2]
         )
-        if random.random() < self.hyperparameters.probability_mutation:
+        offspring2 = self.crossover(
+            self.population[w2], self.population[w1]
+        )
+        if random.random() < self.hyperparameters.micro_variation_rate:
             self.mutate(offspring1)
+        if random.random() < self.hyperparameters.micro_variation_rate:
             self.mutate(offspring2)
 
         offspring1.fitness = self.penalize(self.evaluate_individual(offspring1.genome, problem), offspring1.genome)
@@ -215,10 +231,16 @@ class TinyLGP(GPModel):
         # SURVIVAL
         tmp = [offspring1, self.population[l1]]
         self._sort(tmp, problem.minimizing)
-        self.population[l1] = tmp[0]
+        if (problem.is_better(offspring1.fitness, self.population[w1].fitness) or random.random() < self.hyperparameters.reproduction_rate):
+            self.population[l1] = copy.copy(offspring1)
+        #else:
+        #    self.population[l1] = copy.copy(tmp[0])
         tmp = [offspring2, self.population[l2]]
         self._sort(tmp, problem.minimizing)
-        self.population[l2] = tmp[0]
+        if (problem.is_better(offspring2.fitness, self.population[w2].fitness) or random.random() < self.hyperparameters.reproduction_rate):
+            self.population[l2] = copy.copy(offspring2)
+        #else:
+        #    self.population[l2] = copy.copy(tmp[0])
 
         self._sort(self.population, problem.minimizing)
         best = copy.copy(self.population[0])
@@ -232,27 +254,18 @@ class TinyLGP(GPModel):
 
     def mutate(self, individual: LGPIndividual) -> LGPIndividual:
         pos = random.randint(0, len(individual.genome) - 1)
-        # 1: cut instruction, 2: insert, 3: change destiny, 4: change operator, 5: change operand
-        muts = [1,2,3,4,5] if len(individual.genome) > 1 else [2,3,4,5]
+        # 1: change destiny, 2: change operator, 3: change operand, 4: insert random genome
+        muts = [1,2,3,4]
         p = random.choice(muts)
         read_write = [f"R{n}" for n in range(self.config.num_registers)]
         read_only = [f"I{n}" for n in range(len(self.terminals))]
-        if p==1: # cut off
-            return LGPIndividual(
-                individual.genome[:pos] + individual.genome[pos + 1 :], None
-            )
-        elif p==2: # insert new
-            instruction = self._create_random_genome(min_len=1, max_len=1)
-            return LGPIndividual(
-                individual.genome[:pos] + instruction + individual.genome[pos:], None
-            )
-        elif p==3:
+        if p==1:
             dest, operator, operands = individual.genome[pos]
             individual.genome[pos] = Instruction(random.choice(read_write), operator, operands)
             return LGPIndividual(
                 individual.genome, None
             )
-        elif p==4:
+        elif p==2:
             dest, operator, operands = individual.genome[pos]
             arity = operator.arity
             operator = random.choice([f for f in self.functions if f.arity == arity])
@@ -260,13 +273,13 @@ class TinyLGP(GPModel):
             return LGPIndividual(
                 individual.genome, None
             )
-        elif p==5:
+        elif p==3:
             op = random.randint(0, len(individual.genome[pos].operands)-1)
             operand = individual.genome[pos].operands[op]
             dest, operator, operands = individual.genome[pos]
             if isinstance(operand, str):
                 if operand[0] == "I":
-                    operands[op] = random.choice(read_only + read_write)
+                    operands[op] = random.choice(read_only)# + read_write)
                 else:
                     operands[op] = random.choice(read_write)
             else:
@@ -275,24 +288,29 @@ class TinyLGP(GPModel):
             return LGPIndividual(
                 individual.genome, None
             )
+        elif p==4:
+            individual.genome = individual.genome[:pos] + self._create_random_genome(min_len=1, max_len=1) + individual.genome[pos:]
+            return LGPIndividual(individual.genome, None)
 
     def crossover(
         self, individual1: LGPIndividual, individual2: LGPIndividual
     ) -> tuple[LGPIndividual, LGPIndividual]:
-        cut1_1 = random.randint(0, max(0, len(individual1.genome) - 2))
-        cut1_2 = random.randint(cut1_1, max(0, len(individual1.genome) - 1))
-        cut2_1 = random.randint(0, max(0, len(individual2.genome) - 2))
-        cut2_2 = random.randint(cut2_1, max(0, len(individual2.genome) - 1))
-        n1 = cut1_2 - cut1_1 + 1
-        n2 = cut2_2 - cut2_1 + 1
-        offspring1 = copy.copy(individual1.genome[:cut1_1]) + copy.copy(individual2.genome[cut2_1:n2]) + copy.copy(individual1.genome[cut1_2:])
-        offspring2 = copy.copy(individual2.genome[:cut2_1]) + copy.copy(individual1.genome[cut1_1:n1]) + copy.copy(individual2.genome[cut2_2:])
-
-        if len(offspring1) == 0:
-            offspring1 = copy.copy(individual1.genome)
-        if len(offspring2) == 0:
-            offspring2 = copy.copy(individual2.genome)
-        return LGPIndividual(offspring1, None), LGPIndividual(offspring2, None)
+        insertion = random.random() < self.hyperparameters.insertion_rate
+        do = random.random() < self.hyperparameters.macro_variation_rate
+        l1 = len(individual1.genome)
+        l2 = len(individual2.genome)
+        if do and l1 < self.hyperparameters.max_len and (insertion or l1 == self.hyperparameters.min_len):
+            p1 = random.randint(0, l1-1)
+            p2 = random.randint(0, l2-1)
+            l  = random.randint(1, min(l2-p2+1, self.hyperparameters.max_len - l1, self.hyperparameters.max_segment))
+            offspring = copy.copy(individual1.genome[:p1]) + copy.copy(individual2.genome[p2:l]) + copy.copy(individual1.genome[p1:])
+        elif do and l1 > self.hyperparameters.min_len and (not insertion or l1 == self.hyperparameters.max_len):
+            p1 = random.randint(0, l1-1)
+            l = random.randint(1, min(l1-p1+1, l1-self.hyperparameters.min_len, self.hyperparameters.max_segment))
+            offspring = copy.copy(individual1.genome[:p1]) + copy.copy(individual1.genome[p1+l:])
+        else:
+            offspring = copy.copy(individual1.genome)
+        return LGPIndividual(offspring, None)
 
     def predict(self, genome: Sequence[Instruction], observation: list):
         registerVars = { f"I{n}" : v.function() if v.const else observation[v.function()] for n, v in enumerate(self.terminals) }
@@ -302,12 +320,17 @@ class TinyLGP(GPModel):
             if skip_next:
                 skip_next = False
             else:
-                value = instruction.operator.function(
-                    *[
-                        registers[r] if isinstance(r, str) else r
-                        for r in instruction.operands
-                    ]
-                )
+                try:
+                    value = instruction.operator.function(
+                        *[
+                            registers[r] if isinstance(r, str) else r
+                            for r in instruction.operands
+                        ]
+                    )
+                    if isinstance(value,complex):
+                        value = self.hyperparameters.protection
+                except:
+                    value = self.hyperparameters.protection
                 if instruction.dest is not None:
                     registers[instruction.dest] = value
                 elif not value:
@@ -326,19 +349,7 @@ class TinyLGP(GPModel):
         """
         return individual.fitness
 
-    '''
-    def evaluate(self) -> float:
-        """
-        Evaluates the population.
 
-        :returns: the best solution discovered in the population
-        """
-        for individual in self.population:
-            if individual.fitness is None:
-                individual.fitness = self.evaluate_individual(individual.genome)
-        self._sort(self.population)
-        return self.population[0].fitness
-    '''
     def _sort(self, individuals: list[LGPIndividual], minimizing_fitness):
         individuals.sort(
             key=lambda i: i.fitness, reverse=not minimizing_fitness
@@ -385,7 +396,15 @@ class TinyLGP(GPModel):
 
     def is_valid(self, genome: list[int]) -> bool:
         """ """
-        return True
+        c = {f"I{n}":0 for n, v in enumerate(self.terminals) if not v.const}
+        inputs = [f"I{n}" for n, v in enumerate(self.terminals) if not v.const]
+        for instruction in genome:
+            _, _, operands = instruction
+
+            for i in inputs:
+                if i in operands:
+                    c[i] = 1
+        return sum(c.values())==len(inputs)
 
     def pipeline(self, problem):
         """

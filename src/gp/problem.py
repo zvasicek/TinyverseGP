@@ -113,6 +113,7 @@ class BlackBox(Problem):
         :return: cost function value
         """
         cost = 0.0
+
         for index, _ in enumerate(predictions[0]):
             cost += self.loss(
                 [prediction[index] for prediction in predictions],

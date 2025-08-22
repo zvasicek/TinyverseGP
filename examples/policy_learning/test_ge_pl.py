@@ -29,7 +29,7 @@ env = gym.make("LunarLander-v3")
 
 config = GPConfig(
     num_jobs=1,
-    max_generations=10,
+    max_generations=50,
     stopping_criteria=300,
     minimizing_fitness=False,
     ideal_fitness=300,
@@ -46,11 +46,11 @@ config = GPConfig(
 )
 
 hyperparameters = GEHyperparameters(
-    pop_size=200,
-    genome_length=100,
-    codon_size=1000,
-    cx_rate=0.9,
-    mutation_rate=0.3,
+    pop_size=100,
+    genome_length=50,
+    codon_size=100,
+    cx_rate=0.95,
+    mutation_rate=0.25,
     tournament_size=2,
     penalty_value=-99999,
 )
@@ -60,28 +60,14 @@ problem = PolicySearch(env=env, ideal_=300, minimizing_=False)
 functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT, IF, LT, GT]
 arguments = ["a", "b", "c", "d", "e", "f", "g", "h"]  # Inputs for the functions
 grammar = {
-    "<expr>": ["[<fun>, <fun>, <fun>, <fun>]"],
-    "<fun>": [
-        "ADD(<fun>, <fun>)",
-        "SUB(<fun>, <fun>)",
-        "MUL(<fun>, <fun>)",
-        "DIV(<fun>, <fun>)",
-        #"<d>",
-        #"<d>.<d><d>",
-        "1.414",
-        "3.141",
-        "1",
-        "2",
-        "a",
-        "b",
-        "c",
-        "d",
-        "e",
-        "f",
-        "g",
-        "h",
-    ],
-    "<d>": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+    "<expr>": ["[<lfun>, <lfun>, <lfun>, <lfun>]"],
+    "<lfun>": ["IF(<lfun>, <fun>, <fun>)", "<logic>(<fun>, <fun>)"],
+    "<logic>": ["AND", "OR", "NAND", "NOR", "NOT"],
+    "<lfun>": ["LT(<cvar>, <cvar>)", "GT(<cvar>, <cvar>)"],
+    "<fun>": ["ADD(<fun>, <fun>)", "SUB(<fun>, <fun>)", "MUL(<fun>, <fun>)", "DIV(<fun>, <fun>)", "<lfun>", "<cvar>"],
+    "<cvar>": ["<const>", "<var>"]
+    "<const>" : ["1", "2", "0.5", str(math.pi), str(math.sqrt(2))],
+    "<var>" : arguments
 }
 
 ge = TinyGE(functions, grammar, arguments, config, hyperparameters)

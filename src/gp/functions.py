@@ -57,6 +57,7 @@ LOG = Function(1, "LOG", plog)
 SQRT = Function(1, "SQRT", psqrt)
 SQR = Function(1, "SQR", square)
 CUBE = Function(1, "CUBE", cube)
+POWER = Function(2, "Power", operator.pow, lambda x, y: x**y)
 
 # Logical Functions
 AND = Function(2, "AND", lambda x, y: int(x) & int(y))

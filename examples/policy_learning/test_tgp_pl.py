@@ -42,7 +42,7 @@ terminals = [Var(i) for i in range(NUM_INPUTS)] + [
 
 config = GPConfig(
     num_jobs=1,
-    max_generations=10,
+    max_generations=50,
     stopping_criteria=300,
     minimizing_fitness=False,
     ideal_fitness=300,
@@ -51,7 +51,7 @@ config = GPConfig(
     minimalistic_output=True,
     num_outputs=4,
     report_interval=1,
-    max_time=60,
+    max_time=500,
     global_seed=42,
     checkpoint_interval=100,
     checkpoint_dir='examples/checkpoint',
@@ -59,7 +59,7 @@ config = GPConfig(
 )
 
 hyperparameters = TGPHyperparameters(
-    pop_size=10,
+    pop_size=50,
     max_size=25,
     max_depth=5,
     cx_rate=0.9,
@@ -71,6 +71,8 @@ hyperparameters = TGPHyperparameters(
 problem = PolicySearch(env=env, ideal_=300, minimizing_=False)
 tgp = TinyTGP(functions, terminals, config, hyperparameters)
 policy = tgp.evolve(problem)
+
+print(tgp.expression(policy.genome))
 
 env = gym.make("LunarLander-v3", render_mode="human")
 problem = PolicySearch(env=env, ideal_=100, minimizing_=False)
