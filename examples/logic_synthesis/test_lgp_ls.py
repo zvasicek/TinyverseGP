@@ -17,45 +17,45 @@ from src.gp.functions import *
 from src.gp.loss import *
 from src.gp.problem import BlackBox
 
-benchmark = LSBenchmark('data/logic_synthesis/plu/alu2.plu')
+benchmark = LSBenchmark('data/logic_synthesis/plu/add3.plu')
 benchmark.generate()
 truth_table = benchmark.get_truth_table()
 num_inputs = benchmark.benchmark.num_inputs
 num_outputs = benchmark.benchmark.num_outputs
 print(num_inputs, num_outputs)
 
-functions = [AND, OR, NAND, NOR, XOR, NOT]
+functions = [AND, OR, NAND, NOR]
 terminals = [Var(i) for i in range(num_inputs)]
 
 hyperparameters = LGPHyperparameters(
-    mu=1000,
+    mu=2000,
     macro_variation_rate=0.75,
     micro_variation_rate=0.25,
     insertion_rate=0.4,
-    max_segment=15,
-    reproduction_rate=0.5,
+    max_segment=10,
+    reproduction_rate=0.4,
     branch_probability=0.0,
     p_register = 0.25,
-    max_len = 100,
-    initial_max_len = 50,
+    max_len = 50,
+    initial_max_len = 25,
     erc = False,
-    default_value = 1,
+    default_value = 0,
     protection = 1e10,
-    penalization_validity_factor=200.0
+    penalization_validity_factor=500.0
 )
 config = LGPConfig(
         num_jobs=1,
-        max_generations=100_000, # - hyperparameters.mu,
+        max_generations=500_000, # - hyperparameters.mu,
         stopping_criteria=0,
         minimizing_fitness=True,
         ideal_fitness=0,
         silent_algorithm=False,
         silent_evolver=False,
         minimalistic_output=True,
-        report_interval=hyperparameters.mu,
+        report_interval=10*hyperparameters.mu,
         max_time=500,
         num_outputs=num_outputs,
-        num_registers=12,
+        num_registers=5,
         global_seed=None,
         checkpoint_interval=1000000000,
         checkpoint_dir="checkpoints",

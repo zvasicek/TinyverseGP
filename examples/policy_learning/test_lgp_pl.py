@@ -31,7 +31,7 @@ env = gym.make("LunarLander-v3")
 wrapped_env = FlattenObservation(env)
 
 NUM_INPUTS = wrapped_env.observation_space.shape[0]
-functions = [ADD, SUB, MUL, DIV] #, AND, OR, NAND, NOR, NOT] #, IF, LT, GT]
+functions = [ADD, SUB, MUL, DIV, AND, OR, NAND, NOR, NOT] #, IF, LT, GT]
 terminals = [Var(i) for i in range(NUM_INPUTS)]#*2 + [ Const(1), Const(2), Const(sqrt(2)), Const(pi), Const(0.5), ]
 
 hyperparameters = LGPHyperparameters(
@@ -61,7 +61,7 @@ config = LGPConfig(
         report_interval=5,
         max_time=500,
         num_outputs=4,
-        num_registers=4,
+        num_registers=6,
         global_seed=None,
         checkpoint_interval=100000,
         checkpoint_dir="checkpoints",

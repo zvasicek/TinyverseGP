@@ -133,7 +133,11 @@ class TinyGE(GPModel):
             expr: str, func_dict: list, args: list[str], values: list
         ) -> any:
             local_vars = dict(zip(args, values))
-            return [eval(expr, func_dict, local_vars)]
+            prediction = eval(expr, func_dict, local_vars)
+            if isinstance(prediction, list):
+                return prediction
+            else:
+                return [prediction]
 
         tmp_expr = self.expression(
             genome

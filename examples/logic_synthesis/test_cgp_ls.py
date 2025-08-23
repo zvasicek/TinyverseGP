@@ -29,7 +29,7 @@ terminals = [Var(i) for i in range(num_inputs)]
 
 config = CGPConfig(
     num_jobs=1,
-    max_generations=100000,
+    max_generations=2000000,
     stopping_criteria=0,
     minimizing_fitness=True,
     ideal_fitness=0,
@@ -40,8 +40,8 @@ config = CGPConfig(
     max_arity=2,
     num_inputs=len(terminals),
     num_outputs=num_outputs,
-    report_interval=1,
-    max_time=60,
+    report_interval=5000,
+    max_time=360,
     global_seed=42,
     checkpoint_interval=10,
     checkpoint_dir='examples/checkpoint',
@@ -51,10 +51,10 @@ config = CGPConfig(
 hyperparameters = CGPHyperparameters(
     mu=1,
     lmbda=1,
-    population_size=2,
-    levels_back=100,
-    mutation_rate=0.05,
-    num_function_nodes=10,
+    population_size=1000,
+    levels_back=1000,
+    mutation_rate=0.1,
+    num_function_nodes=30,
     strict_selection=False,
 )
 

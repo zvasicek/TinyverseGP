@@ -65,8 +65,8 @@ grammar = {
     "<logic>": ["AND", "OR", "NAND", "NOR", "NOT"],
     "<lfun>": ["LT(<cvar>, <cvar>)", "GT(<cvar>, <cvar>)"],
     "<fun>": ["ADD(<fun>, <fun>)", "SUB(<fun>, <fun>)", "MUL(<fun>, <fun>)", "DIV(<fun>, <fun>)", "<lfun>", "<cvar>"],
-    "<cvar>": ["<const>", "<var>"]
-    "<const>" : ["1", "2", "0.5", str(math.pi), str(math.sqrt(2))],
+    "<cvar>": ["<var>"],# ["<const>", "<var>"],
+    "<const>" : ["1", "2", "0.5", str(pi), str(sqrt(2))],
     "<var>" : arguments
 }
 

@@ -26,6 +26,7 @@ num_outputs = benchmark.benchmark.num_outputs
 functions = [AND, OR, NAND, NOR]
 terminals = [Var(i) for i in range(num_inputs)]
 
+# 38
 config = GPConfig(
     num_jobs=1,
     max_generations=1000,
@@ -60,4 +61,5 @@ actual = truth_table.outputs
 problem = BlackBox(data, actual, loss, 0, True)
 
 tgp = TinyTGP(functions, terminals, config, hyperparameters)
-tgp.evolve(problem)
+result = tgp.evolve(problem)
+print(tgp.expression(result.genome))
