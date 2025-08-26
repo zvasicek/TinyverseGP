@@ -26,29 +26,29 @@ num_outputs = benchmark.benchmark.num_outputs
 
 config = GPConfig(
     num_jobs=1,
-    max_generations=1000,
+    max_generations=500_00,
     stopping_criteria=1e-6,
     minimizing_fitness=True,  # this should be used from the problem instance
-    ideal_fitness=1e-6,  # this should be used from the problem instance
+    ideal_fitness=0,  # this should be used from the problem instance
     silent_algorithm=False,
     silent_evolver=False,
     minimalistic_output=True,
     num_outputs=num_outputs,
     report_interval=100,
-    max_time=360,
-    global_seed=42,
-    checkpoint_interval=10,
+    max_time=500,
+    global_seed=None,
+    checkpoint_interval=100000,
     checkpoint_dir='examples/checkpoint',
     experiment_name='logic_ge'
 )
 
 hyperparameters = GEHyperparameters(
     pop_size=1000,
-    genome_length=35,
+    genome_length=60,
     codon_size=100,
     cx_rate=0.95,
     mutation_rate=0.25,
-    tournament_size=2,
+    tournament_size=3,
     penalty_value=99999,
 )
 
@@ -57,7 +57,7 @@ data = truth_table.inputs
 actual = truth_table.outputs
 problem = BlackBox(data, actual, loss, 0, True)
 
-functions = [AND, OR, NAND, NOR]
+functions = [AND, OR, NAND, NOR, XOR, NOT]
 arguments = ["a", "b", "c", "d", "e", "f", "g"]
 grammar = {
     "<expr>": ["[<lexpr>, <lexpr>, <lexpr>, <lexpr>]"],
@@ -66,9 +66,18 @@ grammar = {
         "OR(<vexpr>, <vexpr>)",
         "NAND(<vexpr>, <vexpr>)",
         "NOR(<vexpr>, <vexpr>)",
-
+        "XOR(<vexpr>, <vexpr>)",
+        "NOT(<vexpr>)",
     ],
-    "<vexpr>": ["<var>", "<lexpr>", "<var>", "<lexpr>", "<lexpr>"],
+    "<vexpr>": [
+        "AND(<vexpr>, <vexpr>)",
+        "OR(<vexpr>, <vexpr>)",
+        "NAND(<vexpr>, <vexpr>)",
+        "NOR(<vexpr>, <vexpr>)",
+        "XOR(<vexpr>, <vexpr>)",
+        "NOT(<vexpr>)",
+        "<var>"
+    ],
     "<var>": ["a", "b", "c", "d", "e", "f", "g"]
 }
 
