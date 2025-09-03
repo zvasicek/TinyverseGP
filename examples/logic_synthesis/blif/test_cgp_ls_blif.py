@@ -2,16 +2,17 @@
 from src.gp.tiny_cgp import *
 from src.gp.problem import Problem
 from src.gp.tinyverse import Var
+import time
 import requests
 
-# from dd.cudd import BDD
+from dd.cudd import BDD
 # import dd.cudd
-from dd.autoref import BDD, Function
-
-Function.__xor__ = lambda self, other: self._apply("xor", other)
+#from dd.autoref import BDD, Function
+#Function.__xor__ = lambda self, other: self._apply("xor", other)
 
 from src.benchmark.logic_synthesis.blif_parser.blif import BlifFile
 from src.gp.tinyverse import Function
+
 
 AND = Function(2, "AND", lambda x, y: x & y)
 OR = Function(2, "OR", lambda x, y: x | y)
@@ -19,19 +20,18 @@ NOT = Function(1, "NOT", lambda x: ~x)
 NAND = Function(2, "NAND", lambda x, y: ~(x & y))
 NOR = Function(2, "NOR", lambda x, y: ~(x | y))
 XOR = Function(2, "XOR", lambda x, y: x ^ y)
+XOR = Function(2, "XOR", lambda x, y: x.bdd.apply('xor', x, y))
 XNOR = Function(2, "XNOR", lambda x, y: ~(x ^ y))
+XNOR = Function(2, "XNOR", lambda x, y: ~x.bdd.apply('xor', x, y))
 ID = Function(1, "ID", lambda x: x)
 
 
 @dataclass
-class LS(Problem):
+class BlackBoxBDD(Problem):
     """
     A black-box LS problem where the fitness is calculated by a loss function
-    of a set of examples of input and output.
+    using a BDD representation of the target function.
     """
-
-    observations: list
-    actual: list
 
     def __init__(self, blif_: str, minimizing_: bool = True):
         self.blif = blif_
@@ -69,21 +69,21 @@ class LS(Problem):
                 case "OR2":
                     o = ina | inb
                 case "XOR2":
-                    o = ina ^ inb
-                    # o = self.bdd.apply('xor', ina, inb)
+                    #o = ina ^ inb
+                    o = self.bdd.apply('xor', ina, inb)
                 case "NAND2":
                     o = ~(ina & inb)
                 case "NOR2":
                     o = ~(ina | inb)
                 case "XNOR2":
-                    o = ~(ina ^ inb)
-                    # o = ~self.bdd.apply('xor', ina, inb)
+                    #o = ~(ina ^ inb)
+                    o = ~self.bdd.apply('xor', ina, inb)
                 case "INVA":
                     o = ~ina
                 case "IDA":
                     o = ina
             g2v[g.name] = o
-            print(o)
+            #print(o)
 
         self.reference = []
         for o in b.eachOutput():
@@ -121,7 +121,7 @@ class LS(Problem):
 
 
 functions = [NOT, ID, AND, OR, XOR, NAND, NOR, XNOR]
-# functions = [NOT, AND, OR, NAND, NOR, XNOR]
+functions = [NOT, AND, OR, NAND, NOR]
 functions = [ID, AND, XOR]
 functions = [NOT, ID, AND, OR, XOR]
 
@@ -144,18 +144,30 @@ parity5 = """.model parity_5.blif
 1 1
 .end"""
 
-problem = LS(parity5)  # 'parity_5.blif')
+problem = BlackBoxBDD(parity5)  # 'parity_5.blif')
+
+#problem = BlackBoxBDD(
+#    requests.get(
+#        "https://raw.githubusercontent.com/boolean-function-benchmarks/benchmarks/refs/heads/main/benchmarks/blif/epar11.blif"
+#    ).text
+#)
 
 # uncomment to evolve 3-bit adder
-problem = LS(
+problem = BlackBoxBDD(
     requests.get(
         "https://raw.githubusercontent.com/boolean-function-benchmarks/benchmarks/refs/heads/main/benchmarks/blif/add3.blif"
     ).text
 )
+#
+#problem = BlackBoxBDD(
+#    requests.get(
+#        "https://raw.githubusercontent.com/boolean-function-benchmarks/benchmarks/refs/heads/main/benchmarks/blif/mul3.blif"
+#    ).text
+#)
 
 config = CGPConfig(
     num_jobs=1,
-    max_generations=500_000,
+    max_generations=1_500_000,
     stopping_criteria=0,
     minimizing_fitness=True,
     ideal_fitness=0,
@@ -166,10 +178,10 @@ config = CGPConfig(
     max_arity=2,
     num_inputs=problem.num_inputs,
     num_outputs=problem.num_outputs,
-    num_function_nodes=30,
     report_interval=5000,
     report_every_improvement=True,
-    max_time=60000,
+    max_time=3600,
+    global_seed=42,
 )
 
 hyperparameters = CGPHyperparameters(
@@ -178,21 +190,36 @@ hyperparameters = CGPHyperparameters(
     population_size=5,
     levels_back=20,
     mutation_rate=0.05,
-    mutation_rate_genes=5,
+    num_function_nodes=30,
+    #num_function_nodes=100,
     strict_selection=True,
 )
 
-config.init()
-random.seed(142)
+#hyperparameters = CGPHyperparameters(
+#    mu=1,
+#    lmbda=4,
+#    population_size=5,
+#    levels_back=20,
+#    mutation_rate=0.05,
+#    num_function_nodes=50,
+#    strict_selection=True,
+#)
+
+#config.init()
+#random.seed(142)
 
 # todo CONSTANTS
 terminals = [Var(None, name_=n) for i, n in enumerate(problem.input_variables)]
 
 data = None
 
-cgp = TinyCGP(problem, functions, terminals, config, hyperparameters)
-best = cgp.evolve()
+cgp = TinyCGP(functions, terminals, config, hyperparameters)
 
-print("best", best.genome, best.fitness)
-print(cgp.evaluate_individual(best.genome))
-print("decode", cgp.expression(best.genome))
+print('NUM GENES', config.num_genes, config.num_genes*hyperparameters.mutation_rate)
+
+tstart = time.time()
+best = cgp.evolve(problem)
+print(f'finished in {time.time()-tstart:.2f} seconds, generations {cgp.generation_number}')
+print(f'best {best.fitness}, genome {best.genome}')
+#print(cgp.evaluate_individual(best.genome))
+print(f"expression {cgp.expression(best.genome)}")

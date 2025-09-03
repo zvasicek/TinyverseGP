@@ -265,12 +265,18 @@ class Checkpointer:
         return checkpoint
 
     def create_dir(self):
+        if not self.config.checkpointing:
+            return None
+
         dir_name = (
             self.config.experiment_name
-            if self.config.experiment_name is not None
-            else time.time()
+            if (self.config.experiment_name is not None) and (self.config.experiment_name != "")
+            else str(int(time.time()))
         )
-        path = os.path.join(self.config.checkpoint_dir, dir_name)
+        if self.config.checkpoint_dir:
+            path = os.path.join(self.config.checkpoint_dir, dir_name) 
+        else:
+            path = os.path.join("checkpoints", dir_name)
 
         if not os.path.exists(path):
             os.makedirs(path)
@@ -285,7 +291,6 @@ class GPModel(ABC):
     integrated in the framework.
     """
 
-    best_individual: GPIndividual
     num_evaluations: int
     generation_number: int
     population: List[GPIndividual]
@@ -294,7 +299,6 @@ class GPModel(ABC):
     config: GPConfig
 
     def __init__(self, config_: GPConfig, hyperparameters_: GPHyperparameters):
-        # self.best_individual = GPIndividual()
         self.config = config_
         self.hyperparameters = hyperparameters_
         self.erc = []
@@ -313,22 +317,15 @@ class GPModel(ABC):
         best = None
         for individual in self.population:
             self.num_evaluations += 1
-            genome = individual.genome
             if individual.fitness is None:
+                genome = individual.genome
                 individual.fitness = self.penalize(
                     self.evaluate_individual(genome, problem), genome
                 )
             fitness = individual.fitness
-
-            if best is None:
-                best = copy.copy(individual)
+            if (best is None) or problem.is_better(fitness, best_fitness):
+                best = individual
                 best_fitness = fitness
-
-            if problem.is_better(fitness, best_fitness):
-                best = copy.copy(individual)
-                best_fitness = fitness
-
-        self.best_individual = copy.copy(best)
 
         return best
 
@@ -338,19 +335,32 @@ class GPModel(ABC):
         This method is used to penalize genomes that are
         invalid, do not satisfy the constraints of the problem, or are too complex.
         """
-        valid = self.is_valid(genome)
-        if self.hyperparameters.discard_invalid and not valid:
-            if self.config.minimizing_fitness:
-                return float("inf")
-            else:
-                return float("-inf")
-        violations = self.config.constraints(genome)
-        if self.hyperparameters.discard_infeasible and violations > 0:
-            if self.config.minimizing_fitness:
-                return float("inf")
-            else:
-                return float("-inf")
-        complexity = self.eval_complexity(genome)
+        valid = 1.0
+        # Don't check validity if not needed
+        if self.hyperparameters.discard_invalid or (self.hyperparameters.penalization_validity_factor > 0):
+            valid = self.is_valid(genome)
+
+            if self.hyperparameters.discard_invalid and not valid:
+                if self.config.minimizing_fitness:
+                    return float("inf")
+                else:
+                    return float("-inf")
+
+        violations = 0.0
+        # Don't check violations if not needed
+        if self.hyperparameters.discard_infeasible or (self.hyperparameters.penalization_feasibility_factor > 0):
+            violations = self.config.constraints(genome)
+        
+            if self.hyperparameters.discard_infeasible and violations > 0:
+                if self.config.minimizing_fitness:
+                    return float("inf")
+                else:
+                    return float("-inf")
+
+        complexity = 0.0
+        # Don't compute complexity if not needed
+        if self.hyperparameters.penalization_complexity_factor > 0:
+            complexity = self.eval_complexity(genome)
 
         penalty = (
             self.hyperparameters.penalization_complexity_factor * complexity
@@ -386,7 +396,7 @@ class GPModel(ABC):
         pass
 
     @abstractmethod
-    def pipeline(self, problem):
+    def pipeline(self, problem, best: GPIndividual = None) -> GPIndividual:
         pass
 
     def evolve(self, problem) -> Any:
@@ -411,12 +421,18 @@ class GPModel(ABC):
             # Evaluate the population
             best_individual = self.evaluate(problem)
             best_fitness = best_fitness_job = best_individual.fitness
-
+        
             while self.generation_number < self.config.max_generations:
 
-                best_gen = self.pipeline(problem)
-                best_gen_fitness = best_gen.fitness
+                best_gen = self.pipeline(problem, best_individual)
 
+                if (best_gen == best_individual):
+                    #print("No progress, continue")
+                    self.generation_number += 1
+                    continue
+
+                best_gen_fitness = best_gen.fitness
+                #print(f"best gen {id(best_gen)} indi {id(best_individual)}")
                 if problem.is_better(best_gen_fitness, best_fitness):
                     best_individual = best_gen
                     best_fitness = best_gen_fitness

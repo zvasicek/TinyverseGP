@@ -35,7 +35,6 @@ class CGPHyperparameters(Hyperparameters):
     levels_back: int
     strict_selection: bool
     mutation_rate: float = None
-    mutation_rate_genes: int = None
 
     def __post_init__(self):
         Hyperparameters.__post_init__(self)
@@ -255,9 +254,7 @@ class TinyCGP(GPModel):
         :param position: position of the gene in the genome
         :return: node number where the gene belongs to
         """
-        return (
-            math.floor(position / (self.config.max_arity + 1)) + self.config.num_inputs
-        )
+        return (position // (self.config.max_arity + 1)) + self.config.num_inputs
 
     def node_position(self, node_num: int) -> int:
         """
@@ -424,11 +421,11 @@ class TinyCGP(GPModel):
         :param paths: Decoded paths of the graph
         :return: Set of predicted values
         """
-        max_idx = self.config.genes_per_node * self.config.num_function_nodes
+        max_idx = self.config.genes_per_node * self.hyperparameters.num_function_nodes
         step = self.config.genes_per_node
 
         node_values = [
-            None for i in range(self.config.num_function_nodes + self.config.num_inputs)
+            None for i in range(self.hyperparameters.num_function_nodes + self.config.num_inputs)
         ]
         for i in range(self.config.num_inputs):
             if not self.terminals[i].const:
@@ -605,13 +602,12 @@ class TinyCGP(GPModel):
         :param genome: Genome of the individual to be mutated
         :return: the mutated genome
         """
-        if self.hyperparameters.mutation_rate is not None:
-            num_genes = int(self.hyperparameters.mutation_rate * self.config.num_genes)
-            for _ in range(num_genes):
-                gene_pos = random.randint(0, self.config.num_genes - 1)
-                genome[gene_pos] = self.init_gene(gene_pos)
-        else:
-            raise ValueError("The mutation_rate must be set")
+        assert self.hyperparameters.mutation_rate is not None, "The mutation_rate must be set"
+        num_genes = int(self.hyperparameters.mutation_rate * self.config.num_genes)
+        #num_genes = random.randint(1, num_genes)
+        for _ in range(num_genes):
+            gene_pos = random.randint(0, self.config.num_genes - 1)
+            genome[gene_pos] = self.init_gene(gene_pos)
 
     def expression(self, genome: list[int]) -> list[str]:
         """
@@ -666,15 +662,13 @@ class TinyCGP(GPModel):
 
         return expressions
 
-    def pipeline(self, problem):
+    def pipeline(self, problem, parent):
         """
         Pipeline that performs one generational step CGP in the common
         1+lambda fashion.
 
         :return: best solution found in the population
         """
-
-        parent = self.best_individual
 
         if not self.hyperparameters.strict_selection:
             parent = self.selection()
@@ -684,7 +678,6 @@ class TinyCGP(GPModel):
 
         # Evaluation of the offspring
         return self.evaluate(problem)
-
 
 def print_population(self):
     for individual in self.population:
